@@ -1,10 +1,5 @@
-
-# Created by https://www.toptal.com/developers/gitignore/api/jupyternotebooks,linux,macos,python,windows
-# Edit at https://www.toptal.com/developers/gitignore?templates=jupyternotebooks,linux,macos,python,windows
-
-### JupyterNotebooks ###
-# gitignore template for Jupyter Notebooks
-# website: http://jupyter.org/
+# ignore local config file that specifies local paths
+config.json
 
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
