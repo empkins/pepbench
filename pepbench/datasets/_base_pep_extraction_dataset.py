@@ -49,5 +49,9 @@ class BaseUnifiedPepExtractionDataset(Dataset):
     def sampling_rate_icg(self):
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
+    @property
+    def heartbeats(self):
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
+
     def calculate_pep_manual_labeled(self):
         raise NotImplementedError("This property needs to be implemented in the subclass!")
