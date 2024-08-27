@@ -9,8 +9,8 @@ from functools import lru_cache
 import pandas as pd
 import numpy as np
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
+from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
-from tpcp import Dataset
 
 from pepbench._utils._types import path_t
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
@@ -296,6 +296,15 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     @property
     def reference_pep(self) -> pd.DataFrame:
         return compute_reference_pep(self)
+
+    @property
+    def heartbeats(self):
+        heartbeat_algo = HeartbeatSegmentationNeurokit()
+        ecg_clean = self.ecg_clean
+        ecg_clean.columns = ["ECG_Clean"]
+        heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
+        heartbeats = heartbeat_algo.heartbeat_list_
+        return heartbeats
 
     # def correct_start_point(self, heartbeats, b_points=[], q_points=[], c_points=[], pep_results=[]):
     #     # correct samples such manually labeled and calculated ones match

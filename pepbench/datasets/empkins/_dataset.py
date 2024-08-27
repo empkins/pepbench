@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from biopsykit.io.io import load_long_format_csv
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
+from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.utils.file_handling import get_subject_dirs
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 
@@ -271,6 +272,15 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
     @property
     def reference_pep(self) -> pd.DataFrame:
         return compute_reference_pep(self)
+
+    @property
+    def heartbeats(self):
+        heartbeat_algo = HeartbeatSegmentationNeurokit(variable_length=True)
+        ecg_clean = self.ecg_clean
+        ecg_clean.columns = ["ECG_Clean"]
+        heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
+        heartbeats = heartbeat_algo.heartbeat_list_
+        return heartbeats
 
     # def calculate_pep_manual_labeled(self, ecg_clean, ecg_whole, heartbeats):
     #     # calculate pep out of the manual labels
