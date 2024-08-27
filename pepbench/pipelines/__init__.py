@@ -1,3 +1,5 @@
 from pepbench.pipelines._pipeline import PepExtractionPipeline
+from pepbench.pipelines._pipeline_reference_q_point import PepExtractionPipelineReferenceQPoints
+from pepbench.pipelines._pipeline_reference_b_point import PepExtractionPipelineReferenceBPoints
 
-__all__ = ["PepExtractionPipeline"]
+__all__ = ["PepExtractionPipeline", "PepExtractionPipelineReferenceQPoints", "PepExtractionPipelineReferenceBPoints"]

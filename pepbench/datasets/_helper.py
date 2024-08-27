@@ -15,6 +15,7 @@ def load_labeling_borders(file_path: path_t) -> pd.DataFrame:
 
 
 def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFrame:
+    heartbeats = subset.heartbeats
     reference_icg = subset.reference_labels_icg
     reference_ecg = subset.reference_labels_ecg
 
@@ -29,7 +30,26 @@ def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFra
     pep_reference = pd.concat([qwave_onsets, b_points]).sort_index()
     pep_reference = pep_reference["sample_relative"].unstack("label")
 
-    pep_reference.columns = ["q_wave_onset_sample", "b_point_sample"]
+    pep_reference.columns = ["b_point_sample", "q_wave_onset_sample"]
     pep_reference = pep_reference.assign(pep_sample=-1 * pep_reference.diff(axis=1).dropna(axis=1, how="all"))
     pep_reference = pep_reference.assign(pep_ms=pep_reference["pep_sample"] / subset.sampling_rate_ecg * 1000)
-    return pep_reference
+    heartbeats.columns = [
+        f"heartbeat_{col}" if col != "r_peak_sample" else "r_peak_sample" for col in heartbeats.columns
+    ]
+    pep_reference = pep_reference.join(heartbeats)
+
+    # reorder columns
+    pep_reference = pep_reference[
+        [
+            "heartbeat_start_time",
+            "heartbeat_start_sample",
+            "heartbeat_end_sample",
+            "r_peak_sample",
+            "q_wave_onset_sample",
+            "b_point_sample",
+            "pep_sample",
+            "pep_ms",
+        ]
+    ]
+
+    return pep_reference.convert_dtypes(infer_objects=True)

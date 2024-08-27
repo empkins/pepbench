@@ -1,30 +1,17 @@
-from typing import Optional
-
-import numpy as np
 from typing_extensions import Self
 
-import pandas as pd
-from tpcp import Pipeline, Parameter
 from tpcp._dataset import DatasetT
 
-from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
-from biopsykit.signals.ecg.segmentation import BaseHeartbeatSegmentation
-from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
-from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection
-from biopsykit.signals.pep import PepExtraction
-
-__all__ = ["PepExtractionPipeline"]
-
 from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
-from pepbench.pipelines._helper import merge_pep_with_reference
+
+__all__ = ["PepExtractionPipelineReferenceQPoints"]
 
 
-class PepExtractionPipeline(_BasePepExtractionPipeline):
-    """Pipeline for PEP extraction"""
+class PepExtractionPipelineReferenceQPoints(_BasePepExtractionPipeline):
+    """Pipeline for PEP extraction that uses reference Q-points for Q-wave onset detection"""
 
     def run(self, datapoint: DatasetT) -> Self:
         heartbeat_algo = self.heartbeat_segmentation_algo.clone()
-        q_wave_algo = self.q_wave_algo.clone()
         c_point_algo = self.c_point_algo.clone()
         b_point_algo = self.b_point_algo.clone()
         outlier_algo = self.outlier_correction_algo.clone()
@@ -41,8 +28,7 @@ class PepExtractionPipeline(_BasePepExtractionPipeline):
         heartbeats = heartbeat_algo.heartbeat_list_
 
         # run Q-wave extraction
-        q_wave_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=fs_ecg)
-        q_wave_onset_samples = q_wave_algo.points_
+        q_wave_onset_samples = reference_pep[["q_wave_onset_sample"]].copy()
 
         # run C-point extraction
         c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=fs_icg)
