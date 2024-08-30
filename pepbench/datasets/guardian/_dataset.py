@@ -262,7 +262,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     #     return b_points, q_points, heartbeats, c_points, pep_results
 
     @staticmethod
-    def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrameclear) -> pd.DataFrame:
+    def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrame) -> pd.DataFrame:
         start = borders.index[0]
         end = borders.index[-1]
         data = data.loc[start:end]
