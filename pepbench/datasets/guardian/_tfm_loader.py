@@ -1,22 +1,20 @@
-from pathlib import Path
+from typing import ClassVar, Optional, Union
 
-from typing import Dict, Optional, Union
-import pandas as pd
 import numpy as np
-import os
+import pandas as pd
+from biopsykit.utils.array_handling import downsample
 from scipy.io import loadmat
 
 from pepbench._utils._types import path_t
-from biopsykit.utils.array_handling import downsample
 
 
 class TFMLoader:
     """Class for loading and processing Task Force Monitor (TFM) data from the Guardian Study."""
 
-    SAMPLING_RATES_IN = {"ecg_1": 1000, "ecg_2": 1000, "icg_der": 500}
+    SAMPLING_RATES_IN: ClassVar[dict[str, float]] = {"ecg_1": 1000, "ecg_2": 1000, "icg_der": 500}
     SAMPLING_RATE_OUT = 500
-    CHANNEL_MAPPING = {"ecg_1": "rawECG1", "ecg_2": "rawECG2", "icg_der": "rawICG"}
-    PHASES = [
+    CHANNEL_MAPPING: ClassVar[dict[str, str]] = {"ecg_1": "rawECG1", "ecg_2": "rawECG2", "icg_der": "rawICG"}
+    PHASES: ClassVar[list[str]] = [
         "BeginRecording",
         "Pause",
         "Valsalva",
@@ -24,7 +22,8 @@ class TFMLoader:
         "TiltUp",
         "TiltDown",
     ]
-    ORIGINAL_NAMES = {
+
+    ORIGINAL_NAMES: ClassVar[dict[str, str]] = {
         "BeginRecording": "Beginn der Aufzeichnung",
         "Pause": "Ruhe",
         "Valsalva": "Valsalva",
@@ -34,15 +33,15 @@ class TFMLoader:
     }
     _start_time_unix: pd.Timestamp
     _tz: str
-    _start_time_dict: Dict[str, pd.Timestamp]
+    _start_time_dict: dict[str, pd.Timestamp]
 
     def __init__(
         self,
-        data_dict: Dict[str, pd.DataFrame],
-        sampling_rate_dict: Dict[str, float],
-        start_time_dict: Dict[str, pd.Timestamp],
+        data_dict: dict[str, pd.DataFrame],
+        sampling_rate_dict: dict[str, float],
+        start_time_dict: dict[str, pd.Timestamp],
         tz: Optional[str] = None,
-    ):
+    ) -> None:
         """Initialize a TFM dataset.
 
         Parameters
@@ -64,12 +63,12 @@ class TFMLoader:
         self._tz = tz
 
     @classmethod
-    def from_mat_file(
+    def from_mat_file(  # noqa: C901, PLR0912
         cls,
         file_path: path_t,
         date: Union[str, pd.Timestamp],
         tz: Optional[str] = "Europe/Berlin",
-    ):
+    ) -> "TFMLoader":
         data = loadmat(file_path, struct_as_record=False, squeeze_me=True)
 
         data_raw = data["RAW_SIGNALS"]
@@ -96,12 +95,11 @@ class TFMLoader:
                     if isinstance(recording_value, np.ndarray):
                         if len(recording_value) == 0:
                             continue
-                        else:
-                            data_dict[key][recording_key] = downsample(
-                                recording_value,
-                                fs_in=cls.SAMPLING_RATES_IN[key],
-                                fs_out=cls.SAMPLING_RATE_OUT,
-                            )
+                        data_dict[key][recording_key] = downsample(
+                            recording_value,
+                            fs_in=cls.SAMPLING_RATES_IN[key],
+                            fs_out=cls.SAMPLING_RATE_OUT,
+                        )
 
         new_data = {}
 
@@ -113,7 +111,7 @@ class TFMLoader:
 
                 new_data[recording_key][key] = recording_value
 
-        for key2, value2 in new_data.items():
+        for key2, _value2 in new_data.items():
 
             new_data[key2] = pd.concat(
                 [
@@ -153,7 +151,7 @@ class TFMLoader:
         """Timezone the dataset was recorded in."""
         return self._tz
 
-    def data_as_dict(self, index: Optional[str] = None) -> Dict[str, pd.DataFrame]:
+    def data_as_dict(self, index: Optional[str] = None) -> dict[str, pd.DataFrame]:
         return {
             key: self._add_index(val, index=index, start_time=start_time)
             for (key, val), start_time in zip(self._data.items(), self._start_time_dict.values())

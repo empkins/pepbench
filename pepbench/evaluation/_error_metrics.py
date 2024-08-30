@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-
 __all__ = ["error", "rel_error", "abs_error", "abs_rel_error"]
 
 
@@ -40,7 +39,6 @@ def rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     error
         The relative error between the detected and reference values in the form (`est_data` - `ref_data`) / `ref_data`
     """
-
     result = (est_data - ref_data) / ref_data
     result = result.replace(np.inf, pd.NA)
     return result
@@ -63,7 +61,6 @@ def abs_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
         The absolute error between the detected and reference values in the
         form abs(`est_data` - `ref_data`)
     """
-
     return np.abs(est_data - ref_data)
 
 

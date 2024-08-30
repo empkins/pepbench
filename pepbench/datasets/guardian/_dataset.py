@@ -1,20 +1,16 @@
-import ast
-import json
-from pathlib import Path
-from itertools import product
-from typing import Optional, Sequence, Union, Dict, Tuple
-
+from collections.abc import Sequence
 from functools import lru_cache
+from itertools import product
+from typing import ClassVar, Optional, Union
 
 import pandas as pd
-import numpy as np
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 
 from pepbench._utils._types import path_t
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
-from pepbench.datasets._helper import load_labeling_borders, compute_reference_pep
+from pepbench.datasets._helper import compute_reference_pep, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
 
 __all__ = ["GuardianDataset"]
@@ -29,8 +25,8 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     base_path: path_t
     use_cache: bool
 
-    SAMPLING_RATES = {"ecg_1": 500, "ecg_2": 500, "icg_der": 500}
-    PHASES = ["Pause", "Valsalva", "HoldingBreath", "TiltUp", "TiltDown"]
+    SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg_1": 500, "ecg_2": 500, "icg_der": 500}
+    PHASES: ClassVar[tuple[str, ...]] = ["Pause", "Valsalva", "HoldingBreath", "TiltUp", "TiltDown"]
 
     SUBSET_NO_RECORDED_DATA = (
         ("GDN0006", "HoldingBreath"),
@@ -56,7 +52,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         exclude_no_recorded_data: bool = True,
         use_cache: bool = True,
         only_labeled: bool = False,
-    ):
+    ) -> None:
         self.base_path = base_path
         self.exclude_no_recorded_data = exclude_no_recorded_data
         self.data_to_exclude = self._find_data_to_exclude()
@@ -75,7 +71,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
         return index
 
-    def _find_data_to_exclude(self) -> Sequence[Tuple[str, str]]:
+    def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
         data_to_exclude = []
         if self.exclude_no_recorded_data:
             data_to_exclude = self.SUBSET_NO_RECORDED_DATA
@@ -83,7 +79,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return data_to_exclude
 
     @property
-    def sampling_rates(self) -> Dict[str, int]:
+    def sampling_rates(self) -> dict[str, int]:
         return self.SAMPLING_RATES
 
     @property
@@ -104,7 +100,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return metadata
 
     @property
-    def tfm_data(self) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+    def tfm_data(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         participant = self.index["participant"][0]
         phases = self.index["phase"]
 
@@ -131,26 +127,26 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
                 tfm_data_dict = self._cut_to_labeling_borders(tfm_data_dict, labeling_borders)
             else:
                 for phase in phases:
-                    borders = labeling_borders[labeling_borders["description"].apply(lambda x: phase in x.keys())]
+                    borders = labeling_borders[labeling_borders["description"].apply(lambda x, ph=phase: ph in x)]
                     tfm_data = tfm_data_dict[phase]
                     tfm_data_dict[phase] = self._cut_to_labeling_borders(tfm_data, borders)
 
         return tfm_data_dict
 
     @property
-    def icg(self):
+    def icg(self) -> pd.DataFrame:
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
         return self.tfm_data[["icg_der"]]
 
     @property
-    def icg_clean(self):
+    def icg_clean(self) -> pd.DataFrame:
         icg = self.icg
         fs = self.sampling_rate_icg
         return pd.DataFrame(clean_icg_deriv(raw_signal=icg["icg_der"], sampling_rate_hz=fs), columns=["icg_der"])
 
     @property
-    def ecg(self):
+    def ecg(self) -> pd.DataFrame:
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
         data = self.tfm_data[["ecg_2"]]
@@ -158,69 +154,10 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return data
 
     @property
-    def ecg_clean(self):
+    def ecg_clean(self) -> pd.DataFrame:
         ecg = self.ecg
         fs = self.sampling_rate_ecg
         return pd.DataFrame(clean_ecg(raw_signal=ecg["ecg"], sampling_rate_hz=fs, method="biosppy"), columns=["ecg"])
-
-    # def calculate_pep_manual_labeled(self, ecg_clean):
-    #     # calculate the pep from manually labeled points
-    #     fs = self.SAMPLING_RATES["ecg_2"]
-    #     phase = self.index["phase"][0]
-    #     heartbeat_algo = HeartBeatSegmentation()
-    #     heartbeat_algo.extract(ecg_clean=ecg_clean, sampling_rate_hz=fs)
-    #     heartbeats = heartbeat_algo.heartbeat_list_
-    #
-    #     # load manually labeled points
-    #     data_ICG, data_ECG = self.load_manual_labeled
-    #
-    #     if data_ICG is None or data_ECG is None:
-    #         return None, None, None
-    #     row = data_ECG[(data_ECG["Channel"] == phase) & (data_ECG["Label"] == "start")]
-    #
-    #     # get start of first heartbeat
-    #     start_value = row["Samples"].values[0]
-    #
-    #     data_ICG.loc[data_ICG["Channel"] == "Artefact", "Samples"] = np.nan
-    #     data_ECG.loc[data_ECG["Channel"] == "Artefact", "Samples"] = np.nan
-    #     data_ICG = data_ICG[(data_ICG["Channel"] == "ICG") | (data_ICG["Channel"] == "Artefact")]
-    #
-    #     data_ECG = data_ECG[(data_ECG["Channel"] == "ECG") | (data_ECG["Channel"] == "Artefact")]
-    #     b_points = data_ICG["Samples"].values
-    #
-    #     q_onset = data_ECG["Samples"].values
-    #
-    #     if b_points[0] < q_onset[0]:
-    #
-    #         b_points = b_points[1:]
-    #     if b_points[-1] < q_onset[-1]:
-    #
-    #         q_onset = q_onset[:-1]
-    #
-    #     # calculate pep from manually labeled points
-    #     pep_df = pd.DataFrame((b_points - q_onset) / fs * 1000, columns=["pep"])
-    #     pep_df.index = range(len(pep_df))
-    #     pep_df.index.name = "heartbeat_id"
-    #
-    #     # correcct sample number to match the start of the phase (needed since the heartbeats are only calculated inside the random selected part of the phase and not in realtion to the whole phase)
-    #     heartbeats["start_sample"] = heartbeats["start_sample"] + start_value
-    #     heartbeats["end_sample"] = heartbeats["end_sample"] + start_value
-    #
-    #     # exclude labeled points that are part of uncomplete heartbeats
-    #
-    #     if q_onset[0] < heartbeats["start_sample"].values[0]:
-    #
-    #         q_onset = q_onset[1:]
-    #         b_points = b_points[1:]
-    #         pep_df = pep_df[1:]
-    #
-    #     if q_onset[-1] > heartbeats["end_sample"].values[-1]:
-    #
-    #         q_onset = q_onset[:-1]
-    #         b_points = b_points[:-1]
-    #         pep_df = pep_df[:-1]
-    #
-    #     return b_points, q_onset, pep_df, start_value
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
@@ -236,7 +173,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
         if self.is_single(None):
             phase = self.index["phase"][0]
-            data = data[data["description"].apply(lambda x: phase in x.keys())]
+            data = data[data["description"].apply(lambda x: phase in x)]
 
         return data
 
@@ -298,7 +235,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return compute_reference_pep(self)
 
     @property
-    def heartbeats(self):
+    def heartbeats(self) -> pd.DataFrame:
         heartbeat_algo = HeartbeatSegmentationNeurokit()
         ecg_clean = self.ecg_clean
         ecg_clean.columns = ["ECG_Clean"]
@@ -325,7 +262,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     #     return b_points, q_points, heartbeats, c_points, pep_results
 
     @staticmethod
-    def _cut_to_labeling_borders(data, borders) -> pd.DataFrame:
+    def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrameclear) -> pd.DataFrame:
         start = borders.index[0]
         end = borders.index[-1]
         data = data.loc[start:end]

@@ -110,6 +110,10 @@ ignore = [
     "A003",
     # Ignore because of formatting
     "ISC001",
+    # Ignore missing class type annotation
+    "ANN102",
+    # pivot_table over pivot or unstack
+    "PD010"
 ]
 
 

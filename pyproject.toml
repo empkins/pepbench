@@ -20,6 +20,7 @@ tpcp = {path = "/Users/richer/Documents/PhD/Projects/tpcp/Code", develop=true}
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 ipympl = "^0.9.4"
+ruff = "^0.6.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

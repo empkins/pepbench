@@ -1,12 +1,13 @@
-from typing import Union, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import no_agg, FloatAggregator, Scorer, validate
+from tpcp.validate import FloatAggregator, Scorer, no_agg, validate
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation import match_heartbeat_lists
-from pepbench.evaluation._error_metrics import error, abs_error, abs_rel_error
+from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
 from pepbench.evaluation._scoring_aggregator import SingleValueAggregator
 from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
 
@@ -21,7 +22,7 @@ def validate_pep_pipeline(pipeline: _BasePepExtractionPipeline, dataset: BaseUni
 
 def convert_validate_result_to_dataframe(
     *, dataset: BaseUnifiedPepExtractionDataset, results: dict
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     data_labels = results["data_labels"]
     subset = dataset.get_subset(group_labels=data_labels[0])
 
@@ -53,7 +54,7 @@ def convert_validate_result_to_dataframe(
     pep_estimation = results_subset_per_sample.pop("pep_estimation_per_sample")
     pep_estimation = {tuple(key): test_idx for key, test_idx in zip(subset.index.to_numpy(), pep_estimation)}
     pep_estimation = pd.concat(pep_estimation)
-    pep_estimation.index.names = list(subset.index.columns) + [""]
+    pep_estimation.index.names = [*list(subset.index.columns), ""]
     results_subset_per_sample = {key: np.concatenate(val, axis=0) for key, val in results_subset_per_sample.items()}
 
     # heartbeat_ids = heartbeat_ids.set_index([("heartbeat_id", "estimated"), ("heartbeat_id", "reference")])
@@ -130,7 +131,7 @@ def score(pipeline: _BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtract
     }
 
 
-def mean_and_std(vals: Sequence[float]):
+def mean_and_std(vals: Sequence[float]) -> dict:
     return {"mean": float(np.nanmean(vals)), "std": float(np.nanstd(vals))}
 
 

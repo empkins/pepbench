@@ -1,7 +1,7 @@
-from typing import Optional, Union, List
+from typing import Optional, Union
 
-from tpcp import Dataset
 import pandas as pd
+from tpcp import Dataset
 
 
 class BaseUnifiedPepExtractionDataset(Dataset):
@@ -13,45 +13,53 @@ class BaseUnifiedPepExtractionDataset(Dataset):
     _clean_ecg: pd.DataFrame
 
     def __init__(
-        self, groupby_cols: Optional[Union[List[str], str]] = None, subset_index: Optional[pd.DataFrame] = None
-    ):
+        self, groupby_cols: Optional[Union[list[str], str]] = None, subset_index: Optional[pd.DataFrame] = None
+    ) -> None:
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
 
     @property
-    def icg(self):
+    def icg(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def ecg(self):
+    def ecg(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def icg_clean(self):
+    def icg_clean(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def ecg_clean(self):
+    def ecg_clean(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def reference_labels_ecg(self):
+    def reference_pep(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def reference_labels_icg(self):
+    def reference_heartbeats(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def sampling_rate_ecg(self):
+    def reference_labels_ecg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def sampling_rate_icg(self):
+    def reference_labels_icg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def heartbeats(self):
+    def sampling_rate_ecg(self) -> int:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
-    def calculate_pep_manual_labeled(self):
+    @property
+    def sampling_rate_icg(self) -> int:
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
+
+    @property
+    def heartbeats(self) -> pd.DataFrame:
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
+
+    def calculate_pep_manual_labeled(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")

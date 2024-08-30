@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Tuple
 
 import pandas as pd
 from biopsykit.io import load_atimelogger_file
@@ -14,7 +13,7 @@ def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> 
     return data_path
 
 
-def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) -> Tuple[pd.DataFrame, int]:
+def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) -> tuple[pd.DataFrame, int]:
     biopac_dir_path = _build_data_path(base_path, participant_id=participant_id, condition=condition).joinpath(
         "biopac/raw"
     )
@@ -23,7 +22,7 @@ def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) ->
 
     biopac_data = BiopacDataset.from_acq_file(biopac_file_path)
     biopac_df = biopac_data.data_as_df(index="local_datetime")
-    fs = list(biopac_data._sampling_rate.values())[0]
+    fs = next(iter(biopac_data._sampling_rate.values()))
     return biopac_df, fs
 
 
@@ -40,6 +39,5 @@ def _load_timelog(base_path: path_t, participant_id: str, condition: str, phase:
         timelog_coarse = timelog_coarse.drop("Math_1", axis=1, level=0)
         timelog_coarse = timelog_coarse.drop("Math_2", axis=1, level=0)
         return timelog_coarse
-    else:
-        timelog = timelog.iloc[:, timelog.columns.get_level_values(0) == phase]
-        return timelog
+    timelog = timelog.iloc[:, timelog.columns.get_level_values(0) == phase]
+    return timelog

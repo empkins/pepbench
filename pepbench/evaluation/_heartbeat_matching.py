@@ -1,8 +1,8 @@
-from typing import Union, Sequence, Optional
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-
 
 __all__ = ["match_heartbeat_lists"]
 
@@ -19,7 +19,7 @@ def match_heartbeat_lists(
     heartbeats_reference_postfix: Optional[str] = "_reference",
     heartbeats_extracted_postfix: Optional[str] = "",
 ) -> pd.DataFrame:
-    f"""Find True Positives, False Positives and True Negatives by comparing extracted heartbeats with ground truth.
+    """Find True Positives, False Positives and True Negatives by comparing extracted heartbeats with ground truth.
 
     This compares a extracted heartbeat list with a ground truth heartbeat list and returns True Positives,
     False Positives and True Negatives matches.
@@ -39,29 +39,30 @@ def match_heartbeat_lists(
 
     Parameters
     ----------
-    heartbeats_reference
+    heartbeats_reference : :class:`~pandas.DataFrame`
         The ground truth heartbeat list.
-    heartbeats_extracted
+    heartbeats_extracted : :class:`~pandas.DataFrame`
         The list of extracted heartbeats.
-    tolerance
-        The allowed tolerance between labels.
-        Its unit depends on the units used in the heartbeat lists.
-        The comparison is done as `distance <= tolerance`.
-    one_to_one
+    sampling_rate_hz : int or float
+        The sampling rate of the ECG signal in Hz.
+    tolerance_ms : int or float, optional
+        The allowed tolerance between labels in milliseconds.
+        The comparison is done as `distance <= tolerance_ms`.
+    one_to_one : bool, optional
         If True, only a single unique match per heartbeat is considered.
         In case of multiple matches, the one with the lowest distance is considered.
         If case of multiple matches with the same distance, the first match will be considered.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
-    heartbeats_extracted_postfix
-        A postfix that will be append to the index name of the extracted stride list in the output.
-    heartbeats_reference_postfix
-        A postfix that will be append to the index name of the ground truth in the output.
+    heartbeats_extracted_postfix : str, optional
+        A postfix that will be appended to the index name of the extracted stride list in the output.
+    heartbeats_reference_postfix : str, optional
+        A postfix that will be appended to the index name of the ground truth in the output.
 
     Returns
     -------
     matches
-        A 3 column dataframe with the column names `heartbeat_id{heartbeats_extracted_postfix}`, 
+        A 3 column dataframe with the column names `heartbeat_id{heartbeats_extracted_postfix}`,
         `heartbeat_id{heartbeats_reference_postfix}`, and `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         The `match_type` column indicates the type of match.
@@ -74,15 +75,17 @@ def match_heartbeat_lists(
 
     Examples
     --------
-    >>> heartbeat_reference = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start_sample", "end_sample"]).rename_axis(
+    >>> heartbeat_reference = pd.DataFrame([[10, 21], [20, 34], [31, 40]],
+    ...     columns=["start_sample", "end_sample"]).rename_axis(
     ...     "heartbeat_id"
     ... )
-    >>> stride_list_seg = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start_sample", "end_sample"]).rename_axis(
+    >>> stride_list_seg = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]],
+    ...     columns=["start_sample", "end_sample"]).rename_axis(
     ...     "heartbeat_id"
     ... )
     >>> matches = match_heartbeat_lists(
-    ...     heartbeats_reference=heartbeats_reference, 
-    ...     heartbeats_extracted=heartbeats_extracted, 
+    ...     heartbeats_reference=heartbeats_reference,
+    ...     heartbeats_extracted=heartbeats_extracted,
     ...     sampling_rate_hz=500,
     ...     tolerance_ms=10
     ... )

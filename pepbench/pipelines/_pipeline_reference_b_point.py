@@ -1,6 +1,5 @@
-from typing_extensions import Self
-
 from tpcp._dataset import DatasetT
+from typing_extensions import Self
 
 from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
 
@@ -8,7 +7,7 @@ __all__ = ["PepExtractionPipelineReferenceBPoints"]
 
 
 class PepExtractionPipelineReferenceBPoints(_BasePepExtractionPipeline):
-    """Pipeline for PEP extraction that uses reference B-points for B-point detection"""
+    """tpcp Pipeline for PEP extraction that uses reference B-points for B-point detection."""
 
     def run(self, datapoint: DatasetT) -> Self:
         heartbeat_algo = self.heartbeat_segmentation_algo.clone()

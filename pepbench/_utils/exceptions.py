@@ -1,7 +1,7 @@
 """A set of custom exceptions."""
 
-__all__ = ["SamplingRateMismatchException"]
+__all__ = ["SamplingRateMismatchError"]
 
 
-class SamplingRateMismatchException(Exception):
+class SamplingRateMismatchError(Exception):
     """An error indicating a mismatch in sampling rates."""
