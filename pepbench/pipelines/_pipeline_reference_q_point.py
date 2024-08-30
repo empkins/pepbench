@@ -1,12 +1,12 @@
 from tpcp._dataset import DatasetT
 from typing_extensions import Self
 
-from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
+from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 
 __all__ = ["PepExtractionPipelineReferenceQPoints"]
 
 
-class PepExtractionPipelineReferenceQPoints(_BasePepExtractionPipeline):
+class PepExtractionPipelineReferenceQPoints(BasePepExtractionPipeline):
     """tpcp Pipeline for PEP extraction that uses reference Q-points for Q-wave onset detection."""
 
     def run(self, datapoint: DatasetT) -> Self:

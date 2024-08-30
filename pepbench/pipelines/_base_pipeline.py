@@ -12,8 +12,10 @@ from tpcp import Parameter, Pipeline
 
 NEGATIVE_PEP_HANDLING = Literal["nan", "zero", "keep"]
 
+__all__ = ["BasePepExtractionPipeline"]
 
-class _BasePepExtractionPipeline(Pipeline):
+
+class BasePepExtractionPipeline(Pipeline):
 
     heartbeat_segmentation_algo: Parameter[BaseHeartbeatSegmentation]
     q_wave_algo: Parameter[BaseEcgExtraction]

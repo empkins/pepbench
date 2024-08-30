@@ -1,12 +1,12 @@
 from tpcp._dataset import DatasetT
 from typing_extensions import Self
 
-from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
+from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 
 __all__ = ["PepExtractionPipelineReferenceBPoints"]
 
 
-class PepExtractionPipelineReferenceBPoints(_BasePepExtractionPipeline):
+class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
     """tpcp Pipeline for PEP extraction that uses reference B-points for B-point detection."""
 
     def run(self, datapoint: DatasetT) -> Self:

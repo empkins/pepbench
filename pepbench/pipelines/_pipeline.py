@@ -3,10 +3,10 @@ from typing_extensions import Self
 
 __all__ = ["PepExtractionPipeline"]
 
-from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
+from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 
 
-class PepExtractionPipeline(_BasePepExtractionPipeline):
+class PepExtractionPipeline(BasePepExtractionPipeline):
     """tpcp Pipeline for PEP extraction."""
 
     def run(self, datapoint: DatasetT) -> Self:
@@ -52,6 +52,7 @@ class PepExtractionPipeline(_BasePepExtractionPipeline):
             sampling_rate_hz=fs_icg,
             handle_negative=self.handle_negative_pep,
         )
+        # print(dir(outlier_algo))
         b_point_samples = outlier_algo.points_
 
         pep_results = self._compute_pep(
