@@ -8,10 +8,10 @@ from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 
-from pepbench._utils._types import path_t
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_pep, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
+from pepbench.utils._types import path_t
 
 __all__ = ["GuardianDataset"]
 
@@ -202,28 +202,6 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
             reference_data = pd.read_csv(file_path)
             reference_data = reference_data.set_index(["heartbeat_id", "channel", "label"])
 
-            # reference_data = reference_data.drop(index=reference_data[reference_data["Channel"] == phase].index)
-            # reference_data = reference_data.set_index(["Samples", "Label"]).sort_index()
-            # reference_data = reference_data.reset_index()
-            # reference_data = reference_data[["Samples", "Channel", "Label"]]
-            # reference_data.columns = ["Sample", "Channel", "Label"]
-            # if reference_data.iloc[0]["Label"] != "start":
-            #     reference_data = reference_data.iloc[1:]
-            # if reference_data.iloc[-1]["Label"] != "end":
-            #     reference_data = reference_data.iloc[:-1]
-            #
-            # heartbeat_id = 0
-            # reference_data["Heartbeat_ID"] = None
-            # # Iterate over the DataFrame to assign heartbeat IDs
-            # for index, row in reference_data.iterrows():
-            #     if row["Label"] == "start":
-            #         # Start of a new heartbeat
-            #         heartbeat_id += 1
-            #     # Assign the current heartbeat ID
-            #     reference_data.at[index, "Heartbeat_ID"] = heartbeat_id
-            #
-            # reference_data = reference_data.set_index(["Heartbeat_ID", "Channel", "Label"])
-
             reference_data_dict[phase] = reference_data
 
         if self.is_single(None):
@@ -242,24 +220,6 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
         return heartbeats
-
-    # def correct_start_point(self, heartbeats, b_points=[], q_points=[], c_points=[], pep_results=[]):
-    #     # correct samples such manually labeled and calculated ones match
-    #
-    #     rows = self.labeling_borders
-    #
-    #     start = rows["pos"][0]
-    #
-    #     # adding start to get the sample number for the complete phase and not just random selected part
-    #
-    #     b_points = b_points + start
-    #
-    #     q_points = q_points + start
-    #     c_points = c_points + start
-    #
-    #     heartbeats["start_sample"] = heartbeats["start_sample"] + start
-    #     heartbeats["end_sample"] = heartbeats["end_sample"] + start
-    #     return b_points, q_points, heartbeats, c_points, pep_results
 
     @staticmethod
     def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrame) -> pd.DataFrame:

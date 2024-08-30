@@ -1,8 +1,7 @@
-
 import pandas as pd
 
-from pepbench._utils._types import path_t
 from pepbench.datasets.guardian._tfm_loader import TFMLoader
+from pepbench.utils._types import path_t
 
 
 def _load_tfm_data(base_path: path_t, date: pd.Timestamp) -> dict[str, pd.DataFrame]:

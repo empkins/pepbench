@@ -5,7 +5,7 @@ import pandas as pd
 from biopsykit.utils.array_handling import downsample
 from scipy.io import loadmat
 
-from pepbench._utils._types import path_t
+from pepbench.utils._types import path_t
 
 
 class TFMLoader:
