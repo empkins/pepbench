@@ -1,0 +1,89 @@
+import numpy as np
+import pandas as pd
+
+
+__all__ = ["error", "rel_error", "abs_error", "abs_rel_error"]
+
+
+def error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
+    """
+    Calculate the error between the detected and reference values.
+
+    Parameters
+    ----------
+    ref_data
+        The reference values.
+    est_data
+        The estimated values.
+
+    Returns
+    -------
+    error
+        The error between the detected and reference values in the form `est_data` - `ref_data`
+    """
+    return est_data - ref_data
+
+
+def rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
+    """
+    Calculate the relative error between the detected and reference values.
+
+    Parameters
+    ----------
+    ref_data
+        The reference values.
+    est_data
+        The estimated values.
+
+    Returns
+    -------
+    error
+        The relative error between the detected and reference values in the form (`est_data` - `ref_data`) / `ref_data`
+    """
+
+    result = (est_data - ref_data) / ref_data
+    result = result.replace(np.inf, pd.NA)
+    return result
+
+
+def abs_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
+    """
+    Calculate the absolute error between the detected and reference values.
+
+    Parameters
+    ----------
+    ref_data
+        The reference values.
+    est_data
+        The estimated values.
+
+    Returns
+    -------
+    error
+        The absolute error between the detected and reference values in the
+        form abs(`est_data` - `ref_data`)
+    """
+
+    return np.abs(est_data - ref_data)
+
+
+def abs_rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
+    """
+    Calculate the absolute relative error between the detected and reference values.
+
+    Parameters
+    ----------
+    ref_data
+        The reference values.
+    est_data
+        The estimated values.
+
+    Returns
+    -------
+    error
+        The absolute relative error between the detected and reference values in the
+        form (`est_data` - `ref_data`) / `ref_data`
+    """
+    result = np.abs((est_data - ref_data) / ref_data)
+    result = result.replace(np.inf, pd.NA)
+    return result
