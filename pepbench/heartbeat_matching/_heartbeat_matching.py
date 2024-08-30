@@ -16,8 +16,8 @@ def match_heartbeat_lists(
     tolerance_ms: Union[int, float] = 10,
     sampling_rate_hz: float,
     one_to_one: bool = True,
-    heartbeats_reference_postfix: Optional[str] = "_reference",
-    heartbeats_extracted_postfix: Optional[str] = "",
+    heartbeats_reference_suffix: Optional[str] = "_reference",
+    heartbeats_extracted_suffix: Optional[str] = "",
 ) -> pd.DataFrame:
     """Find True Positives, False Positives and True Negatives by comparing extracted heartbeats with ground truth.
 
@@ -54,16 +54,16 @@ def match_heartbeat_lists(
         If case of multiple matches with the same distance, the first match will be considered.
         If False, multiple matches are possible.
         If this is set to False, some calculated metrics from these matches might not be well defined!
-    heartbeats_extracted_postfix : str, optional
-        A postfix that will be appended to the index name of the extracted stride list in the output.
-    heartbeats_reference_postfix : str, optional
-        A postfix that will be appended to the index name of the ground truth in the output.
+    heartbeats_extracted_suffix : str, optional
+        A suffix that will be appended to the index name of the extracted stride list in the output.
+    heartbeats_reference_suffix : str, optional
+        A suffix that will be appended to the index name of the ground truth in the output.
 
     Returns
     -------
     matches
-        A 3 column dataframe with the column names `heartbeat_id{heartbeats_extracted_postfix}`,
-        `heartbeat_id{heartbeats_reference_postfix}`, and `match_type`.
+        A 3 column dataframe with the column names `heartbeat_id{heartbeats_extracted_suffix}`,
+        `heartbeat_id{heartbeats_reference_suffix}`, and `match_type`.
         Each row is a match containing the index value of the left and the right list, that belong together.
         The `match_type` column indicates the type of match.
         For all extracted heartbeats that have a match in the ground truth list, this will be "tp" (true positive).
@@ -98,19 +98,19 @@ def match_heartbeat_lists(
     4  NaN                 1         fn
 
     """
-    tolerance = tolerance_ms / 1000 * sampling_rate_hz
+    tolerance_samples = int(tolerance_ms / 1000 * sampling_rate_hz)
     matches = _match_heartbeat_lists(
         heartbeats_extracted,
         heartbeats_reference,
         match_cols=["start_sample", "end_sample"],
-        tolerance=tolerance,
+        tolerance_samples=tolerance_samples,
         one_to_one=one_to_one,
-        postfix_a=heartbeats_extracted_postfix,
-        postfix_b=heartbeats_reference_postfix,
+        suffix_a=heartbeats_extracted_suffix,
+        suffix_b=heartbeats_reference_suffix,
     )
 
-    segmented_index_name = heartbeats_extracted.index.name + heartbeats_extracted_postfix
-    reference_index_name = heartbeats_reference.index.name + heartbeats_reference_postfix
+    segmented_index_name = heartbeats_extracted.index.name + heartbeats_extracted_suffix
+    reference_index_name = heartbeats_reference.index.name + heartbeats_reference_suffix
 
     matches = matches.assign(match_type=0)
     matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
@@ -124,15 +124,15 @@ def _match_heartbeat_lists(
     heartbeat_list_a: pd.DataFrame,
     heartbeat_list_b: pd.DataFrame,
     match_cols: Union[str, Sequence[str]],
-    tolerance: Union[int, float] = 0,
+    tolerance_samples: Union[int, float] = 0,
     one_to_one: bool = True,
-    postfix_a: str = "_a",
-    postfix_b: str = "_b",
+    suffix_a: str = "_a",
+    suffix_b: str = "_b",
 ) -> pd.DataFrame:
-    if postfix_a == postfix_b:
-        raise ValueError("The postfix for the first and the second heartbeat list must be different.")
+    if suffix_a == suffix_b:
+        raise ValueError("The suffix for the first and the second heartbeat list must be different.")
 
-    if tolerance < 0:
+    if tolerance_samples < 0:
         raise ValueError("The tolerance must be larger 0.")
 
     # sanitize input
@@ -141,12 +141,12 @@ def _match_heartbeat_lists(
     left_indices, right_indices = _match_label_lists(
         heartbeat_list_a[match_cols].to_numpy(),
         heartbeat_list_b[match_cols].to_numpy(),
-        tolerance=tolerance,
+        tolerance_samples=tolerance_samples,
         one_to_one=one_to_one,
     )
 
-    index_name_a = heartbeat_list_a.index.name + postfix_a
-    index_name_b = heartbeat_list_b.index.name + postfix_b
+    index_name_a = heartbeat_list_a.index.name + suffix_a
+    index_name_b = heartbeat_list_b.index.name + suffix_b
 
     matches_a = pd.DataFrame(index=heartbeat_list_a.index.copy(), columns=[index_name_b])
     matches_a.index.name = index_name_a
@@ -174,7 +174,7 @@ def _match_heartbeat_lists(
 
 
 def _match_label_lists(
-    list_a: np.ndarray, list_b: np.ndarray, tolerance: Union[int, float], one_to_one: bool
+    list_a: np.ndarray, list_b: np.ndarray, tolerance_samples: int, one_to_one: bool
 ) -> tuple[np.ndarray, np.ndarray]:
     """Find matches in two lists based on the distance between their vectors.
 
@@ -184,7 +184,7 @@ def _match_label_lists(
         An n long array of d-dimensional vectors
     list_b : array with shape (m, d)
         An m long array of d-dimensional vectors
-    tolerance
+    tolerance_samples
         Max allowed Chebyshev distance between matches.
         The comparison is done as "distance <= tolerance".
     one_to_one
@@ -234,7 +234,7 @@ def _match_label_lists(
                 # We force sort the keys here to make sure the order is deterministic, even if the storage order of
                 # sparse array might not be.
                 *sorted(
-                    tree_a.sparse_distance_matrix(tree_b, tolerance, p=np.inf, output_type="dict").keys(),
+                    tree_a.sparse_distance_matrix(tree_b, tolerance_samples, p=np.inf, output_type="dict").keys(),
                     key=lambda x: x[1],
                 )
             )
@@ -262,12 +262,12 @@ def _match_label_lists(
     valid_matches_distance = nearest_distance_a[boolean_map]
     # First we check if any of the Manhattan distances is larger than the threshold.
     # If not, all the Chebyshev distances are smaller than the threshold, too.
-    index_large_matches = np.where(~(valid_matches_distance <= tolerance))[0]
+    index_large_matches = np.where(~(valid_matches_distance <= tolerance_samples))[0]
     if index_large_matches.size > 0:
         # Minkowski with p = np.inf uses the Chebyshev distance
         boolean_map = (
             minkowski_distance(list_a[index_large_matches], list_b[valid_matches[index_large_matches, 1]], p=np.inf)
-            <= tolerance
+            <= tolerance_samples
         )
 
         valid_matches = np.delete(valid_matches, index_large_matches[~boolean_map], axis=0)
