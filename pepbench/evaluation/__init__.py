@@ -1,6 +1,6 @@
 """Module for the evaluation of PEP extraction pipelines."""
 
-from pepbench.evaluation._heartbeat_matching import match_heartbeat_lists
-from pepbench.evaluation._scoring import convert_validate_result_to_dataframe, score, validate_pep_pipeline
+from pepbench.evaluation._evaluation import PepEvaluationChallenge
+from pepbench.evaluation._scoring import score_pep_evaluation
 
-__all__ = ["match_heartbeat_lists", "score", "validate_pep_pipeline", "convert_validate_result_to_dataframe"]
+__all__ = ["PepEvaluationChallenge", "score_pep_evaluation"]

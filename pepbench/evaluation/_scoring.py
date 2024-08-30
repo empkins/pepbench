@@ -3,74 +3,20 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import FloatAggregator, Scorer, no_agg, validate
+from tpcp.validate import no_agg
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
-from pepbench.evaluation import match_heartbeat_lists
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
 from pepbench.evaluation._scoring_aggregator import SingleValueAggregator
-from pepbench.pipelines._base_pipeline import _BasePepExtractionPipeline
+from pepbench.heartbeat_matching import match_heartbeat_lists
+from pepbench.pipelines import BasePepExtractionPipeline
 
-__all__ = ["validate_pep_pipeline", "convert_validate_result_to_dataframe", "score"]
-
-
-def validate_pep_pipeline(pipeline: _BasePepExtractionPipeline, dataset: BaseUnifiedPepExtractionDataset) -> dict:
-    mean_std_agg = FloatAggregator(mean_and_std)
-    scorer = Scorer(score, default_aggregator=mean_std_agg)
-    return validate(pipeline=pipeline, dataset=dataset, scoring=scorer)
+__all__ = ["score_pep_evaluation", "mean_and_std"]
 
 
-def convert_validate_result_to_dataframe(
-    *, dataset: BaseUnifiedPepExtractionDataset, results: dict
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    data_labels = results["data_labels"]
-    subset = dataset.get_subset(group_labels=data_labels[0])
-
-    results_subset_single = {
-        key.replace("single__", ""): val[0]
-        for key, val in results.items()
-        if key.startswith("single__") and "per_sample" not in key
-    }
-    result_df_single = pd.DataFrame.from_dict(results_subset_single)
-    result_df_single.index = pd.MultiIndex.from_frame(subset.index)
-
-    results_subset_agg = {key.replace("agg__", ""): val[0] for key, val in results.items() if key.startswith("agg__")}
-    results_subset_agg = {
-        agg_type: {
-            key.replace(f"__{agg_type}", ""): val
-            for key, val in results_subset_agg.items()
-            if key.endswith(f"__{agg_type}")
-        }
-        for agg_type in ["mean", "std"]
-    }
-    result_df_agg = pd.DataFrame.from_dict(results_subset_agg)
-
-    results_subset_per_sample = {
-        key.replace("single__", ""): val[0]
-        for key, val in results.items()
-        if key.startswith("single__") and "per_sample" in key
-    }
-    # concatenate the per_sample results
-    pep_estimation = results_subset_per_sample.pop("pep_estimation_per_sample")
-    pep_estimation = {tuple(key): test_idx for key, test_idx in zip(subset.index.to_numpy(), pep_estimation)}
-    pep_estimation = pd.concat(pep_estimation)
-    pep_estimation.index.names = [*list(subset.index.columns), ""]
-    results_subset_per_sample = {key: np.concatenate(val, axis=0) for key, val in results_subset_per_sample.items()}
-
-    # heartbeat_ids = heartbeat_ids.set_index([("heartbeat_id", "estimated"), ("heartbeat_id", "reference")])
-    result_df_per_sample = pd.DataFrame.from_dict(results_subset_per_sample)
-    result_df_per_sample.columns = pd.MultiIndex.from_product([list(result_df_per_sample.columns), ["metric"]])
-    result_df_per_sample.index = pep_estimation.index
-    result_df_per_sample = pd.concat([pep_estimation, result_df_per_sample], axis=1)
-
-    # result_df_agg
-    return result_df_agg, result_df_single, result_df_per_sample
-
-
-def score(pipeline: _BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtractionDataset) -> dict:
+def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtractionDataset) -> dict:
     pipeline = pipeline.clone()
-    # TODO: change to pipeline.save_run(datapoint) later
-    pipeline = pipeline.run(datapoint)
+    pipeline = pipeline.safe_run(datapoint)
     pep_estimated = pipeline.pep_results_
     pep_reference = datapoint.reference_pep
 
