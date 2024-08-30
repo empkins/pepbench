@@ -4,7 +4,7 @@ import pandas as pd
 from biopsykit.io import load_atimelogger_file
 from biopsykit.io.biopac import BiopacDataset
 
-from pepbench._utils._types import path_t
+from pepbench.utils._types import path_t
 
 
 def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> Path:

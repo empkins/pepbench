@@ -9,10 +9,10 @@ from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 from biopsykit.utils.file_handling import get_subject_dirs
 
-from pepbench._utils._types import path_t
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
+from pepbench.utils._types import path_t
 
 _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 
@@ -22,13 +22,7 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
     use_cache: bool
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg": 1000, "icg": 1000}
 
-    PHASES: ClassVar[Sequence[str]] = [
-        "Prep",
-        "Pause_1",
-        "Talk",
-        "Math",
-        "Pause_5",
-    ]
+    PHASES: ClassVar[Sequence[str]] = ["Prep", "Pause_1", "Talk", "Math", "Pause_5"]
 
     CONDITIONS: ClassVar[Sequence[str]] = ["tsst", "ftsst"]
 

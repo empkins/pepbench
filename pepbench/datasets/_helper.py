@@ -2,8 +2,8 @@ import ast
 
 import pandas as pd
 
-from pepbench._utils._types import path_t
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.utils._types import path_t
 
 __all__ = ["load_labeling_borders", "compute_reference_heartbeats", "compute_reference_pep"]
 
