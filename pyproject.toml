@@ -15,7 +15,7 @@ ipykernel = "^6.29.5"
 matplotlib = "<3.9.0"
 # biopsykit = {git="https://github.com/mad-lab-fau/BioPsyKit.git", branch="main"}
 biopsykit = {path = "/Users/richer/Documents/PhD/Projects/BioPsyKit", develop=true}
-tpcp = "^1.0.0"
+tpcp = {path = "/Users/richer/Documents/PhD/Projects/tpcp/Code", develop=true}
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
