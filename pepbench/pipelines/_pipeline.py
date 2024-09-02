@@ -52,13 +52,12 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
             sampling_rate_hz=fs_icg,
             handle_negative=self.handle_negative_pep,
         )
-        # print(dir(outlier_algo))
-        b_point_samples = outlier_algo.points_
+        b_point_samples_after_outlier = outlier_algo.points_
 
         pep_results = self._compute_pep(
             heartbeats=heartbeats,
             q_wave_onset_samples=q_wave_onset_samples,
-            b_point_samples=b_point_samples,
+            b_point_samples=b_point_samples_after_outlier,
             sampling_rate_hz=fs_icg,
         )
 
@@ -66,6 +65,6 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
         self.q_wave_results_ = q_wave_onset_samples
         self.c_point_results_ = c_point_algo.points_
         self.b_point_results_ = b_point_algo.points_
-        self.b_point_after_outlier_correction_results_ = b_point_samples
+        self.b_point_after_outlier_correction_results_ = b_point_samples_after_outlier
         self.pep_results_ = pep_results
         return self

@@ -30,25 +30,35 @@ class PepExtractionPipelineReferenceQPoints(BasePepExtractionPipeline):
         q_wave_onset_samples = reference_pep[["q_wave_onset_sample"]].copy()
 
         # run C-point extraction
-        c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=fs_icg)
+        c_point_algo.extract(
+            icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=fs_icg, handle_missing=self.handle_missing_events
+        )
 
         # run B-point extraction
         b_point_algo.extract(
-            icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=fs_icg
+            icg=icg_data,
+            heartbeats=heartbeats,
+            c_points=c_point_algo.points_,
+            sampling_rate_hz=fs_icg,
+            handle_missing=self.handle_missing_events,
         )
 
         outlier_algo.correct_outlier(
             b_points=b_point_algo.points_, c_points=c_point_algo.points_, sampling_rate_hz=fs_icg
         )
-        b_point_samples = outlier_algo.points_
+        b_point_samples_after_outlier = outlier_algo.points_
 
         pep_results = self._compute_pep(
-            reference_pep=reference_pep,
             heartbeats=heartbeats,
             q_wave_onset_samples=q_wave_onset_samples,
-            b_point_samples=b_point_samples,
+            b_point_samples=b_point_samples_after_outlier,
             sampling_rate_hz=fs_icg,
         )
 
+        self.heartbeat_segmentation_results_ = heartbeats
+        self.q_wave_results_ = q_wave_onset_samples
+        self.c_point_results_ = c_point_algo.points_
+        self.b_point_results_ = b_point_algo.points_
+        self.b_point_after_outlier_correction_results_ = b_point_samples_after_outlier
         self.pep_results_ = pep_results
         return self
