@@ -9,7 +9,7 @@ from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
-from pepbench.datasets._helper import compute_reference_pep, load_labeling_borders
+from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
 from pepbench.utils._types import path_t
 
@@ -178,12 +178,22 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return data
 
     @property
+    def reference_heartbeats(self) -> pd.DataFrame:
+        return self._load_reference_heartbeats()
+
+    @property
     def reference_labels_ecg(self) -> pd.DataFrame:
         return self._load_reference_labels("ECG")
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
         return self._load_reference_labels("ICG")
+
+    def _load_reference_heartbeats(self) -> pd.DataFrame:
+        reference_ecg = self.reference_labels_ecg
+        reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
+        reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
+        return reference_heartbeats
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
         participant = self.index["participant"][0]

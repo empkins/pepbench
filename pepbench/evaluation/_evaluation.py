@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import Any, Callable, Optional
 
@@ -11,6 +12,7 @@ from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._scoring import mean_and_std, score_pep_evaluation
 from pepbench.pipelines import BasePepExtractionPipeline
 from pepbench.utils._timing import measure_time
+from pepbench.utils._types import path_t
 
 __all__ = ["PepEvaluationChallenge"]
 
@@ -23,6 +25,11 @@ class PepEvaluationChallenge(Algorithm):
     scoring: Optional[Callable]
 
     results_: dict
+    results_agg_: pd.DataFrame
+    results_single_: pd.DataFrame
+    results_per_sample_: pd.DataFrame
+
+    timing_information_: dict
     # timing information
     start_time_utc_timestamp_: float
     start_time_utc: str
@@ -42,16 +49,44 @@ class PepEvaluationChallenge(Algorithm):
         self.validate_kwargs = validate_kwargs or {}
 
     def run(self, pipeline: BasePepExtractionPipeline) -> Self:
-        with measure_time() as timing_results:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
-                mean_std_agg = FloatAggregator(mean_and_std)
-                scorer = Scorer(score_pep_evaluation, default_aggregator=mean_std_agg, **self.validate_kwargs)
-                self.results_ = validate(pipeline=pipeline, dataset=self.dataset, scoring=scorer)
-                self.results_as_df()
+        with measure_time() as timing_results, warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            mean_std_agg = FloatAggregator(mean_and_std)
+            scorer = Scorer(score_pep_evaluation, default_aggregator=mean_std_agg, **self.validate_kwargs)
+            self.results_ = validate(pipeline=pipeline, dataset=self.dataset, scoring=scorer)
+            self.results_as_df()
 
+        self.timing_information_ = timing_results
         self._set_attrs_from_dict(timing_results)
         return self
+
+    def save_results(self, folder_path: path_t, filename_stub: str) -> None:
+        """Save the results of the evaluation to disk.
+
+        Parameters
+        ----------
+        folder_path
+            The folder path to save the results to.
+        filename_stub
+            The filename stub to use for the results file.
+
+        """
+        timing_information_path = folder_path.joinpath(f"{filename_stub}_timing_information.json")
+        # save timing information as json
+        with timing_information_path.open("w") as fp:
+            json.dump(self.timing_information_, fp)
+
+        # save agg results as csv
+        results_agg_path = folder_path.joinpath(f"{filename_stub}_results_agg.csv")
+        self.results_agg_.to_csv(results_agg_path)
+
+        # save single results as csv
+        results_single_path = folder_path.joinpath(f"{filename_stub}_results_single.csv")
+        self.results_single_.to_csv(results_single_path)
+
+        # save per sample results as csv
+        results_per_sample_path = folder_path.joinpath(f"{filename_stub}_results_per_sample.csv")
+        self.results_per_sample_.to_csv(results_per_sample_path)
 
     def _set_attrs_from_dict(self, attr_dict: dict[str, Any]) -> None:
         """Set attributes of an object from a dictionary.
