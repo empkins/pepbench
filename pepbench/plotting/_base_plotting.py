@@ -1,11 +1,12 @@
-from typing import Optional, Any, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 import pandas as pd
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
-from pepbench.plotting._utils import _get_fig_axs, _get_fig_ax
+from pepbench.plotting._utils import _get_fig_ax, _get_fig_axs
 
 __all__ = [
     "plot_signals",
@@ -23,11 +24,9 @@ def plot_signals(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     """Plot ECG and ICG signals."""
-
     if collapse:
         return _plot_signals_one_axis(datapoint, use_clean=use_clean, **kwargs)
-    else:
-        return _plot_signals_two_axes(datapoint, use_clean=use_clean, **kwargs)
+    return _plot_signals_two_axes(datapoint, use_clean=use_clean, **kwargs)
 
 
 def plot_signals_with_reference_labels(
@@ -36,7 +35,7 @@ def plot_signals_with_reference_labels(
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
     **kwargs: Any,
-):
+) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
 
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_outside = kwargs.get("legend_outside", False)
@@ -91,7 +90,7 @@ def plot_signals_with_reference_pep(
     reference_labels_icg = reference_labels_icg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
     labels = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
 
-    for i, row in labels.iterrows():
+    for _i, row in labels.iterrows():
         start = ecg_data.index[row[("ecg", "sample_relative")]]
         end = icg_data.index[row[("icg", "sample_relative")]]
         if row[("ecg", "label")] == "Artefact" or row[("icg", "label")] == "Artefact":
@@ -105,7 +104,7 @@ def plot_signals_with_reference_pep(
 
 def _plot_signals_one_axis(
     datapoint: BaseUnifiedPepExtractionDataset, *, use_clean: Optional[bool] = True, **kwargs: Any
-):
+) -> tuple[plt.Figure, plt.Axes]:
     figsize = kwargs.pop("figsize", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -131,7 +130,7 @@ def _plot_signals_one_axis(
 
 def _plot_signals_two_axes(
     datapoint: BaseUnifiedPepExtractionDataset, *, use_clean: Optional[bool] = True, **kwargs: Any
-):
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     figsize = kwargs.pop("figsize", None)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_outside = kwargs.get("legend_outside", False)
@@ -159,7 +158,7 @@ def _plot_signals_two_axes(
     return fig, axs
 
 
-def _plot_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs):
+def _plot_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any) -> None:
     color = kwargs.get("heartbeat_color", cmaps.tech[2])
     ax.vlines(
         x=heartbeats,
@@ -178,8 +177,8 @@ def _plot_ecg_q_wave_onsets(
     q_wave_onsets: pd.DataFrame,
     q_wave_artefacts: pd.DataFrame,
     ax: plt.Axes,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> None:
     color = kwargs.get("q_wave_color", cmaps.med[0])
     ax.vlines(
         x=ecg_data.index[q_wave_onsets],
@@ -223,8 +222,8 @@ def _plot_icg_b_points(
     b_points: pd.DataFrame,
     b_point_artefacts: pd.DataFrame,
     ax: plt.Axes,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> None:
     color = kwargs.get("b_point_color", cmaps.phil[0])
 
     ax.vlines(
@@ -266,7 +265,7 @@ def _plot_icg_b_points(
 
 def _handle_legend_one_axis(
     legend_orientation: str, legend_outside: bool, legend_loc: str, fig: plt.Figure, ax: plt.Axes
-):
+) -> None:
     handles, labels = ax.get_legend_handles_labels()
     handles, labels = _remove_duplicate_legend_entries(handles, labels)
     ncols = min(len(handles), 6) if legend_orientation == "horizontal" else 1
@@ -283,7 +282,7 @@ def _handle_legend_one_axis(
 
 def _handle_legend_two_axes(
     legend_orientation: str, legend_outside: bool, legend_loc: str, fig: plt.Figure, axs: Sequence[plt.Axes]
-):
+) -> None:
     handles, labels = axs[0].get_legend_handles_labels()
     handles += axs[1].get_legend_handles_labels()[0]
     labels += axs[1].get_legend_handles_labels()[1]
@@ -305,7 +304,7 @@ def _handle_legend_two_axes(
         ax.set_ylabel("Amplitude [a.u.]")
 
 
-def _remove_duplicate_legend_entries(handles, labels):
+def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:
     unique_labels = []
     unique_handles = []
     for handle, label in zip(handles, labels):
@@ -321,9 +320,9 @@ def plot_signals_from_challenge_result(
     use_clean: Optional[bool] = True,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_loc = kwargs.get("legend_loc", "lower right" if legend_orientation == "vertical" else "upper center")
-    rect = kwargs.pop("rect", (0, 0, 0.825, 1.0) if legend_orientation == "vertical" else (0, 0, 1, 0.925))
+    # legend_orientation = kwargs.get("legend_orientation", "vertical")
+    # legend_loc = kwargs.get("legend_loc", "lower right" if legend_orientation == "vertical" else "upper center")
+    # rect = kwargs.pop("rect", (0, 0, 0.825, 1.0) if legend_orientation == "vertical" else (0, 0, 1, 0.925))
 
     fig, axs = plot_signals(datapoint, use_clean=use_clean, **kwargs)
 
@@ -401,9 +400,6 @@ def plot_signals_from_challenge_result(
         zorder=3,
     )
 
-    # ax.scatter(x=icg_data.index[bpoint_labels_algo.astype(int)], y=icg_data["icg_der"][icg_data.index[bpoint_labels_algo.astype(int)]], color=cmaps.phil[0], zorder=3, label="Algorithm")
-    # ax.scatter(x=icg_data.index[bpoint_labels_outlier.astype(int)], y=icg_data["icg_der"][icg_data.index[bpoint_labels_outlier.astype(int)]], color=cmaps.wiso[0], zorder=3, label="Outlier Correction")
-
     ax.legend(loc="upper right")
 
     fig.tight_layout()
@@ -421,7 +417,7 @@ def _get_data(datapoint: BaseUnifiedPepExtractionDataset, use_clean: bool) -> tu
     return ecg_data, icg_data
 
 
-def _get_rect(**kwargs) -> tuple[float, ...]:
+def _get_rect(**kwargs: Any) -> tuple[float, ...]:
     rect = kwargs.pop("rect", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -433,7 +429,7 @@ def _get_rect(**kwargs) -> tuple[float, ...]:
     return (0, 0, 1, 1)
 
 
-def _get_legend_loc(**kwargs) -> str:
+def _get_legend_loc(**kwargs: Any) -> str:
     legend_loc = kwargs.get("legend_loc", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")

@@ -85,7 +85,7 @@ class PepEvaluationChallenge(Algorithm):
         self.results_single_.to_csv(results_single_path)
 
         # save per sample results as csv
-        results_per_sample_path = folder_path.joinpath(f"{filename_stub}_results_per_sample.csv")
+        results_per_sample_path = folder_path.joinpath(f"{filename_stub}_results_per-sample.csv")
         self.results_per_sample_.to_csv(results_per_sample_path)
 
     def _set_attrs_from_dict(self, attr_dict: dict[str, Any]) -> None:
@@ -127,6 +127,7 @@ class PepEvaluationChallenge(Algorithm):
             for agg_type in ["mean", "std"]
         }
         result_df_agg = pd.DataFrame.from_dict(results_subset_agg)
+        result_df_agg.index.name = "metrics"
 
         results_subset_per_sample = {
             key.replace("single__", ""): val[0]
