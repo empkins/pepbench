@@ -11,7 +11,7 @@ from pepbench.plotting._utils import _get_fig_ax, _get_fig_axs
 __all__ = [
     "plot_signals",
     "plot_signals_with_reference_labels",
-    "plot_signals_from_challenge_result",
+    "plot_signals_from_challenge_results",
     "plot_signals_with_reference_pep",
 ]
 
@@ -36,9 +36,9 @@ def plot_signals_with_reference_labels(
     use_clean: Optional[bool] = True,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
-
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_outside = kwargs.get("legend_outside", False)
+    legend_max_cols = kwargs.get("legend_max_cols", 6)
     legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
 
@@ -55,16 +55,16 @@ def plot_signals_with_reference_labels(
 
     # plot q-wave onsets and b-points
     if collapse:
-        _plot_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax, **kwargs)
-        _plot_ecg_q_wave_onsets(ecg_data, q_wave_onsets, q_wave_artefacts, ax, **kwargs)
-        _plot_icg_b_points(icg_data, b_points, b_point_artefacts, ax, **kwargs)
-        _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax)
+        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax, **kwargs)
+        _add_ecg_q_wave_onsets(ecg_data, q_wave_onsets, q_wave_artefacts, ax, **kwargs)
+        _add_icg_b_points(icg_data, b_points, b_point_artefacts, ax, **kwargs)
+        _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
     else:
-        _plot_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[0], **kwargs)
-        _plot_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[1], **kwargs)
-        _plot_ecg_q_wave_onsets(ecg_data, q_wave_onsets, q_wave_artefacts, ax[0], **kwargs)
-        _plot_icg_b_points(icg_data, b_points, b_point_artefacts, ax[1], **kwargs)
-        _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, ax)
+        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[0], **kwargs)
+        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[1], **kwargs)
+        _add_ecg_q_wave_onsets(ecg_data, q_wave_onsets, q_wave_artefacts, ax[0], **kwargs)
+        _add_icg_b_points(icg_data, b_points, b_point_artefacts, ax[1], **kwargs)
+        _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
 
     fig.tight_layout(rect=rect)
     return fig, ax
@@ -72,34 +72,116 @@ def plot_signals_with_reference_labels(
 
 def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    use_clean: Optional[bool] = True,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_outside = kwargs.get("legend_outside", False)
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_loc = _get_legend_loc(**kwargs)
+    rect = _get_rect(**kwargs)
 
-    fig, ax = plot_signals_with_reference_labels(datapoint, use_clean=True, collapse=True, **kwargs)
+    fig, ax = plot_signals_with_reference_labels(datapoint, use_clean=use_clean, collapse=True, **kwargs)
 
-    color = kwargs.get("pep_color", cmaps.nat[0])
-    color_artefact = kwargs.get("pep_artefact_color", cmaps.wiso[0])
+    _add_pep(datapoint, use_clean, ax, **kwargs)
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean=True)
-    reference_labels_ecg = datapoint.reference_labels_ecg
-    reference_labels_icg = datapoint.reference_labels_icg
-    reference_labels_ecg = reference_labels_ecg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
-    reference_labels_icg = reference_labels_icg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
-    labels = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
-
-    for _i, row in labels.iterrows():
-        start = ecg_data.index[row[("ecg", "sample_relative")]]
-        end = icg_data.index[row[("icg", "sample_relative")]]
-        if row[("ecg", "label")] == "Artefact" or row[("icg", "label")] == "Artefact":
-            ax.axvspan(start, end, color=color_artefact, alpha=0.3, zorder=0, label="PEP Artefact")
-        else:
-            ax.axvspan(start, end, color=color, alpha=0.3, zorder=0, label="PEP")
-
-    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax)
+    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
+    fig.tight_layout(rect=rect)
     return fig, ax
+
+
+def plot_signals_from_challenge_results(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    pep_results_per_sample: pd.DataFrame,
+    *,
+    collapse: Optional[bool] = False,
+    use_clean: Optional[bool] = True,
+    add_pep: Optional[bool] = False,
+    **kwargs: Any,
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    legend_orientation = kwargs.get("legend_orientation", "vertical")
+    legend_outside = kwargs.get("legend_outside", False)
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
+    legend_loc = _get_legend_loc(**kwargs)
+    rect = _get_rect(**kwargs)
+
+    fig, axs = plot_signals(datapoint, collapse=collapse, use_clean=use_clean, **kwargs)
+
+    ecg_data, icg_data = _get_data(datapoint, use_clean)
+
+    heartbeats_start = pep_results_per_sample[("heartbeat_start_sample", "estimated")]
+    heartbeats_end = pep_results_per_sample[("heartbeat_end_sample", "estimated")]
+    heartbeats_start = ecg_data.index[heartbeats_start]
+    heartbeats_end = ecg_data.index[heartbeats_end]
+    q_wave_labels_reference = pep_results_per_sample[("q_wave_onset_sample", "reference")]
+    q_wave_labels_estimated = pep_results_per_sample[("q_wave_onset_sample", "estimated")]
+    b_point_labels_reference = pep_results_per_sample[("b_point_sample", "reference")]
+    b_point_labels_estimated = pep_results_per_sample[("b_point_sample", "estimated")]
+
+    if collapse:
+        ax_ecg = axs
+        ax_icg = axs
+    else:
+        ax_ecg = axs[0]
+        ax_icg = axs[1]
+
+    _add_heartbeat_borders(heartbeats_start, ax_ecg)
+    _add_heartbeat_borders(heartbeats_end, ax_ecg)
+    if not collapse:
+        _add_heartbeat_borders(heartbeats_start, ax_icg)
+        _add_heartbeat_borders(heartbeats_end, ax_icg)
+
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_labels_reference,
+        pd.DataFrame(),
+        ax_ecg,
+        q_wave_color=cmaps.med[0],
+        q_wave_label="Q-Wave Reference",
+        plot_artifacts=False,
+    )
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_labels_estimated,
+        pd.DataFrame(),
+        ax_ecg,
+        q_wave_color=cmaps.med_dark[0],
+        q_wave_label="Q-Wave Estimated",
+        plot_artifacts=False,
+    )
+    _add_icg_b_points(
+        icg_data,
+        b_point_labels_reference,
+        pd.DataFrame(),
+        ax_icg,
+        b_point_color=cmaps.phil[0],
+        b_point_label="B-Point Reference",
+        plot_artifacts=False,
+    )
+    _add_icg_b_points(
+        icg_data,
+        b_point_labels_estimated,
+        pd.DataFrame(),
+        ax_icg,
+        b_point_color=cmaps.phil_dark[0],
+        b_point_label="B-Point Estimated",
+        plot_artifacts=False,
+    )
+
+    if add_pep:
+        _add_pep(datapoint, use_clean, ax_icg, **kwargs)
+        if not collapse:
+            _add_pep(datapoint, use_clean, ax_ecg, **kwargs)
+
+    if collapse:
+        _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
+    else:
+        _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
+
+    fig.tight_layout(rect=rect)
+
+    return fig, axs
 
 
 def _plot_signals_one_axis(
@@ -108,6 +190,7 @@ def _plot_signals_one_axis(
     figsize = kwargs.pop("figsize", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
 
     legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
@@ -121,7 +204,7 @@ def _plot_signals_one_axis(
     ax.set_xlabel("Time [hh:mm:ss]")
     ax.set_ylabel("Amplitude [a.u.]")
 
-    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax)
+    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
 
     fig.tight_layout(rect=rect)
 
@@ -135,6 +218,7 @@ def _plot_signals_two_axes(
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_outside = kwargs.get("legend_outside", False)
     legend_loc = kwargs.get("legend_loc", None)
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
     rect = kwargs.get("rect", None)
 
     if legend_loc is None:
@@ -150,7 +234,7 @@ def _plot_signals_two_axes(
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
-    _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, axs)
+    _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
 
     fig.align_ylabels()
     fig.tight_layout(rect=rect)
@@ -158,7 +242,7 @@ def _plot_signals_two_axes(
     return fig, axs
 
 
-def _plot_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any) -> None:
+def _add_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any) -> None:
     color = kwargs.get("heartbeat_color", cmaps.tech[2])
     ax.vlines(
         x=heartbeats,
@@ -172,14 +256,18 @@ def _plot_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: An
     )
 
 
-def _plot_ecg_q_wave_onsets(
+def _add_ecg_q_wave_onsets(
     ecg_data: pd.DataFrame,
     q_wave_onsets: pd.DataFrame,
     q_wave_artefacts: pd.DataFrame,
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
+    label = kwargs.get("q_wave_label", "Q-Wave Onsets")
     color = kwargs.get("q_wave_color", cmaps.med[0])
+    plot_artifacts = kwargs.get("plot_artifacts", True)
+
+    q_wave_onsets = q_wave_onsets.astype(int)
     ax.vlines(
         x=ecg_data.index[q_wave_onsets],
         ymin=0,
@@ -193,10 +281,10 @@ def _plot_ecg_q_wave_onsets(
         x=ecg_data.index[q_wave_onsets],
         y=ecg_data.iloc[q_wave_onsets],
         color=color,
-        label="Q-Wave Onsets",
+        label=label,
         zorder=3,
     )
-    if not q_wave_artefacts.empty:
+    if plot_artifacts and not q_wave_artefacts.empty:
         ax.vlines(
             x=ecg_data.index[q_wave_artefacts],
             ymin=0,
@@ -217,7 +305,7 @@ def _plot_ecg_q_wave_onsets(
         )
 
 
-def _plot_icg_b_points(
+def _add_icg_b_points(
     icg_data: pd.DataFrame,
     b_points: pd.DataFrame,
     b_point_artefacts: pd.DataFrame,
@@ -225,6 +313,10 @@ def _plot_icg_b_points(
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("b_point_color", cmaps.phil[0])
+    b_point_label = kwargs.get("b_point_label", "B Points")
+    plot_artifacts = kwargs.get("plot_artifacts", True)
+
+    b_points = b_points.astype(int)
 
     ax.vlines(
         x=icg_data.index[b_points],
@@ -239,10 +331,10 @@ def _plot_icg_b_points(
         x=icg_data.index[b_points],
         y=icg_data.iloc[b_points],
         color=color,
-        label="B Points",
+        label=b_point_label,
         zorder=3,
     )
-    if not b_point_artefacts.empty:
+    if plot_artifacts and not b_point_artefacts.empty:
         ax.vlines(
             x=icg_data.index[b_point_artefacts],
             ymin=0,
@@ -264,11 +356,16 @@ def _plot_icg_b_points(
 
 
 def _handle_legend_one_axis(
-    legend_orientation: str, legend_outside: bool, legend_loc: str, fig: plt.Figure, ax: plt.Axes
+    legend_orientation: str,
+    legend_outside: bool,
+    legend_loc: str,
+    fig: plt.Figure,
+    ax: plt.Axes,
+    max_cols: Optional[int] = 5,
 ) -> None:
     handles, labels = ax.get_legend_handles_labels()
     handles, labels = _remove_duplicate_legend_entries(handles, labels)
-    ncols = min(len(handles), 6) if legend_orientation == "horizontal" else 1
+    ncols = min(len(handles), max_cols) if legend_orientation == "horizontal" else 1
 
     if len(fig.legends) > 0:
         fig.legends[0].remove()
@@ -277,27 +374,60 @@ def _handle_legend_one_axis(
         ax.legend().remove()
         fig.legend(handles=handles, labels=labels, ncols=ncols, loc=legend_loc)
     else:
-        ax.legend(loc=legend_loc, ncols=ncols)
+        ax.legend(handles=handles, labels=labels, loc=legend_loc, ncols=ncols)
+
+
+def _add_pep(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    use_clean: bool,
+    ax: plt.Axes,
+    **kwargs: Any,
+) -> None:
+    color = kwargs.get("pep_color", cmaps.nat[0])
+    color_artefact = kwargs.get("pep_artefact_color", cmaps.wiso[0])
+
+    ecg_data, icg_data = _get_data(datapoint, use_clean=use_clean)
+
+    reference_labels_ecg = datapoint.reference_labels_ecg
+    reference_labels_icg = datapoint.reference_labels_icg
+    reference_labels_ecg = reference_labels_ecg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
+    reference_labels_icg = reference_labels_icg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
+    labels = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
+
+    for _i, row in labels.iterrows():
+        start = ecg_data.index[row[("ecg", "sample_relative")]]
+        end = icg_data.index[row[("icg", "sample_relative")]]
+        if row[("ecg", "label")] == "Artefact" or row[("icg", "label")] == "Artefact":
+            ax.axvspan(start, end, color=color_artefact, alpha=0.3, zorder=0, label="PEP Artefact")
+        else:
+            ax.axvspan(start, end, color=color, alpha=0.3, zorder=0, label="PEP")
 
 
 def _handle_legend_two_axes(
-    legend_orientation: str, legend_outside: bool, legend_loc: str, fig: plt.Figure, axs: Sequence[plt.Axes]
+    legend_orientation: str,
+    legend_outside: bool,
+    legend_loc: str,
+    fig: plt.Figure,
+    axs: Sequence[plt.Axes],
+    max_cols: Optional[int] = 5,
 ) -> None:
-    handles, labels = axs[0].get_legend_handles_labels()
-    handles += axs[1].get_legend_handles_labels()[0]
-    labels += axs[1].get_legend_handles_labels()[1]
 
-    handles, labels = _remove_duplicate_legend_entries(handles, labels)
-    ncols = len(handles) if legend_orientation == "horizontal" else 1
     if len(fig.legends) > 0:
         fig.legends[0].remove()
     if legend_outside:
+        handles, labels = axs[0].get_legend_handles_labels()
+        handles += axs[1].get_legend_handles_labels()[0]
+        labels += axs[1].get_legend_handles_labels()[1]
         for ax in axs:
             ax.legend().remove()
+
+        ncols = min(len(handles), max_cols) if legend_orientation == "horizontal" else 1
+        handles, labels = _remove_duplicate_legend_entries(handles, labels)
+
         fig.legend(handles, labels, ncols=ncols, loc=legend_loc)
     else:
         for ax in axs:
-            ax.legend(loc=legend_loc, ncols=ncols)
+            ax.legend(loc=legend_loc)
 
     for ax in axs:
         ax.set_xlabel("Time [hh:mm:ss]")
@@ -312,99 +442,6 @@ def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequ
             unique_labels.append(label)
             unique_handles.append(handle)
     return unique_handles, unique_labels
-
-
-def plot_signals_from_challenge_result(
-    datapoint: BaseUnifiedPepExtractionDataset,
-    pep_results_per_sample: pd.DataFrame,
-    use_clean: Optional[bool] = True,
-    **kwargs: Any,
-) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    # legend_orientation = kwargs.get("legend_orientation", "vertical")
-    # legend_loc = kwargs.get("legend_loc", "lower right" if legend_orientation == "vertical" else "upper center")
-    # rect = kwargs.pop("rect", (0, 0, 0.825, 1.0) if legend_orientation == "vertical" else (0, 0, 1, 0.925))
-
-    fig, axs = plot_signals(datapoint, use_clean=use_clean, **kwargs)
-
-    ecg_data, icg_data = _get_data(datapoint, use_clean)
-
-    fig, ax = plt.subplots()
-
-    start_end_borders = pep_results_per_sample[
-        [("heartbeat_start_sample", "estimated"), ("heartbeat_end_sample", "estimated")]
-    ]
-    q_wave_labels_estimated = pep_results_per_sample[("q_wave_onset_sample", "estimated")]
-    b_point_labels_reference = pep_results_per_sample[("b_point_sample", "reference")]
-    b_point_labels_estimated = pep_results_per_sample[("b_point_sample", "estimated")]
-
-    ecg_data.plot(ax=ax)
-    icg_data.plot(ax=ax)
-
-    ax.vlines(
-        x=icg_data.index[start_end_borders[("heartbeat_start_sample", "estimated")]],
-        ymin=0,
-        ymax=1,
-        colors=cmaps.tech[2],
-        transform=ax.get_xaxis_transform(),
-    )
-    ax.vlines(
-        x=ecg_data.index[q_wave_labels_estimated],
-        ymin=0,
-        ymax=1,
-        color=cmaps.phil[0],
-        transform=ax.get_xaxis_transform(),
-        zorder=3,
-        label="Q-Wave Estimated",
-        ls="--",
-        lw=1,
-    )
-    ax.vlines(
-        x=icg_data.index[b_point_labels_reference],
-        ymin=0,
-        ymax=1,
-        color=cmaps.nat[0],
-        transform=ax.get_xaxis_transform(),
-        zorder=3,
-        label="B-Point Reference",
-        ls="--",
-        lw=1,
-    )
-    ax.vlines(
-        x=icg_data.index[b_point_labels_estimated],
-        ymin=0,
-        ymax=1,
-        color=cmaps.med[0],
-        transform=ax.get_xaxis_transform(),
-        zorder=3,
-        label="B-Point Estimated",
-        ls="--",
-        lw=1,
-    )
-
-    ax.scatter(
-        x=ecg_data.index[q_wave_labels_estimated],
-        y=ecg_data["ecg"][ecg_data.index[q_wave_labels_estimated]],
-        color=cmaps.phil[1],
-        zorder=3,
-    )
-    ax.scatter(
-        x=icg_data.index[b_point_labels_reference],
-        y=icg_data["icg_der"][icg_data.index[b_point_labels_reference]],
-        color=cmaps.nat[1],
-        zorder=3,
-    )
-    ax.scatter(
-        x=icg_data.index[b_point_labels_estimated],
-        y=icg_data["icg_der"][icg_data.index[b_point_labels_estimated]],
-        color=cmaps.med[1],
-        zorder=3,
-    )
-
-    ax.legend(loc="upper right")
-
-    fig.tight_layout()
-
-    return fig, axs
 
 
 def _get_data(datapoint: BaseUnifiedPepExtractionDataset, use_clean: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -425,7 +462,7 @@ def _get_rect(**kwargs: Any) -> tuple[float, ...]:
     if rect is not None:
         return rect
     if legend_outside:
-        return (0, 0, 0.85, 1.0) if legend_orientation == "vertical" else (0, 0, 1, 0.925)
+        return (0, 0, 0.80, 1.0) if legend_orientation == "vertical" else (0, 0, 1, 0.90)
     return (0, 0, 1, 1)
 
 
