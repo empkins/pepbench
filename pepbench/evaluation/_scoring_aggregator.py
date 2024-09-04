@@ -5,7 +5,7 @@ import numpy as np
 from tpcp.validate import Aggregator
 
 
-class SingleValueAggregator(Aggregator[np.ndarray]):
+class PerSampleAggregator(Aggregator[np.ndarray]):
     def __init__(
         self,
         func: Callable[[Sequence[np.ndarray]], Union[float, dict[str, float]]],

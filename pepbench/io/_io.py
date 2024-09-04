@@ -13,7 +13,7 @@ def load_challenge_results_from_folder(
     index_cols_single: Optional[Sequence[str]] = None,
     index_cols_per_sample: Optional[Sequence[str]] = None,
     return_as_df: Optional[bool] = True,
-) -> Union[tuple[dict[str, pd.DataFrame], ...], tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]:
+) -> Union[tuple[dict[tuple[str, ...], pd.DataFrame], ...], tuple[pd.DataFrame, ...]]:
     """Load challenge results from a folder.
 
     Parameters
@@ -41,19 +41,28 @@ def load_challenge_results_from_folder(
     if index_cols_per_sample is None:
         index_cols_per_sample = ["participant"]
 
-    result_files_agg = sorted(folder_path.glob("*_agg.csv"))
+    result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
+    result_files_agg_total = sorted(folder_path.glob("*_agg_total.csv"))
     result_files_single = sorted(folder_path.glob("*_single.csv"))
     result_files_per_sample = sorted(folder_path.glob("*_per-sample.csv"))
-    dict_agg = {}
+    dict_agg_mean_std = {}
+    dict_agg_total = {}
     dict_single = {}
     dict_per_sample = {}
 
-    for file in result_files_agg:
+    for file in result_files_agg_mean_std:
         file_paras = file.stem.split("_")
         algo_types = tuple(file_paras[3:6])
         data = pd.read_csv(file, index_col=0)
         data.index.name = "metric"
-        dict_agg[algo_types] = data
+        dict_agg_mean_std[algo_types] = data
+
+    for file in result_files_agg_total:
+        file_paras = file.stem.split("_")
+        algo_types = tuple(file_paras[3:6])
+        data = pd.read_csv(file, index_col=0)
+        data.index.name = "metric"
+        dict_agg_total[algo_types] = data
 
     for file in result_files_single:
         file_paras = file.stem.split("_")
@@ -69,8 +78,11 @@ def load_challenge_results_from_folder(
         dict_per_sample[algo_types] = data
 
     if return_as_df:
-        results_agg = pd.concat(
-            dict_agg, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+        results_agg_mean_std = pd.concat(
+            dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+        )
+        results_agg_total = pd.concat(
+            dict_agg_total, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
         results_single = pd.concat(
             dict_single, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
@@ -78,6 +90,6 @@ def load_challenge_results_from_folder(
         results_per_sample = pd.concat(
             dict_per_sample, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
-        return results_agg, results_single, results_per_sample
+        return results_agg_mean_std, results_agg_total, results_single, results_per_sample
 
-    return dict_agg, dict_single, dict_per_sample
+    return dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample

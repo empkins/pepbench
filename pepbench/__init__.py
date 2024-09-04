@@ -1,7 +1,7 @@
 """Top-level module for the PEPBench package."""
 
-from pepbench import datasets, evaluation, pipelines
+from pepbench import algorithms, datasets, evaluation, pipelines
 
 __version__ = "0.1.0"
 
-__all__ = ["datasets", "pipelines", "evaluation"]
+__all__ = ["algorithms", "datasets", "pipelines", "evaluation"]

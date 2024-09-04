@@ -25,7 +25,8 @@ class PepEvaluationChallenge(Algorithm):
     scoring: Optional[Callable]
 
     results_: dict
-    results_agg_: pd.DataFrame
+    results_agg_mean_std_: pd.DataFrame
+    results_agg_total_: pd.DataFrame
     results_single_: pd.DataFrame
     results_per_sample_: pd.DataFrame
 
@@ -77,8 +78,11 @@ class PepEvaluationChallenge(Algorithm):
             json.dump(self.timing_information_, fp)
 
         # save agg results as csv
-        results_agg_path = folder_path.joinpath(f"{filename_stub}_results_agg.csv")
-        self.results_agg_.to_csv(results_agg_path)
+        results_agg_mean_std_path = folder_path.joinpath(f"{filename_stub}_results_agg_mean_std.csv")
+        self.results_agg_mean_std_.to_csv(results_agg_mean_std_path)
+
+        results_agg_total_path = folder_path.joinpath(f"{filename_stub}_results_agg_total.csv")
+        self.results_agg_total_.to_csv(results_agg_total_path)
 
         # save single results as csv
         results_single_path = folder_path.joinpath(f"{filename_stub}_results_single.csv")
@@ -118,7 +122,8 @@ class PepEvaluationChallenge(Algorithm):
         results_subset_agg = {
             key.replace("agg__", ""): val[0] for key, val in results.items() if key.startswith("agg__")
         }
-        results_subset_agg = {
+        # mean and std aggregations
+        results_subset_agg_mean_std = {
             agg_type: {
                 key.replace(f"__{agg_type}", ""): val
                 for key, val in results_subset_agg.items()
@@ -126,8 +131,16 @@ class PepEvaluationChallenge(Algorithm):
             }
             for agg_type in ["mean", "std"]
         }
-        result_df_agg = pd.DataFrame.from_dict(results_subset_agg)
-        result_df_agg.index.name = "metrics"
+        # add "total" aggregation
+        results_subset_agg_total = {"total": {key: val for key, val in results_subset_agg.items() if "num_" in key}}
+
+        result_df_agg_mean_std = pd.DataFrame.from_dict(results_subset_agg_mean_std)
+        result_df_agg_mean_std.index.name = "metrics"
+
+        result_df_agg_total = pd.DataFrame.from_dict(results_subset_agg_total)
+        result_df_agg_total = result_df_agg_total.astype(int)
+        result_df_agg_total = result_df_agg_total.reindex(["num_pep_total", "num_pep_valid", "num_pep_invalid"])
+        result_df_agg_total.index.name = "metrics"
 
         results_subset_per_sample = {
             key.replace("single__", ""): val[0]
@@ -141,7 +154,6 @@ class PepEvaluationChallenge(Algorithm):
         pep_estimation.index.names = [*list(subset.index.columns), ""]
         results_subset_per_sample = {key: np.concatenate(val, axis=0) for key, val in results_subset_per_sample.items()}
 
-        # heartbeat_ids = heartbeat_ids.set_index([("heartbeat_id", "estimated"), ("heartbeat_id", "reference")])
         result_df_per_sample = pd.DataFrame.from_dict(results_subset_per_sample)
         result_df_per_sample.columns = pd.MultiIndex.from_product([list(result_df_per_sample.columns), ["metric"]])
         result_df_per_sample.index = pep_estimation.index
@@ -149,7 +161,8 @@ class PepEvaluationChallenge(Algorithm):
 
         self._set_attrs_from_dict(
             {
-                "results_agg": result_df_agg,
+                "results_agg_mean_std": result_df_agg_mean_std,
+                "results_agg_total": result_df_agg_total,
                 "results_single": result_df_single,
                 "results_per_sample": result_df_per_sample,
             }

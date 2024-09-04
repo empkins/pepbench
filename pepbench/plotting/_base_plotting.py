@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Optional, Union
 
+import numpy as np
 import pandas as pd
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -21,12 +22,13 @@ def plot_signals(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     """Plot ECG and ICG signals."""
     if collapse:
-        return _plot_signals_one_axis(datapoint, use_clean=use_clean, **kwargs)
-    return _plot_signals_two_axes(datapoint, use_clean=use_clean, **kwargs)
+        return _plot_signals_one_axis(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs)
+    return _plot_signals_two_axes(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs)
 
 
 def plot_signals_with_reference_labels(
@@ -34,6 +36,7 @@ def plot_signals_with_reference_labels(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -42,16 +45,17 @@ def plot_signals_with_reference_labels(
     legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
 
-    fig, ax = plot_signals(datapoint, collapse=collapse, use_clean=use_clean, **kwargs)
-    ecg_data, icg_data = _get_data(datapoint, use_clean)
+    fig, ax = plot_signals(
+        datapoint, collapse=collapse, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs
+    )
+    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
 
-    reference_heartbeats = datapoint.reference_heartbeats
-    reference_labels_ecg = datapoint.reference_labels_ecg
-    reference_labels_icg = datapoint.reference_labels_icg
-    q_wave_onsets = reference_labels_ecg.xs("ECG", level="channel")["sample_relative"]
-    q_wave_artefacts = reference_labels_ecg.reindex(["Artefact"], level="channel")["sample_relative"]
-    b_points = reference_labels_icg.xs("ICG", level="channel")["sample_relative"]
-    b_point_artefacts = reference_labels_icg.reindex(["Artefact"], level="channel")["sample_relative"]
+    reference_labels = _get_reference_labels(datapoint, heartbeat_subsample=heartbeat_subsample)
+    reference_heartbeats = reference_labels["reference_heartbeats"]
+    q_wave_onsets = reference_labels["q_wave_onsets"]
+    q_wave_artefacts = reference_labels["q_wave_artefacts"]
+    b_points = reference_labels["b_points"]
+    b_point_artefacts = reference_labels["b_point_artefacts"]
 
     # plot q-wave onsets and b-points
     if collapse:
@@ -74,6 +78,7 @@ def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -82,9 +87,11 @@ def plot_signals_with_reference_pep(
     legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
 
-    fig, ax = plot_signals_with_reference_labels(datapoint, use_clean=use_clean, collapse=True, **kwargs)
+    fig, ax = plot_signals_with_reference_labels(
+        datapoint, use_clean=use_clean, collapse=True, heartbeat_subsample=heartbeat_subsample, **kwargs
+    )
 
-    _add_pep(datapoint, use_clean, ax, **kwargs)
+    _add_pep(datapoint, use_clean, heartbeat_subsample, ax, **kwargs)
 
     _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
     fig.tight_layout(rect=rect)
@@ -97,6 +104,7 @@ def plot_signals_from_challenge_results(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
     add_pep: Optional[bool] = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -106,18 +114,20 @@ def plot_signals_from_challenge_results(
     legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
 
-    fig, axs = plot_signals(datapoint, collapse=collapse, use_clean=use_clean, **kwargs)
+    fig, axs = plot_signals(
+        datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, collapse=collapse, **kwargs
+    )
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean)
+    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
 
-    heartbeats_start = pep_results_per_sample[("heartbeat_start_sample", "estimated")]
-    heartbeats_end = pep_results_per_sample[("heartbeat_end_sample", "estimated")]
-    heartbeats_start = ecg_data.index[heartbeats_start]
-    heartbeats_end = ecg_data.index[heartbeats_end]
-    q_wave_labels_reference = pep_results_per_sample[("q_wave_onset_sample", "reference")]
-    q_wave_labels_estimated = pep_results_per_sample[("q_wave_onset_sample", "estimated")]
-    b_point_labels_reference = pep_results_per_sample[("b_point_sample", "reference")]
-    b_point_labels_estimated = pep_results_per_sample[("b_point_sample", "estimated")]
+    labels_from_challenge = _get_labels_from_challenge_results(pep_results_per_sample, heartbeat_subsample)
+
+    heartbeats_start = ecg_data.index[labels_from_challenge["heartbeats_start"]]
+    heartbeats_end = ecg_data.index[labels_from_challenge["heartbeats_end"] - 1]
+    q_wave_labels_reference = labels_from_challenge["q_wave_labels_reference"]
+    q_wave_labels_estimated = labels_from_challenge["q_wave_labels_estimated"]
+    b_point_labels_reference = labels_from_challenge["b_point_labels_reference"]
+    b_point_labels_estimated = labels_from_challenge["b_point_labels_estimated"]
 
     if collapse:
         ax_ecg = axs
@@ -170,9 +180,9 @@ def plot_signals_from_challenge_results(
     )
 
     if add_pep:
-        _add_pep(datapoint, use_clean, ax_icg, **kwargs)
+        _add_pep(datapoint, use_clean, heartbeat_subsample=heartbeat_subsample, ax=ax_icg, **kwargs)
         if not collapse:
-            _add_pep(datapoint, use_clean, ax_ecg, **kwargs)
+            _add_pep(datapoint, use_clean, heartbeat_subsample=heartbeat_subsample, ax=ax_ecg, **kwargs)
 
     if collapse:
         _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
@@ -185,7 +195,11 @@ def plot_signals_from_challenge_results(
 
 
 def _plot_signals_one_axis(
-    datapoint: BaseUnifiedPepExtractionDataset, *, use_clean: Optional[bool] = True, **kwargs: Any
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
+    **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     figsize = kwargs.pop("figsize", None)
     legend_outside = kwargs.get("legend_outside", False)
@@ -197,7 +211,8 @@ def _plot_signals_one_axis(
 
     fig, ax = _get_fig_ax(figsize=figsize)
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean)
+    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
+
     ecg_data.plot(ax=ax)
     icg_data.plot(ax=ax)
 
@@ -212,7 +227,11 @@ def _plot_signals_one_axis(
 
 
 def _plot_signals_two_axes(
-    datapoint: BaseUnifiedPepExtractionDataset, *, use_clean: Optional[bool] = True, **kwargs: Any
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    use_clean: Optional[bool] = True,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
+    **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     figsize = kwargs.pop("figsize", None)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -230,7 +249,7 @@ def _plot_signals_two_axes(
 
     colors = iter(cmaps.faculties)
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean)
+    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
@@ -380,18 +399,23 @@ def _handle_legend_one_axis(
 def _add_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     use_clean: bool,
+    heartbeat_subsample: Optional[Sequence[int]],
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("pep_color", cmaps.nat[0])
     color_artefact = kwargs.get("pep_artefact_color", cmaps.wiso[0])
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean=use_clean)
+    ecg_data, icg_data = _get_data(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample)
+    reference_labels = _get_reference_labels(datapoint, heartbeat_subsample)
 
-    reference_labels_ecg = datapoint.reference_labels_ecg
-    reference_labels_icg = datapoint.reference_labels_icg
-    reference_labels_ecg = reference_labels_ecg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
-    reference_labels_icg = reference_labels_icg.drop("heartbeat", level="channel")["sample_relative"].reset_index()
+    reference_labels_ecg = (
+        pd.concat([reference_labels["q_wave_onsets"], reference_labels["q_wave_artefacts"]]).sort_index().reset_index()
+    )
+    reference_labels_icg = (
+        pd.concat([reference_labels["b_points"], reference_labels["b_point_artefacts"]]).sort_index().reset_index()
+    )
+
     labels = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
 
     for _i, row in labels.iterrows():
@@ -444,14 +468,101 @@ def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequ
     return unique_handles, unique_labels
 
 
-def _get_data(datapoint: BaseUnifiedPepExtractionDataset, use_clean: bool) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _sanitize_heartbeat_subsample(heartbeat_subsample: Optional[Sequence[int]] = None) -> Optional[Sequence[int]]:
+    if heartbeat_subsample is None:
+        return None
+    if len(heartbeat_subsample) == 1:
+        return heartbeat_subsample
+    # if heartbeat_subsample is a tuple of two integers, assume it's a range
+    if isinstance(heartbeat_subsample, tuple) and len(heartbeat_subsample) == 2:
+        return list(range(heartbeat_subsample[0], heartbeat_subsample[1] + 1))
+    # if it's a sequence but not incremented by 1, it's an error
+    if np.ediff1d(heartbeat_subsample).max() != 1:
+        raise ValueError("Heartbeat subsample must be a range or list of indices.")
+    return heartbeat_subsample
+
+
+def _get_data(
+    datapoint: BaseUnifiedPepExtractionDataset, use_clean: bool, heartbeat_subsample: Union[Sequence[int], None]
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     ecg_data = datapoint.ecg_clean if use_clean else datapoint.ecg
     icg_data = datapoint.icg_clean if use_clean else datapoint.icg
 
     ecg_data.columns = ["ECG"]
     icg_data.columns = ["ICG ($dZ/dt$)"]
 
+    heartbeat_subsample = _sanitize_heartbeat_subsample(heartbeat_subsample)
+
+    if heartbeat_subsample is not None:
+        heartbeat_borders = datapoint.reference_heartbeats
+        start = heartbeat_borders["start_sample"].iloc[heartbeat_subsample[0]]
+        end = heartbeat_borders["end_sample"].iloc[heartbeat_subsample[-1]]
+
+        ecg_data = ecg_data.iloc[start:end]
+        icg_data = icg_data.iloc[start:end]
+
     return ecg_data, icg_data
+
+
+def _get_reference_labels(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    heartbeat_subsample: Optional[Sequence[int]] = None,
+) -> dict[str, pd.DataFrame]:
+    reference_heartbeats = datapoint.reference_heartbeats
+    reference_labels_ecg = datapoint.reference_labels_ecg
+    reference_labels_icg = datapoint.reference_labels_icg
+    q_wave_onsets = reference_labels_ecg.xs("ECG", level="channel")["sample_relative"]
+    q_wave_artefacts = reference_labels_ecg.reindex(["Artefact"], level="channel")["sample_relative"]
+    b_points = reference_labels_icg.xs("ICG", level="channel")["sample_relative"]
+    b_point_artefacts = reference_labels_icg.reindex(["Artefact"], level="channel")["sample_relative"]
+
+    heartbeat_subsample = _sanitize_heartbeat_subsample(heartbeat_subsample)
+
+    if heartbeat_subsample is not None:
+        reference_heartbeats = reference_heartbeats.iloc[heartbeat_subsample]
+        q_wave_onsets = q_wave_onsets.reindex(heartbeat_subsample, level="heartbeat_id").dropna()
+        q_wave_artefacts = q_wave_artefacts.reindex(heartbeat_subsample, level="heartbeat_id").dropna()
+        b_points = b_points.reindex(heartbeat_subsample, level="heartbeat_id").dropna()
+        b_point_artefacts = b_point_artefacts.reindex(heartbeat_subsample, level="heartbeat_id").dropna()
+
+    return_dict = {
+        "reference_heartbeats": reference_heartbeats,
+        "q_wave_onsets": q_wave_onsets,
+        "q_wave_artefacts": q_wave_artefacts,
+        "b_points": b_points,
+        "b_point_artefacts": b_point_artefacts,
+    }
+
+    start_sample = reference_heartbeats["start_sample"].iloc[0]
+    # subtract start_sample to get relative sample indices
+    return {key: value - start_sample for key, value in return_dict.items()}
+
+
+def _get_labels_from_challenge_results(
+    pep_results_per_sample: pd.DataFrame, heartbeat_subsample: Sequence[int]
+) -> dict[str, pd.DataFrame]:
+    heartbeat_subsample = _sanitize_heartbeat_subsample(heartbeat_subsample)
+    pep_results_per_sample = pep_results_per_sample.reindex(heartbeat_subsample, level="heartbeat_id")
+
+    heartbeats_start = pep_results_per_sample[("heartbeat_start_sample", "estimated")]
+    heartbeats_end = pep_results_per_sample[("heartbeat_end_sample", "estimated")]
+
+    start_index = heartbeats_start.iloc[0]
+
+    q_wave_labels_reference = pep_results_per_sample[("q_wave_onset_sample", "reference")]
+    q_wave_labels_estimated = pep_results_per_sample[("q_wave_onset_sample", "estimated")]
+    b_point_labels_reference = pep_results_per_sample[("b_point_sample", "reference")]
+    b_point_labels_estimated = pep_results_per_sample[("b_point_sample", "estimated")]
+
+    return_dict = {
+        "heartbeats_start": heartbeats_start,
+        "heartbeats_end": heartbeats_end,
+        "q_wave_labels_reference": q_wave_labels_reference,
+        "q_wave_labels_estimated": q_wave_labels_estimated,
+        "b_point_labels_reference": b_point_labels_reference,
+        "b_point_labels_estimated": b_point_labels_estimated,
+    }
+    return {key: (val.dropna() - start_index).astype(int) for key, val in return_dict.items()}
 
 
 def _get_rect(**kwargs: Any) -> tuple[float, ...]:

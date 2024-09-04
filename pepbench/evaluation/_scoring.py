@@ -3,11 +3,11 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import no_agg
+from tpcp.validate import FloatAggregator, no_agg
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
-from pepbench.evaluation._scoring_aggregator import SingleValueAggregator
+from pepbench.evaluation._scoring_aggregator import PerSampleAggregator
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines import BasePepExtractionPipeline
 
@@ -59,7 +59,8 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
         pep_merged_filter[("pep_ms", "reference")], pep_merged_filter[("pep_ms", "estimated")]
     ).to_numpy(na_value=np.nan)
 
-    single_value_aggregator = SingleValueAggregator(mean_and_std)
+    per_sample_aggregator = PerSampleAggregator(mean_and_std)
+    sum_aggregator = FloatAggregator(np.nansum)
 
     return {
         "pep_reference_ms": np.nanmean(pep_reference),
@@ -67,13 +68,13 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
         "error_ms": np.nanmean(pep_error),
         "absolute_error_ms": np.nanmean(pep_abs_error),
         "absolute_relative_error_percent": np.nanmean(pep_abs_rel_error),
-        "num_peps": no_agg(num_peps),
-        "num_valid_peps": no_agg(num_valid_peps),
-        "num_invalid_peps": no_agg(num_invalid_peps),
+        "num_pep_total": sum_aggregator(num_peps),
+        "num_pep_valid": sum_aggregator(num_valid_peps),
+        "num_pep_invalid": sum_aggregator(num_invalid_peps),
         "pep_estimation_per_sample": no_agg(pep_merged_filter),
-        "error_per_sample_ms": single_value_aggregator(pep_error),
-        "absolute_error_per_sample_ms": single_value_aggregator(pep_abs_error),
-        "absolute_relative_error_per_sample_percent": single_value_aggregator(pep_abs_rel_error),
+        "error_per_sample_ms": per_sample_aggregator(pep_error),
+        "absolute_error_per_sample_ms": per_sample_aggregator(pep_abs_error),
+        "absolute_relative_error_per_sample_percent": per_sample_aggregator(pep_abs_rel_error),
     }
 
 

@@ -42,6 +42,10 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         ("GDN0030", "Pause"),
         ("GDN0030", "TiltUp"),
     )
+    SUBSET_NOISY_DATA = (
+        ("GDN0025", "TiltUp"),
+        ("GDN0025", "TiltDown"),
+    )
 
     def __init__(
         self,
@@ -50,11 +54,13 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         subset_index: Optional[Sequence[str]] = None,
         *,
         exclude_no_recorded_data: bool = True,
+        exclude_noisy_data: bool = True,
         use_cache: bool = True,
         only_labeled: bool = False,
     ) -> None:
         self.base_path = base_path
         self.exclude_no_recorded_data = exclude_no_recorded_data
+        self.exclude_noisy_data = exclude_noisy_data
         self.data_to_exclude = self._find_data_to_exclude()
         self.use_cache = use_cache
         self.only_labeled = only_labeled
@@ -74,7 +80,9 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
         data_to_exclude = []
         if self.exclude_no_recorded_data:
-            data_to_exclude = self.SUBSET_NO_RECORDED_DATA
+            data_to_exclude.extend(self.SUBSET_NO_RECORDED_DATA)
+        if self.exclude_noisy_data:
+            data_to_exclude.extend(self.SUBSET_NOISY_DATA)
 
         return data_to_exclude
 
