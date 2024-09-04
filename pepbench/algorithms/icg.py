@@ -1,3 +1,5 @@
+"""Module for ICG event extraction algorithms."""
+
 from biopsykit.signals.icg.event_extraction import (
     BPointExtractionArbol2017,
     BPointExtractionDebski1993,
