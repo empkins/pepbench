@@ -22,13 +22,26 @@ def plot_signals(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     """Plot ECG and ICG signals."""
     if collapse:
-        return _plot_signals_one_axis(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs)
-    return _plot_signals_two_axes(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs)
+        return _plot_signals_one_axis(
+            datapoint,
+            use_clean=use_clean,
+            normalize_time=normalize_time,
+            heartbeat_subsample=heartbeat_subsample,
+            **kwargs,
+        )
+    return _plot_signals_two_axes(
+        datapoint,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subsample=heartbeat_subsample,
+        **kwargs,
+    )
 
 
 def plot_signals_with_reference_labels(
@@ -36,6 +49,7 @@ def plot_signals_with_reference_labels(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
@@ -46,9 +60,16 @@ def plot_signals_with_reference_labels(
     rect = _get_rect(**kwargs)
 
     fig, ax = plot_signals(
-        datapoint, collapse=collapse, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, **kwargs
+        datapoint,
+        collapse=collapse,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subsample=heartbeat_subsample,
+        **kwargs,
     )
-    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subsample=heartbeat_subsample
+    )
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subsample=heartbeat_subsample)
     reference_heartbeats = reference_labels["reference_heartbeats"]
@@ -78,6 +99,7 @@ def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -88,10 +110,15 @@ def plot_signals_with_reference_pep(
     rect = _get_rect(**kwargs)
 
     fig, ax = plot_signals_with_reference_labels(
-        datapoint, use_clean=use_clean, collapse=True, heartbeat_subsample=heartbeat_subsample, **kwargs
+        datapoint,
+        use_clean=use_clean,
+        collapse=True,
+        normalize_time=normalize_time,
+        heartbeat_subsample=heartbeat_subsample,
+        **kwargs,
     )
 
-    _add_pep(datapoint, use_clean, heartbeat_subsample, ax, **kwargs)
+    _add_pep(datapoint, use_clean, normalize_time, heartbeat_subsample, ax, **kwargs)
 
     _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
     fig.tight_layout(rect=rect)
@@ -104,6 +131,7 @@ def plot_signals_from_challenge_results(
     *,
     collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     add_pep: Optional[bool] = False,
     **kwargs: Any,
@@ -115,10 +143,17 @@ def plot_signals_from_challenge_results(
     rect = _get_rect(**kwargs)
 
     fig, axs = plot_signals(
-        datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample, collapse=collapse, **kwargs
+        datapoint,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subsample=heartbeat_subsample,
+        collapse=collapse,
+        **kwargs,
     )
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subsample=heartbeat_subsample
+    )
 
     labels_from_challenge = _get_labels_from_challenge_results(pep_results_per_sample, heartbeat_subsample)
 
@@ -180,9 +215,23 @@ def plot_signals_from_challenge_results(
     )
 
     if add_pep:
-        _add_pep(datapoint, use_clean, heartbeat_subsample=heartbeat_subsample, ax=ax_icg, **kwargs)
+        _add_pep(
+            datapoint,
+            use_clean=use_clean,
+            normalize_time=normalize_time,
+            heartbeat_subsample=heartbeat_subsample,
+            ax=ax_icg,
+            **kwargs,
+        )
         if not collapse:
-            _add_pep(datapoint, use_clean, heartbeat_subsample=heartbeat_subsample, ax=ax_ecg, **kwargs)
+            _add_pep(
+                datapoint,
+                use_clean=use_clean,
+                normalize_time=normalize_time,
+                heartbeat_subsample=heartbeat_subsample,
+                ax=ax_ecg,
+                **kwargs,
+            )
 
     if collapse:
         _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
@@ -198,6 +247,7 @@ def _plot_signals_one_axis(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -211,12 +261,17 @@ def _plot_signals_one_axis(
 
     fig, ax = _get_fig_ax(figsize=figsize)
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subsample=heartbeat_subsample
+    )
 
     ecg_data.plot(ax=ax)
     icg_data.plot(ax=ax)
 
-    ax.set_xlabel("Time [hh:mm:ss]")
+    if normalize_time:
+        ax.set_xlabel("Time [s]")
+    else:
+        ax.set_xlabel("Time [hh:mm:ss]")
     ax.set_ylabel("Amplitude [a.u.]")
 
     _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
@@ -230,6 +285,7 @@ def _plot_signals_two_axes(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
     heartbeat_subsample: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -249,7 +305,9 @@ def _plot_signals_two_axes(
 
     colors = iter(cmaps.faculties)
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean, heartbeat_subsample)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subsample=heartbeat_subsample
+    )
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
@@ -399,6 +457,7 @@ def _handle_legend_one_axis(
 def _add_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     use_clean: bool,
+    normalize_time: bool,
     heartbeat_subsample: Optional[Sequence[int]],
     ax: plt.Axes,
     **kwargs: Any,
@@ -406,7 +465,9 @@ def _add_pep(
     color = kwargs.get("pep_color", cmaps.nat[0])
     color_artefact = kwargs.get("pep_artefact_color", cmaps.wiso[0])
 
-    ecg_data, icg_data = _get_data(datapoint, use_clean=use_clean, heartbeat_subsample=heartbeat_subsample)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subsample=heartbeat_subsample
+    )
     reference_labels = _get_reference_labels(datapoint, heartbeat_subsample)
 
     reference_labels_ecg = (
@@ -483,7 +544,11 @@ def _sanitize_heartbeat_subsample(heartbeat_subsample: Optional[Sequence[int]] =
 
 
 def _get_data(
-    datapoint: BaseUnifiedPepExtractionDataset, use_clean: bool, heartbeat_subsample: Union[Sequence[int], None]
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    use_clean: bool,
+    normalize_time: bool,
+    heartbeat_subsample: Union[Sequence[int], None],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     ecg_data = datapoint.ecg_clean if use_clean else datapoint.ecg
     icg_data = datapoint.icg_clean if use_clean else datapoint.icg
@@ -500,6 +565,10 @@ def _get_data(
 
         ecg_data = ecg_data.iloc[start:end]
         icg_data = icg_data.iloc[start:end]
+
+    if normalize_time:
+        ecg_data.index = (ecg_data.index - ecg_data.index[0]).total_seconds()
+        icg_data.index = (icg_data.index - icg_data.index[0]).total_seconds()
 
     return ecg_data, icg_data
 
