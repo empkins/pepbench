@@ -10,7 +10,10 @@ from pepbench.datasets import BaseUnifiedPepExtractionDataset
 
 
 def _get_fig_ax(**kwargs: Any) -> tuple[plt.Figure, plt.Axes]:
-    ax: Union[plt.Axes, None] = kwargs.pop("ax", None)
+    ax = kwargs.pop("ax", None)
+    # filter out the kwargs that are not needed for plt.subplots
+    kwargs = kwargs.copy()
+    kwargs = {key: value for key, value in kwargs.items() if key in plt.subplots.__code__.co_varnames}
 
     if ax is not None:
         fig = ax.get_figure()
@@ -21,6 +24,9 @@ def _get_fig_ax(**kwargs: Any) -> tuple[plt.Figure, plt.Axes]:
 
 def _get_fig_axs(**kwargs: Any) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     axs: Union[plt.Axes, None] = kwargs.pop("axs", None)
+    # filter out the kwargs that are not needed for plt.subplots
+    kwargs = kwargs.copy()
+    kwargs = {key: value for key, value in kwargs.items() if key in plt.subplots.__code__.co_varnames}
 
     if axs is not None:
         fig = axs[0].get_figure()
@@ -39,25 +45,27 @@ def _add_ecg_r_peaks(
     color = kwargs.get("r_peak_color", cmaps.wiso[0])
     marker = kwargs.get("r_peak_marker", "o")
     linestyle = kwargs.get("r_peak_linestyle", "-")
-    linewidth = kwargs.get("r_peak_linewidth", 1)
+    linewidth = kwargs.get("r_peak_linewidth", None)
     alpha = kwargs.get("r_peak_alpha", 0.7)
-
-    print(kwargs)
+    plot_marker = kwargs.get("r_peak_plot_marker", True)
+    plot_vline = kwargs.get("r_peak_plot_vline", True)
 
     r_peaks = r_peaks.astype(int)
 
-    _base_add_scatter(
-        x=ecg_data.index[r_peaks], y=ecg_data.iloc[r_peaks], color=color, label=label, marker=marker, ax=ax
-    )
-    _base_add_vlines(
-        x=ecg_data.index[r_peaks],
-        color=color,
-        alpha=alpha,
-        linestyle=linestyle,
-        linewidth=linewidth,
-        label=label,
-        ax=ax,
-    )
+    if plot_marker:
+        _base_add_scatter(
+            x=ecg_data.index[r_peaks], y=ecg_data.iloc[r_peaks], color=color, label=label, marker=marker, ax=ax
+        )
+    if plot_vline:
+        _base_add_vlines(
+            x=ecg_data.index[r_peaks],
+            color=color,
+            alpha=alpha,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            label=label,
+            ax=ax,
+        )
 
 
 def _add_ecg_r_peak_artefacts(
@@ -92,7 +100,7 @@ def _add_ecg_q_wave_onsets(
     color = kwargs.get("q_wave_color", cmaps.med[0])
     marker = kwargs.get("q_wave_marker", "o")
     linestyle = kwargs.get("q_wave_linestyle", "-")
-    linewidth = kwargs.get("q_wave_linewidth", 1)
+    linewidth = kwargs.get("q_wave_linewidth", None)
     alpha = kwargs.get("q_wave_alpha", 0.7)
 
     q_wave_onsets = q_wave_onsets.astype(int)
@@ -177,14 +185,52 @@ def _add_icg_b_point_artefacts(
     )
 
 
+def _add_icg_c_points(
+    icg_data: pd.DataFrame,
+    c_points: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
+) -> None:
+    color = kwargs.get("c_point_color", cmaps.wiso_light[0])
+    c_point_label = kwargs.get("c_point_label", "C Points")
+    marker = kwargs.get("c_point_marker", "o")
+    linestyle = kwargs.get("c_point_linestyle", "--")
+    linewidth = kwargs.get("c_point_linewidth", None)
+    alpha = kwargs.get("c_point_alpha", 0.7)
+    plot_marker = kwargs.get("c_point_plot_marker", True)
+    plot_vline = kwargs.get("c_point_plot_vline", True)
+
+    c_points = c_points.astype(int)
+
+    if plot_marker:
+        _base_add_scatter(
+            x=icg_data.index[c_points],
+            y=icg_data.iloc[c_points],
+            color=color,
+            label=c_point_label,
+            marker=marker,
+            ax=ax,
+        )
+    if plot_vline:
+        _base_add_vlines(
+            x=icg_data.index[c_points],
+            color=color,
+            alpha=alpha,
+            label=c_point_label,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            ax=ax,
+        )
+
+
 def _base_add_vlines(
     x: pd.Series,
     color: str,
     alpha: float,
     label: str,
     linestyle: str,
-    linewidth: float,
     ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
 
     ax.vlines(
@@ -196,8 +242,8 @@ def _base_add_vlines(
         zorder=3,
         alpha=alpha,
         ls=linestyle,
-        lw=linewidth,
         label=label,
+        **kwargs,
     )
 
 
@@ -313,14 +359,15 @@ def _add_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any
 
 
 def _handle_legend_one_axis(
-    legend_orientation: str,
-    legend_outside: bool,
-    legend_loc: str,
     fig: plt.Figure,
     ax: plt.Axes,
     max_cols: Optional[int] = 5,
     **kwargs: Any,  # noqa: ARG001
 ) -> None:
+    legend_outside = kwargs.get("legend_outside", False)
+    legend_orientation = kwargs.get("legend_orientation", "vertical")
+    legend_loc = kwargs.get("legend_loc", None)
+
     handles, labels = ax.get_legend_handles_labels()
     handles, labels = _remove_duplicate_legend_entries(handles, labels)
     ncols = min(len(handles), max_cols) if legend_orientation == "horizontal" else 1
@@ -336,14 +383,14 @@ def _handle_legend_one_axis(
 
 
 def _handle_legend_two_axes(
-    legend_orientation: str,
-    legend_outside: bool,
-    legend_loc: str,
     fig: plt.Figure,
     axs: Sequence[plt.Axes],
     max_cols: Optional[int] = 5,
     **kwargs: Any,  # noqa: ARG001
 ) -> None:
+    legend_outside = kwargs.get("legend_outside", False)
+    legend_orientation = kwargs.get("legend_orientation", "vertical")
+    legend_loc = kwargs.get("legend_loc", None)
 
     if len(fig.legends) > 0:
         fig.legends[0].remove()

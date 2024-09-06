@@ -45,14 +45,14 @@ def plot_signals(
     """Plot ECG and ICG signals."""
     if collapse:
         return _plot_signals_one_axis(
-            datapoint,
+            datapoint=datapoint,
             use_clean=use_clean,
             normalize_time=normalize_time,
             heartbeat_subset=heartbeat_subset,
             **kwargs,
         )
     return _plot_signals_two_axes(
-        datapoint,
+        datapoint=datapoint,
         use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
@@ -69,10 +69,8 @@ def plot_signals_with_reference_labels(
     normalize_time: Optional[bool] = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_outside = kwargs.get("legend_outside", False)
     legend_max_cols = kwargs.get("legend_max_cols", 6)
-    legend_loc = _get_legend_loc(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     plot_artefacts = kwargs.get("plot_artefacts", False)
     rect = _get_rect(**kwargs)
 
@@ -106,7 +104,7 @@ def plot_signals_with_reference_labels(
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax, **kwargs)
 
-        _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
+        _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
     else:
         _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[0], **kwargs)
         _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[1], **kwargs)
@@ -118,7 +116,7 @@ def plot_signals_with_reference_labels(
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax[1], **kwargs)
 
-        _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
+        _handle_legend_two_axes(fig, ax, max_cols=legend_max_cols, **kwargs)
 
     fig.tight_layout(rect=rect)
     return fig, ax
@@ -132,10 +130,10 @@ def plot_signals_with_reference_pep(
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_outside = kwargs.get("legend_outside", False)
+    kwargs.setdefault("legend_orientation", "vertical")
+    kwargs.setdefault("legend_outside", False)
     legend_max_cols = kwargs.get("legend_max_cols", 5)
-    legend_loc = _get_legend_loc(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     rect = _get_rect(**kwargs)
 
     fig, ax = plot_signals_with_reference_labels(
@@ -162,7 +160,7 @@ def plot_signals_with_reference_pep(
 
     _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, ax, **kwargs)
 
-    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
+    _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
     fig.tight_layout(rect=rect)
     return fig, ax
 
@@ -178,10 +176,8 @@ def plot_signals_from_challenge_results(
     add_pep: Optional[bool] = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_outside = kwargs.get("legend_outside", False)
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     legend_max_cols = kwargs.get("legend_max_cols", 5)
-    legend_loc = _get_legend_loc(**kwargs)
     rect = _get_rect(**kwargs)
 
     fig, axs = plot_signals(
@@ -296,9 +292,9 @@ def plot_signals_from_challenge_results(
             )
 
     if collapse:
-        _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
+        _handle_legend_one_axis(fig, axs, max_cols=legend_max_cols, **kwargs)
     else:
-        _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
+        _handle_legend_two_axes(fig, axs, max_cols=legend_max_cols, **kwargs)
 
     fig.tight_layout(rect=rect)
 
@@ -306,29 +302,41 @@ def plot_signals_from_challenge_results(
 
 
 def _plot_signals_one_axis(
-    datapoint: BaseUnifiedPepExtractionDataset,
     *,
+    datapoint: Optional[BaseUnifiedPepExtractionDataset] = None,
+    df: Optional[pd.DataFrame] = None,
     use_clean: Optional[bool] = True,
     normalize_time: Optional[bool] = False,
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
-    figsize = kwargs.pop("figsize", None)
-    legend_outside = kwargs.get("legend_outside", False)
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     legend_max_cols = kwargs.get("legend_max_cols", 5)
+    plot_ecg = kwargs.get("plot_ecg", True)
+    plot_icg = kwargs.get("plot_icg", True)
+    color = kwargs.get("color", cmaps.fau[0])
 
-    legend_loc = _get_legend_loc(**kwargs)
+    if datapoint is not None and df is not None:
+        raise ValueError("Either `datapoint` or `df` must be provided, but not both.")
+    if datapoint is None and df is None:
+        raise ValueError("Either `datapoint` or `df` must be provided.")
+
     rect = _get_rect(**kwargs)
 
-    fig, ax = _get_fig_ax(figsize=figsize)
+    fig, ax = _get_fig_ax(**kwargs)
+    kwargs.pop("ax", None)
 
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    if datapoint is not None:
+        ecg_data, icg_data = _get_data(
+            datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+        )
 
-    ecg_data.plot(ax=ax)
-    icg_data.plot(ax=ax)
+        if plot_ecg:
+            ecg_data.plot(ax=ax)
+        if plot_icg:
+            icg_data.plot(ax=ax)
+    else:
+        df.plot(ax=ax, color=color)
 
     if normalize_time:
         ax.set_xlabel("Time [s]")
@@ -336,7 +344,7 @@ def _plot_signals_one_axis(
         ax.set_xlabel("Time [hh:mm:ss]")
     ax.set_ylabel("Amplitude [a.u.]")
 
-    _handle_legend_one_axis(legend_orientation, legend_outside, legend_loc, fig, ax, max_cols=legend_max_cols)
+    _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
 
     fig.tight_layout(rect=rect)
 
@@ -344,24 +352,18 @@ def _plot_signals_one_axis(
 
 
 def _plot_signals_two_axes(
-    datapoint: BaseUnifiedPepExtractionDataset,
     *,
+    datapoint: BaseUnifiedPepExtractionDataset,
     use_clean: Optional[bool] = True,
     normalize_time: Optional[bool] = False,
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     figsize = kwargs.pop("figsize", None)
-    legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_outside = kwargs.get("legend_outside", False)
-    legend_loc = kwargs.get("legend_loc", None)
-    legend_max_cols = kwargs.get("legend_max_cols", 5)
-    rect = kwargs.get("rect", None)
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
 
-    if legend_loc is None:
-        legend_loc = _get_legend_loc(**kwargs)
-    if rect is None:
-        rect = _get_rect(**kwargs)
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
+    rect = kwargs.get("rect", _get_rect(**kwargs))
 
     fig, axs = _get_fig_axs(figsize=figsize, nrows=2, sharex=True)
 
@@ -373,7 +375,7 @@ def _plot_signals_two_axes(
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
-    _handle_legend_two_axes(legend_orientation, legend_outside, legend_loc, fig, axs, max_cols=legend_max_cols)
+    _handle_legend_two_axes(fig, axs, max_cols=legend_max_cols, **kwargs)
 
     fig.align_ylabels()
     fig.tight_layout(rect=rect)
