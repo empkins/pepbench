@@ -17,6 +17,7 @@ from pepbench.utils._types import path_t
 __all__ = ["PepEvaluationChallenge"]
 
 
+# TODO add CrossValidateChallenge
 class PepEvaluationChallenge(Algorithm):
 
     _action_methods = "run"
@@ -51,7 +52,7 @@ class PepEvaluationChallenge(Algorithm):
 
     def run(self, pipeline: BasePepExtractionPipeline) -> Self:
         with measure_time() as timing_results, warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
+            warnings.simplefilter("ignore", category=RuntimeWarning)  # better specify the RuntimeWarning using regex
             mean_std_agg = FloatAggregator(mean_and_std)
             scorer = Scorer(score_pep_evaluation, default_aggregator=mean_std_agg, **self.validate_kwargs)
             self.results_ = validate(pipeline=pipeline, dataset=self.dataset, scoring=scorer)
