@@ -193,7 +193,7 @@ def _add_icg_c_points(
 ) -> None:
     color = kwargs.get("c_point_color", cmaps.wiso_light[0])
     c_point_label = kwargs.get("c_point_label", "C Points")
-    marker = kwargs.get("c_point_marker", "o")
+    marker = kwargs.get("c_point_marker", "X")
     linestyle = kwargs.get("c_point_linestyle", "--")
     linewidth = kwargs.get("c_point_linewidth", None)
     alpha = kwargs.get("c_point_alpha", 0.7)
@@ -358,19 +358,15 @@ def _add_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any
     )
 
 
-def _handle_legend_one_axis(
-    fig: plt.Figure,
-    ax: plt.Axes,
-    max_cols: Optional[int] = 5,
-    **kwargs: Any,  # noqa: ARG001
-) -> None:
+def _handle_legend_one_axis(fig: plt.Figure, ax: plt.Axes, **kwargs: Any) -> None:
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_loc = kwargs.get("legend_loc", None)
 
     handles, labels = ax.get_legend_handles_labels()
     handles, labels = _remove_duplicate_legend_entries(handles, labels)
-    ncols = min(len(handles), max_cols) if legend_orientation == "horizontal" else 1
+    ncols = min(len(handles), legend_max_cols) if legend_orientation == "horizontal" else 1
 
     if len(fig.legends) > 0:
         fig.legends[0].remove()
@@ -385,9 +381,9 @@ def _handle_legend_one_axis(
 def _handle_legend_two_axes(
     fig: plt.Figure,
     axs: Sequence[plt.Axes],
-    max_cols: Optional[int] = 5,
-    **kwargs: Any,  # noqa: ARG001
+    **kwargs: Any,
 ) -> None:
+    legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
     legend_loc = kwargs.get("legend_loc", None)
@@ -401,17 +397,13 @@ def _handle_legend_two_axes(
         for ax in axs:
             ax.legend().remove()
 
-        ncols = min(len(handles), max_cols) if legend_orientation == "horizontal" else 1
+        ncols = min(len(handles), legend_max_cols) if legend_orientation == "horizontal" else 1
         handles, labels = _remove_duplicate_legend_entries(handles, labels)
 
         fig.legend(handles, labels, ncols=ncols, loc=legend_loc)
     else:
         for ax in axs:
             ax.legend(loc=legend_loc)
-
-    for ax in axs:
-        ax.set_xlabel("Time [hh:mm:ss]")
-        ax.set_ylabel("Amplitude [a.u.]")
 
 
 def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:

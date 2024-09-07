@@ -69,7 +69,7 @@ def plot_signals_with_reference_labels(
     normalize_time: Optional[bool] = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
-    legend_max_cols = kwargs.get("legend_max_cols", 6)
+    kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     plot_artefacts = kwargs.get("plot_artefacts", False)
     rect = _get_rect(**kwargs)
@@ -104,7 +104,7 @@ def plot_signals_with_reference_labels(
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax, **kwargs)
 
-        _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
+        _handle_legend_one_axis(fig, ax, **kwargs)
     else:
         _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[0], **kwargs)
         _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[1], **kwargs)
@@ -116,7 +116,7 @@ def plot_signals_with_reference_labels(
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax[1], **kwargs)
 
-        _handle_legend_two_axes(fig, ax, max_cols=legend_max_cols, **kwargs)
+        _handle_legend_two_axes(fig, ax, **kwargs)
 
     fig.tight_layout(rect=rect)
     return fig, ax
@@ -132,7 +132,7 @@ def plot_signals_with_reference_pep(
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("legend_orientation", "vertical")
     kwargs.setdefault("legend_outside", False)
-    legend_max_cols = kwargs.get("legend_max_cols", 5)
+    kwargs.setdefault("legend_max_cols", 5)
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     rect = _get_rect(**kwargs)
 
@@ -160,7 +160,7 @@ def plot_signals_with_reference_pep(
 
     _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, ax, **kwargs)
 
-    _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
+    _handle_legend_one_axis(fig, ax, **kwargs)
     fig.tight_layout(rect=rect)
     return fig, ax
 
@@ -177,7 +177,7 @@ def plot_signals_from_challenge_results(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    legend_max_cols = kwargs.get("legend_max_cols", 5)
+    kwargs.setdefault("legend_max_cols", 5)
     rect = _get_rect(**kwargs)
 
     fig, axs = plot_signals(
@@ -292,9 +292,9 @@ def plot_signals_from_challenge_results(
             )
 
     if collapse:
-        _handle_legend_one_axis(fig, axs, max_cols=legend_max_cols, **kwargs)
+        _handle_legend_one_axis(fig, axs, **kwargs)
     else:
-        _handle_legend_two_axes(fig, axs, max_cols=legend_max_cols, **kwargs)
+        _handle_legend_two_axes(fig, axs, **kwargs)
 
     fig.tight_layout(rect=rect)
 
@@ -311,7 +311,7 @@ def _plot_signals_one_axis(
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    legend_max_cols = kwargs.get("legend_max_cols", 5)
+    kwargs.setdefault("legend_max_cols", 5)
     plot_ecg = kwargs.get("plot_ecg", True)
     plot_icg = kwargs.get("plot_icg", True)
     color = kwargs.get("color", cmaps.fau[0])
@@ -344,7 +344,7 @@ def _plot_signals_one_axis(
         ax.set_xlabel("Time [hh:mm:ss]")
     ax.set_ylabel("Amplitude [a.u.]")
 
-    _handle_legend_one_axis(fig, ax, max_cols=legend_max_cols, **kwargs)
+    _handle_legend_one_axis(fig, ax, **kwargs)
 
     fig.tight_layout(rect=rect)
 
@@ -361,8 +361,8 @@ def _plot_signals_two_axes(
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     figsize = kwargs.pop("figsize", None)
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_max_cols", 5)
 
-    legend_max_cols = kwargs.get("legend_max_cols", 5)
     rect = kwargs.get("rect", _get_rect(**kwargs))
 
     fig, axs = _get_fig_axs(figsize=figsize, nrows=2, sharex=True)
@@ -375,9 +375,16 @@ def _plot_signals_two_axes(
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
-    _handle_legend_two_axes(fig, axs, max_cols=legend_max_cols, **kwargs)
+    _handle_legend_two_axes(fig, axs, **kwargs)
 
     fig.align_ylabels()
     fig.tight_layout(rect=rect)
+
+    for ax in axs:
+        if normalize_time:
+            ax.set_xlabel("Time [s]")
+        else:
+            ax.set_xlabel("Time [hh:mm:ss]")
+        ax.set_ylabel("Amplitude [a.u.]")
 
     return fig, axs
