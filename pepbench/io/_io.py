@@ -1,8 +1,9 @@
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Optional
 
 import pandas as pd
 
+from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 
 __all__ = ["load_challenge_results_from_folder"]
@@ -13,7 +14,7 @@ def load_challenge_results_from_folder(
     index_cols_single: Optional[Sequence[str]] = None,
     index_cols_per_sample: Optional[Sequence[str]] = None,
     return_as_df: Optional[bool] = True,
-) -> Union[tuple[dict[tuple[str, ...], pd.DataFrame], ...], tuple[pd.DataFrame, ...]]:
+) -> ChallengeResults:
     """Load challenge results from a folder.
 
     Parameters
@@ -90,6 +91,6 @@ def load_challenge_results_from_folder(
         results_per_sample = pd.concat(
             dict_per_sample, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
-        return results_agg_mean_std, results_agg_total, results_single, results_per_sample
+        return ChallengeResults(results_agg_mean_std, results_agg_total, results_single, results_per_sample)
 
-    return dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample
+    return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
