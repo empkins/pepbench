@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from functools import cached_property, lru_cache
+from functools import cached_property
 from itertools import product
 from typing import ClassVar, Optional, Union
 
@@ -8,13 +8,17 @@ from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 from biopsykit.utils.file_handling import get_subject_dirs
+from joblib import Memory
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import path_t
 
-_cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
+# _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
+cache_dir = "./cachedir"
+memory = Memory(location=cache_dir, verbose=0)
+_cached_get_biopac_data = memory.cache(_load_biopac_data)
 
 
 class EmpkinsDataset(BaseUnifiedPepExtractionDataset):

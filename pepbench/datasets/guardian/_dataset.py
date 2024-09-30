@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from functools import lru_cache
 from itertools import product
 from typing import ClassVar, Optional, Union
 
@@ -7,6 +6,7 @@ import pandas as pd
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
+from joblib import Memory
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
@@ -16,7 +16,10 @@ from pepbench.utils._types import path_t
 __all__ = ["GuardianDataset"]
 
 
-_cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
+# _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
+cache_dir = "./cachedir"
+memory = Memory(location=cache_dir, verbose=0)
+_cached_get_tfm_data = memory.cache(_load_tfm_data)
 
 
 class GuardianDataset(BaseUnifiedPepExtractionDataset):
