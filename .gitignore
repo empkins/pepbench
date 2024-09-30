@@ -1,6 +1,9 @@
 # ignore local config file that specifies local paths
 config.json
 
+# ignore local cachedir
+cachedir
+
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
