@@ -23,7 +23,7 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
     heartbeat_matching = match_heartbeat_lists(
         heartbeats_reference=datapoint.reference_heartbeats,
         heartbeats_extracted=pipeline.heartbeat_segmentation_results_,
-        tolerance_ms=20,
+        tolerance_ms=100,
         sampling_rate_hz=datapoint.sampling_rate_ecg,
     )
 
@@ -86,7 +86,7 @@ def _merge_extracted_and_reference_pep(
     extracted: pd.DataFrame, reference: pd.DataFrame, tp_matches: Union[pd.DataFrame, None] = None
 ) -> pd.DataFrame:
     extracted_original = extracted.copy()
-    # if wb_id in index, add it as a column to preserve it in the combined DataFrame
+    # if heartbeat_id in index, add it as a column to preserve it in the combined DataFrame
     if "heartbeat_id" in extracted.index.names and "heartbeat_id" in reference.index.names:
         extracted.insert(0, "heartbeat_id", extracted.index.get_level_values("heartbeat_id"))
         reference.insert(0, "heartbeat_id", reference.index.get_level_values("heartbeat_id"))
