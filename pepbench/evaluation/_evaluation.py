@@ -1,5 +1,6 @@
 import json
 import warnings
+from collections import namedtuple
 from typing import Any, Callable, Optional
 
 import numpy as np
@@ -14,7 +15,9 @@ from pepbench.pipelines import BasePepExtractionPipeline
 from pepbench.utils._timing import measure_time
 from pepbench.utils._types import path_t
 
-__all__ = ["PepEvaluationChallenge"]
+__all__ = ["PepEvaluationChallenge", "ChallengeResults"]
+
+ChallengeResults = namedtuple("ChallengeResults", ["agg_mean_std", "agg_total", "single", "per_sample"])
 
 
 # TODO add CrossValidateChallenge
