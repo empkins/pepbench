@@ -13,7 +13,11 @@ def _get_fig_ax(**kwargs: Any) -> tuple[plt.Figure, plt.Axes]:
     ax = kwargs.pop("ax", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs = kwargs.copy()
-    kwargs = {key: value for key, value in kwargs.items() if key in plt.subplots.__code__.co_varnames}
+    kwargs = {
+        key: value
+        for key, value in kwargs.items()
+        if key in plt.subplots.__code__.co_varnames + plt.figure.__code__.co_varnames
+    }
 
     if ax is not None:
         fig = ax.get_figure()
