@@ -18,9 +18,9 @@ def error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     Returns
     -------
     error
-        The error between the detected and reference values in the form `est_data` - `ref_data`
+        The error between the detected and reference values in the form `ref_data` - `est_data`
     """
-    return est_data - ref_data
+    return ref_data - est_data
 
 
 def rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
@@ -37,9 +37,9 @@ def rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     Returns
     -------
     error
-        The relative error between the detected and reference values in the form (`est_data` - `ref_data`) / `ref_data`
+        The relative error between the detected and reference values in the form (`ref_data` - `est_data`) / `ref_data`
     """
-    result = (est_data - ref_data) / ref_data
+    result = (ref_data - est_data) / ref_data
     result = result.replace(np.inf, pd.NA)
     return result
 
@@ -59,9 +59,9 @@ def abs_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     -------
     error
         The absolute error between the detected and reference values in the
-        form abs(`est_data` - `ref_data`)
+        form `abs(ref_data - est_data)`
     """
-    return np.abs(est_data - ref_data)
+    return np.abs(ref_data - est_data)
 
 
 def abs_rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
@@ -79,8 +79,9 @@ def abs_rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     -------
     error
         The absolute relative error between the detected and reference values in the
-        form (`est_data` - `ref_data`) / `ref_data`
+        form `abs((ref_data - est_data) / ref_data)`
     """
-    result = np.abs((est_data - ref_data) / ref_data)
+
+    result = np.abs((ref_data - est_data) / ref_data)
     result = result.replace(np.inf, pd.NA)
     return result
