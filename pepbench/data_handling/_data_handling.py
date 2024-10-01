@@ -8,8 +8,8 @@ __all__ = [
     "get_reference_pep",
     "get_pep_for_algo",
     "get_data_for_algo",
-    "describe_pep",
-    "performance_metrics_pep",
+    "describe_pep_values",
+    "compute_pep_performance_metrics",
 ]
 
 from pepbench.utils._types import str_t
@@ -54,7 +54,7 @@ def get_pep_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]
     return pep
 
 
-def describe_pep(
+def describe_pep_values(
     data: pd.DataFrame, group_cols: Optional[str_t] = None, metrics: Optional[Sequence[str]] = None
 ) -> pd.DataFrame:
     if group_cols is None:
@@ -65,7 +65,7 @@ def describe_pep(
     return data.groupby(group_cols).describe().reindex(metrics, level=-1, axis=1)
 
 
-def performance_metrics_pep(
+def compute_pep_performance_metrics(
     results_per_sample: pd.DataFrame,
     *,
     num_heartbeats: Optional[pd.DataFrame] = None,
@@ -93,3 +93,7 @@ def performance_metrics_pep(
     results_per_sample = results_per_sample.reindex(rename_map.values(), level=0, axis=1)
 
     return results_per_sample
+
+
+def get_performance_metric(results_per_sample: pd.DataFrame, metric: str) -> pd.DataFrame:
+    return results_per_sample[[metric]].droplevel(level=-1, axis=1)
