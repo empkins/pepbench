@@ -97,3 +97,7 @@ def compute_pep_performance_metrics(
 
 def get_performance_metric(results_per_sample: pd.DataFrame, metric: str) -> pd.DataFrame:
     return results_per_sample[[metric]].droplevel(level=-1, axis=1)
+
+
+def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
+    return data.assign(heart_rate_bpm=60 * 1000 / data["rr_interval_ms"])

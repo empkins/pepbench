@@ -40,7 +40,7 @@ def rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
         The relative error between the detected and reference values in the form (`ref_data` - `est_data`) / `ref_data`
     """
     result = (ref_data - est_data) / ref_data
-    result = result.replace(np.inf, pd.NA)
+    result = result.replace([np.inf, -np.inf], pd.NA)
     return result
 
 
@@ -81,7 +81,6 @@ def abs_rel_error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
         The absolute relative error between the detected and reference values in the
         form `abs((ref_data - est_data) / ref_data)`
     """
-
     result = np.abs((ref_data - est_data) / ref_data)
-    result = result.replace(np.inf, pd.NA)
+    result = result.replace([np.inf, -np.inf], pd.NA)
     return result
