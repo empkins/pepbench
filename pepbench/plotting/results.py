@@ -1,9 +1,10 @@
-from typing import Optional, Sequence, Union, Callable
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import pingouin as pg
+import seaborn as sns
 from fau_colors import cmaps, colors_all
 from matplotlib import pyplot as plt
 
@@ -89,7 +90,7 @@ def _plot_helper_reference_pep(
     y: str = "pep_ms",
     hue: Optional[str] = None,
     **kwargs: dict,
-):
+) -> tuple[plt.Figure, plt.Axes]:
     fig, ax = _get_fig_ax(**kwargs)
 
     if hue is None:
@@ -105,19 +106,19 @@ def _plot_helper_reference_pep(
 
 
 def boxplot_algorithm_performance(
-    data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs
+    data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     return _plot_helper_algorithm_performance(data, sns.boxplot, metric, **kwargs)
 
 
 def violinplot_algorithm_performance(
-    data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs
+    data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     return _plot_helper_algorithm_performance(data, sns.violinplot, metric, **kwargs)
 
 
 def _plot_helper_algorithm_performance(
-    data: pd.DataFrame, plot_func: Callable, metric: str = "absolute_error_per_sample_ms", **kwargs
+    data: pd.DataFrame, plot_func: Callable, metric: str = "absolute_error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     fig, ax = _get_fig_ax(**kwargs)
 
@@ -157,7 +158,7 @@ def _plot_helper_algorithm_performance(
     return fig, ax
 
 
-def residual_plot_pep(data: pd.DataFrame, algorithm: Sequence[str], **kwargs) -> tuple[plt.Figure, plt.Axes]:
+def residual_plot_pep(data: pd.DataFrame, algorithm: Sequence[str], **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("color", cmaps.fau[0])
     kwargs.setdefault("alpha", 0.3)
 
@@ -168,7 +169,7 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: Sequence[str], **kwargs) ->
     data = data.dropna()
 
     # filter kwargs for plt.scatter
-    kwargs_scatter = {k: v for k, v in kwargs.items() if k in plt.scatter.__code__.co_varnames + ("color", "alpha")}
+    kwargs_scatter = {k: v for k, v in kwargs.items() if k in (*plt.scatter.__code__.co_varnames, "color", "alpha")}
     pg.plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs_scatter)
 
     ax.set_xlabel("Reference PEP [ms]")
@@ -182,18 +183,22 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: Sequence[str], **kwargs) ->
     return fig, ax
 
 
-def residual_plot_pep_subject(data: pd.DataFrame, algorithm: Sequence[str], **kwargs) -> tuple[plt.Figure, plt.Axes]:
+def residual_plot_pep_subject(
+    data: pd.DataFrame, algorithm: Sequence[str], **kwargs: dict
+) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("base_color", "Spectral")
     return _residual_plot_error_detailed_helper(data, algorithm, "participant", **kwargs)
 
 
-def residual_plot_pep_phase(data: pd.DataFrame, algorithm: Sequence[str], **kwargs) -> tuple[plt.Figure, plt.Axes]:
+def residual_plot_pep_phase(
+    data: pd.DataFrame, algorithm: Sequence[str], **kwargs: dict
+) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("base_color", f"blend:{colors_all.fau},{colors_all.tech_light}")
     return _residual_plot_error_detailed_helper(data, algorithm, "phase", **kwargs)
 
 
 def residual_plot_pep_heart_rate(
-    data: pd.DataFrame, algorithm: Sequence[str], bins: Optional[Union[int, str, Sequence[int]]] = 10, **kwargs
+    data: pd.DataFrame, algorithm: Sequence[str], bins: Optional[Union[int, str, Sequence[int]]] = 10, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     data = rr_interval_to_heart_rate(data)
     histogram, bin_edges = np.histogram(data["heart_rate_bpm"].dropna(), bins=bins)
@@ -211,7 +216,7 @@ def residual_plot_pep_heart_rate(
 
 
 def _residual_plot_error_detailed_helper(
-    data: pd.DataFrame, algorithm: Sequence[str], grouper: str, **kwargs
+    data: pd.DataFrame, algorithm: Sequence[str], grouper: str, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("alpha", 0.8)
     rect = kwargs.pop("rect", (0, 0, 0.85, 1))
@@ -223,7 +228,7 @@ def _residual_plot_error_detailed_helper(
     # use residual plot to only plot mean and confidence interval of all data;
     # manually plot the scatter plot using participant as hue variable afterwards
     kwargs_new = kwargs.copy()
-    kwargs_new.update(**{"alpha": 0.0})
+    kwargs_new.update(alpha=0.0)
     fig, ax = residual_plot_pep(data, algorithm, **kwargs_new)
 
     data = get_data_for_algo(data, algorithm)
@@ -245,7 +250,7 @@ def _residual_plot_error_detailed_helper(
 
 
 def regplot_error_heart_rate(
-    data: pd.DataFrame, algorithm: Sequence[str], error_metric: str = "error_per_sample_ms", **kwargs
+    data: pd.DataFrame, algorithm: Sequence[str], error_metric: str = "error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("color", cmaps.tech[0])
     kwargs.setdefault("scatter_kws", {"alpha": 0.3})
@@ -266,7 +271,7 @@ def regplot_error_heart_rate(
 
 
 def regplot_pep_heart_rate(
-    data: pd.DataFrame, algorithm: Sequence[str], use_reference: bool = True, **kwargs
+    data: pd.DataFrame, algorithm: Sequence[str], use_reference: bool = True, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("color", cmaps.tech[0])
     kwargs.setdefault("scatter_kws", {"alpha": 0.3})
@@ -283,10 +288,7 @@ def regplot_pep_heart_rate(
     ax.set_xlabel("Heart Rate [bpm]")
     ax.set_ylabel("PEP [ms]")
 
-    if use_reference:
-        title = "PEP Reference"
-    else:
-        title = "PEP Pipeline:\n" + _pep_pipeline_to_str(algorithm)
+    title = "PEP Reference" if use_reference else "PEP Pipeline:\n" + _pep_pipeline_to_str(algorithm)
     ax.set_title(title, fontweight="bold")
 
     fig.tight_layout()
@@ -294,7 +296,7 @@ def regplot_pep_heart_rate(
     return fig, ax
 
 
-def _get_meanprops(**kwargs):
+def _get_meanprops(**kwargs: dict) -> dict:
     if "meanprops" in kwargs:
         return kwargs["meanprops"]
     return {"marker": "X", "markerfacecolor": cmaps.fau[0], "markeredgecolor": cmaps.fau[0], "markersize": "6"}
