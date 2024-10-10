@@ -63,3 +63,19 @@ class BaseUnifiedPepExtractionDataset(Dataset):
 
     def calculate_pep_manual_labeled(self) -> pd.DataFrame:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
+
+    @property
+    def base_demographics(self) -> pd.DataFrame:
+        return pd.concat([self.gender, self.age, self.bmi], axis=1)
+
+    @property
+    def age(self) -> pd.DataFrame:
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
+
+    @property
+    def gender(self) -> pd.DataFrame:
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
+
+    @property
+    def bmi(self) -> pd.DataFrame:
+        raise NotImplementedError("This property needs to be implemented in the subclass!")
