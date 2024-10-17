@@ -16,6 +16,7 @@ matplotlib = "<3.9.0"
 # biopsykit = {git="https://github.com/mad-lab-fau/BioPsyKit.git", branch="main"}
 biopsykit = {path = "/Users/richer/Documents/PhD/Projects/BioPsyKit", develop=true}
 tpcp = {path = "/Users/richer/Documents/PhD/Projects/tpcp/Code", develop=true}
+jinja2 = "^3.1.4"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
