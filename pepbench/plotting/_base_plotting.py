@@ -2,6 +2,9 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union
 
 import pandas as pd
+from biopsykit.signals._base_extraction import BaseExtraction
+from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
+from biopsykit.signals.icg.event_extraction import BaseBPointExtraction
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
 
@@ -23,6 +26,7 @@ from pepbench.plotting._utils import (
     _get_reference_labels,
     _handle_legend_one_axis,
     _handle_legend_two_axes,
+    _sanitize_heartbeat_subset,
 )
 
 __all__ = [
@@ -30,7 +34,10 @@ __all__ = [
     "plot_signals_with_reference_labels",
     "plot_signals_from_challenge_results",
     "plot_signals_with_reference_pep",
+    "plot_signals_with_algorithm_results",
 ]
+
+from pepbench.plotting.algorithms import _get_heartbeat_borders, _get_heartbeats
 
 
 def plot_signals(
@@ -163,6 +170,91 @@ def plot_signals_with_reference_pep(
     _handle_legend_one_axis(fig, ax, **kwargs)
     fig.tight_layout(rect=rect)
     return fig, ax
+
+
+def plot_signals_with_algorithm_results(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    collapse: Optional[bool] = False,
+    algorithm: BaseExtraction,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    **kwargs: Any,
+):
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_max_cols", 5)
+    rect = _get_rect(**kwargs)
+
+    fig, axs = plot_signals_with_reference_labels(
+        datapoint,
+        collapse=collapse,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        **kwargs,
+    )
+
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    heartbeats = datapoint.heartbeats.loc[heartbeat_subset]["start_sample"]
+
+    algorithm_results = algorithm.points_
+
+    if isinstance(algorithm, BaseEcgExtraction):
+        q_waves = algorithm_results["q_wave_sample"]
+        q_waves = q_waves.loc[heartbeat_subset]
+        q_waves = q_waves - heartbeats.iloc[0]
+        if collapse:
+            _add_ecg_q_wave_onsets(
+                ecg_data,
+                q_waves,
+                axs,
+                q_wave_label="Detected Q Waves",
+                q_wave_color=cmaps.med_dark[0],
+                **kwargs,
+            )
+        else:
+            _add_ecg_q_wave_onsets(
+                ecg_data,
+                q_waves,
+                axs[0],
+                q_wave_label="Detected Q Waves",
+                q_wave_color=cmaps.med_dark[0],
+                **kwargs,
+            )
+    if isinstance(algorithm, BaseBPointExtraction):
+        b_points = algorithm_results["b_point_sample"]
+        b_points = b_points.loc[heartbeat_subset]
+        b_points = b_points - heartbeats.iloc[0]
+        if collapse:
+            _add_icg_b_points(
+                icg_data,
+                b_points,
+                axs,
+                b_point_label="Detected B Points",
+                b_point_color=cmaps.phil_dark[0],
+                **kwargs,
+            )
+        else:
+            _add_icg_b_points(
+                icg_data,
+                b_points,
+                axs[1],
+                b_point_label="Detected B Points",
+                b_point_color=cmaps.phil_dark[0],
+                **kwargs,
+            )
+
+    if collapse:
+        _handle_legend_one_axis(fig, axs, **kwargs)
+    else:
+        _handle_legend_two_axes(fig, axs, **kwargs)
+
+    fig.tight_layout(rect=rect)
+    return fig, axs
 
 
 def plot_signals_from_challenge_results(
