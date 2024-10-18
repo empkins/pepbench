@@ -159,12 +159,19 @@ def _add_icg_b_points(
 
     b_points = b_points.astype(int)
 
-    _base_add_scatter(
-        x=icg_data.index[b_points], y=icg_data.iloc[b_points], color=color, label=b_point_label, marker=marker, ax=ax
-    )
-    _base_add_vlines(
-        x=icg_data.index[b_points], color=color, alpha=alpha, label=b_point_label, linestyle=linestyle, ax=ax
-    )
+    if kwargs.get("b_point_plot_marker", True):
+        _base_add_scatter(
+            x=icg_data.index[b_points],
+            y=icg_data.iloc[b_points],
+            color=color,
+            label=b_point_label,
+            marker=marker,
+            ax=ax,
+        )
+    if kwargs.get("b_point_plot_vlines", True):
+        _base_add_vlines(
+            x=icg_data.index[b_points], color=color, alpha=alpha, label=b_point_label, linestyle=linestyle, ax=ax
+        )
 
 
 def _add_icg_b_point_artefacts(
@@ -181,12 +188,7 @@ def _add_icg_b_point_artefacts(
     kwargs = kwargs.copy()
     kwargs.update(b_point_color=color, b_point_label=label, b_point_marker=marker, b_point_linestyle=linestyle)
 
-    _add_icg_b_points(
-        icg_data,
-        b_points,
-        ax,
-        **kwargs,
-    )
+    _add_icg_b_points(icg_data, b_points, ax, **kwargs)
 
 
 def _add_icg_c_points(
