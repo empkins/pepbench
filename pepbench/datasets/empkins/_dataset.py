@@ -4,11 +4,11 @@ from itertools import product
 from typing import ClassVar, Optional, Union
 
 import pandas as pd
+from biopsykit.metadata import bmi
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 from biopsykit.utils.file_handling import get_subject_dirs
-from biopsykit.metadata import bmi
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders

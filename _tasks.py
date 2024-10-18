@@ -1,4 +1,3 @@
-import platform
 import re
 import shutil
 import subprocess
@@ -6,6 +5,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).parent
+
 
 def task_docs(clean=False):
     """Build the html docs using Sphinx."""
@@ -25,7 +25,13 @@ def update_version_strings(file_path, new_version):
     with open(file_path, "r+") as f:
         content = f.read()
         f.seek(0)
-        f.write(re.sub(version_regex, lambda match: '{}{}"'.format(match.group(1), new_version), content,))
+        f.write(
+            re.sub(
+                version_regex,
+                lambda match: f'{match.group(1)}{new_version}"',
+                content,
+            )
+        )
         f.truncate()
 
 
@@ -42,4 +48,3 @@ def update_version(version):
 
 def task_update_version():
     update_version(sys.argv[1])
-

@@ -22,7 +22,6 @@ ChallengeResults = namedtuple("ChallengeResults", ["agg_mean_std", "agg_total", 
 
 # TODO add CrossValidateChallenge
 class PepEvaluationChallenge(Algorithm):
-
     _action_methods = "run"
 
     dataset: BaseUnifiedPepExtractionDataset

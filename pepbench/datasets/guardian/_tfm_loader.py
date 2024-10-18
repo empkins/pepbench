@@ -106,13 +106,11 @@ class TFMLoader:
         for key, value in data_dict.items():
             for recording_key, recording_value in value.items():
                 if recording_key not in new_data:
-
                     new_data[recording_key] = {}
 
                 new_data[recording_key][key] = recording_value
 
         for key2, _value2 in new_data.items():
-
             new_data[key2] = pd.concat(
                 [
                     pd.Series(new_data[key2]["ecg_1"]),
@@ -127,7 +125,6 @@ class TFMLoader:
         start_time_dict = {}
 
         for key1, value1 in cls.ORIGINAL_NAMES.items():
-
             if value1 not in names:
                 start_time_dict[key1] = pd.Timestamp("2000-01-01 00:00:00", tz="Europe/Berlin")
             else:

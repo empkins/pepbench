@@ -75,19 +75,17 @@ def match_heartbeat_lists(
 
     Examples
     --------
-    >>> heartbeat_reference = pd.DataFrame([[10, 21], [20, 34], [31, 40]],
-    ...     columns=["start_sample", "end_sample"]).rename_axis(
-    ...     "heartbeat_id"
-    ... )
-    >>> stride_list_seg = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]],
-    ...     columns=["start_sample", "end_sample"]).rename_axis(
-    ...     "heartbeat_id"
-    ... )
+    >>> heartbeat_reference = pd.DataFrame(
+    ...     [[10, 21], [20, 34], [31, 40]], columns=["start_sample", "end_sample"]
+    ... ).rename_axis("heartbeat_id")
+    >>> stride_list_seg = pd.DataFrame(
+    ...     [[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start_sample", "end_sample"]
+    ... ).rename_axis("heartbeat_id")
     >>> matches = match_heartbeat_lists(
     ...     heartbeats_reference=heartbeats_reference,
     ...     heartbeats_extracted=heartbeats_extracted,
     ...     sampling_rate_hz=500,
-    ...     tolerance_ms=10
+    ...     tolerance_ms=10,
     ... )
     >>> matches
       heartbeat_id heartbeat_id_reference match_type

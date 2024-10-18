@@ -30,21 +30,21 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
     This is called by sphinx.ext.linkcode
 
     An example with a long-untouched module that everyone has
-    >>> _linkcode_resolve('py', {'module': 'tty',
-    ...                          'fullname': 'setraw'},
-    ...                   package='tty',
-    ...                   url_fmt='http://hg.python.org/cpython/file/'
-    ...                           '{revision}/Lib/{package}/{path}#L{lineno}',
-    ...                   revision='xxxx')
+    >>> _linkcode_resolve(
+    ...     "py",
+    ...     {"module": "tty", "fullname": "setraw"},
+    ...     package="tty",
+    ...     url_fmt="http://hg.python.org/cpython/file/" "{revision}/Lib/{package}/{path}#L{lineno}",
+    ...     revision="xxxx",
+    ... )
     'http://hg.python.org/cpython/file/xxxx/Lib/tty/tty.py#L18'
     """
-
     if revision is None:
-        return
+        return None
     if domain not in ("py", "pyx"):
-        return
+        return None
     if not info.get("module") or not info.get("fullname"):
-        return
+        return None
 
     class_name = info["fullname"].split(".")[0]
     module = __import__(info["module"], fromlist=[class_name])
@@ -64,7 +64,7 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
         except Exception:
             fn = None
     if not fn:
-        return
+        return None
 
     fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
     try:
@@ -86,6 +86,4 @@ def make_linkcode_resolve(package, url_fmt):
                                    '{path}#L{lineno}')
     """
     revision = _get_git_revision()
-    return partial(
-        _linkcode_resolve, revision=revision, package=package, url_fmt=url_fmt
-    )
+    return partial(_linkcode_resolve, revision=revision, package=package, url_fmt=url_fmt)
