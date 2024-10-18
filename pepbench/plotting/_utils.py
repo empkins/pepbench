@@ -238,7 +238,6 @@ def _base_add_vlines(
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
-
     ax.vlines(
         x=x,
         ymin=0,
@@ -261,7 +260,6 @@ def _base_add_scatter(
     marker: str,
     ax: plt.Axes,
 ) -> None:
-
     ax.scatter(
         x=x,
         y=y,

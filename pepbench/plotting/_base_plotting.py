@@ -37,8 +37,6 @@ __all__ = [
     "plot_signals_with_algorithm_results",
 ]
 
-from pepbench.plotting.algorithms import _get_heartbeat_borders, _get_heartbeats
-
 
 def plot_signals(
     datapoint: BaseUnifiedPepExtractionDataset,
@@ -181,7 +179,7 @@ def plot_signals_with_algorithm_results(
     normalize_time: Optional[bool] = False,
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
-):
+) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     rect = _get_rect(**kwargs)

@@ -7,12 +7,14 @@ import numpy as np
 import pandas as pd
 from biopsykit.signals.ecg.event_extraction import QPeakExtractionNeurokitDwt, QWaveOnsetExtractionVanLien2013
 from biopsykit.signals.icg.event_extraction import (
-    BPointExtractionArbol2017,
+    BPointExtractionArbol2017IsoelectricCrossings,
+    BPointExtractionArbol2017SecondDerivative,
+    BPointExtractionArbol2017ThirdDerivative,
     BPointExtractionDebski1993,
     BPointExtractionDrost2022,
     BPointExtractionForouzanfar2018,
-    CPointExtractionScipyFindPeaks,
     BPointExtractionSherwood1990,
+    CPointExtractionScipyFindPeaks,
 )
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -41,7 +43,9 @@ __all__ = [
     "plot_b_point_extraction_sherwood1990",
     "plot_b_point_extraction_debski1993",
     "plot_b_point_extraction_drost2022",
-    "plot_b_point_extraction_arbol2017",
+    "plot_b_point_extraction_arbol2017_isoelectric_crossings",
+    "plot_b_point_extraction_arbol2017_second_derivative",
+    "plot_b_point_extraction_arbol2017_third_derivative",
     "plot_b_point_extraction_forouzanfar2018",
 ]
 
@@ -268,12 +272,12 @@ def plot_b_point_extraction_sherwood1990(
     zero_crossings_filtered = pd.Series(zero_crossings_filtered, name="zero_crossing_sample")
 
     _plot_signals_one_axis(
-        datapoint=datapoint,
+        df=icg_data,
+        ax=ax,
         use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
-        plot_ecg=False,
-        ax=ax,
+        color=cmaps.tech[0],
         **kwargs,
     )
 
@@ -295,8 +299,7 @@ def plot_b_point_extraction_sherwood1990(
         zero_crossings_filtered,
         ax=ax,
         b_point_label="Zero Crossings before C-Point",
-        b_point_color=cmaps.phil[1],
-        b_point_plot_marker=False,
+        b_point_color=cmaps.phil[2],
         **kwargs,
     )
 
@@ -308,7 +311,13 @@ def plot_b_point_extraction_sherwood1990(
         **kwargs,
     )
 
-    ax.axhline(0, color=cmaps.tech[1], linestyle="dashed", linewidth=1, label="Zero Line")
+    ax.axhline(
+        0,
+        color=cmaps.tech_dark[1],
+        linestyle="--",
+        linewidth=2,
+        label="Zero Line",
+    )
 
     _handle_legend_one_axis(fig=fig, ax=ax, **kwargs)
 
@@ -437,7 +446,128 @@ def plot_b_point_extraction_debski1993(
     return fig, axs
 
 
-def plot_b_point_extraction_arbol2017(
+def plot_b_point_extraction_arbol2017_isoelectric_crossings(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, plt.Axes]:
+    fig, ax = plt.subplots(**kwargs)
+    kwargs.setdefault("legend_max_cols", 4)
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    rect = _get_rect(**kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    icg_data = icg_data.squeeze()
+
+    algo_params_c_point = {
+        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
+    }
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionArbol2017IsoelectricCrossings(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
+
+    _plot_signals_one_axis(
+        df=icg_data,
+        ax=ax,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech[0],
+        **kwargs,
+    )
+
+    for idx, row in heartbeats.iterrows():
+        start = row["start_sample"]
+        end = row["end_sample"]
+
+        # get isoelectric line per heartbeat
+        icg_heartbeat = icg_data[start:end]
+        iso_line = icg_heartbeat.mean()
+
+        # compute isoelectric line crossings
+        iso_crossings = np.where(np.diff(np.sign(icg_heartbeat - iso_line)))[0]
+        # filter only isoelectric crossings that are *before* the C-point
+        c_point = c_point_samples[idx] - start
+        iso_crossings = iso_crossings[iso_crossings < c_point]
+        iso_crossings = iso_crossings + start
+        _add_icg_b_points(
+            icg_data,
+            iso_crossings,
+            ax=ax,
+            b_point_label="Isoelectric Crossings before C-Point",
+            b_point_color=cmaps.phil[2],
+            **kwargs,
+        )
+
+        # plot isoelectric line per heartbeat
+        ax.hlines(
+            iso_line,
+            xmin=icg_heartbeat.index[0],
+            xmax=icg_heartbeat.index[-1],
+            color=cmaps.tech_dark[0],
+            linestyle="--",
+            linewidth=2,
+            zorder=0,
+            label="Isoelectric Line per Heartbeat",
+        )
+
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples_reference,
+        ax=ax,
+        b_point_label="Reference B Points",
+        b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples,
+        ax=ax,
+        b_point_label="Detected B Points",
+        **kwargs,
+    )
+
+    _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
+
+    _handle_legend_one_axis(
+        fig=fig,
+        ax=ax,
+        **kwargs,
+    )
+
+    fig.tight_layout(rect=rect)
+    fig.align_ylabels()
+
+    return fig, ax
+
+
+def plot_b_point_extraction_arbol2017_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Optional[Sequence[int]] = None,
@@ -447,9 +577,150 @@ def plot_b_point_extraction_arbol2017(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
+    kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("rect", (0, 0, 1, 0.8))
+    rect = _get_rect(**kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    icg_data = icg_data.squeeze()
+    icg_2nd_der = np.gradient(icg_data)
+    icg_2nd_der = pd.DataFrame(icg_2nd_der, index=icg_data.index, columns=["ICG 2nd Deriv. $(d^2Z/dt^2)$"])
+
+    algo_params_c_point = {
+        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
+    }
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionArbol2017SecondDerivative(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+    search_window_start = c_point_samples - int(150 / 1000 * datapoint.sampling_rate_icg)
+    search_window_start.name = "search_window_start"
+    search_window_end = search_window_start + int(50 / 1000 * datapoint.sampling_rate_icg)
+    search_window_end.name = "search_window_end"
+    search_window = pd.concat([search_window_start, search_window_end], axis=1)
+
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
+
+    _plot_signals_one_axis(
+        df=icg_data,
+        ax=axs[0],
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech[0],
+        **kwargs,
+    )
+    _plot_signals_one_axis(
+        df=icg_2nd_der,
+        ax=axs[1],
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech_dark[0],
+        **kwargs,
+    )
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[0], **kwargs)
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[1], **kwargs)
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples_reference,
+        ax=axs[0],
+        b_point_label="Reference B Points",
+        b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples,
+        ax=axs[0],
+        b_point_label="Detected B Points",
+        **kwargs,
+    )
+    _add_icg_b_points(
+        icg_2nd_der,
+        b_point_samples,
+        b_point_label="$d^2Z/dt^2$ Local Max.",
+        b_point_marker="X",
+        b_point_color=cmaps.phil_light[0],
+        ax=axs[1],
+        **kwargs,
+    )
+
+    _add_icg_c_points(icg_data, c_point_samples, ax=axs[0], **kwargs)
+    _add_icg_c_points(
+        icg_data,
+        search_window_start,
+        ax=axs[0],
+        c_point_color=cmaps.wiso_light[1],
+        c_point_label="C Points - 150 ms",
+        **kwargs,
+    )
+    _add_icg_c_points(icg_data, c_point_samples, ax=axs[1], c_point_plot_marker=False, **kwargs)
+    _add_icg_c_points(
+        icg_data,
+        search_window_end,
+        ax=axs[1],
+        c_point_color=cmaps.wiso_light[1],
+        c_point_plot_marker=False,
+        **kwargs,
+    )
+    for _idx, row in search_window.iterrows():
+        start = icg_data.index[row["search_window_start"]]
+        end = icg_data.index[row["search_window_end"]]
+        axs[0].axvspan(
+            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows: 50 ms"
+        )
+        axs[1].axvspan(
+            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows: 50 ms"
+        )
+
+    _handle_legend_two_axes(
+        fig=fig,
+        axs=axs,
+        **kwargs,
+    )
+
+    fig.tight_layout(rect=rect)
+    fig.align_ylabels()
+
+    return fig, axs
+
+
+def plot_b_point_extraction_arbol2017_third_derivative(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
+    kwargs.setdefault("legend_max_cols", 4)
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("rect", (0, 0, 1, 0.8))
     rect = _get_rect(**kwargs)
 
     if algo_params is None:
@@ -473,15 +744,15 @@ def plot_b_point_extraction_arbol2017(
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
 
-    b_point_algo = BPointExtractionArbol2017(**algo_params_b_point)
+    b_point_algo = BPointExtractionArbol2017ThirdDerivative(**algo_params_b_point)
     b_point_algo.extract(
         icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
     )
 
     c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
-    c_point_minus_150_samples = c_point_samples - int(150 / 1000 * datapoint.sampling_rate_icg)
-    c_point_minus_150_samples.name = "c_point_sample_minus_150"
-    search_window = pd.concat([c_point_minus_150_samples, c_point_samples], axis=1)
+    c_point_minus_300_samples = c_point_samples - int(300 / 1000 * datapoint.sampling_rate_icg)
+    c_point_minus_300_samples.name = "c_point_sample_minus_300"
+    search_window = pd.concat([c_point_minus_300_samples, c_point_samples], axis=1)
 
     b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
     b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
@@ -535,23 +806,23 @@ def plot_b_point_extraction_arbol2017(
     _add_icg_c_points(icg_data, c_point_samples, ax=axs[0], **kwargs)
     _add_icg_c_points(
         icg_data,
-        c_point_minus_150_samples,
+        c_point_minus_300_samples,
         ax=axs[0],
         c_point_color=cmaps.wiso_light[1],
-        c_point_label="C Points - 150 ms",
+        c_point_label="C Points - 300 ms",
         **kwargs,
     )
     _add_icg_c_points(icg_data, c_point_samples, ax=axs[1], c_point_plot_marker=False, **kwargs)
     _add_icg_c_points(
         icg_data,
-        c_point_minus_150_samples,
+        c_point_minus_300_samples,
         ax=axs[1],
         c_point_color=cmaps.wiso_light[1],
         c_point_plot_marker=False,
         **kwargs,
     )
     for _idx, row in search_window.iterrows():
-        start = icg_data.index[row["c_point_sample_minus_150"]]
+        start = icg_data.index[row["c_point_sample_minus_300"]]
         end = icg_data.index[row["c_point_sample"]]
         axs[0].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows")
         axs[1].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows")
