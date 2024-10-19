@@ -6,19 +6,20 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from biopsykit.signals.ecg.event_extraction import QPeakExtractionNeurokitDwt, QWaveOnsetExtractionVanLien2013
-from biopsykit.signals.icg.event_extraction import (
+from biopsykit.signals.icg.event_extraction import BPointExtractionStern1985
+from fau_colors import cmaps
+from matplotlib import pyplot as plt
+
+from pepbench.algorithms.icg import (
     BPointExtractionArbol2017IsoelectricCrossings,
     BPointExtractionArbol2017SecondDerivative,
     BPointExtractionArbol2017ThirdDerivative,
-    BPointExtractionDebski1993,
+    BPointExtractionDebski1993SecondDerivative,
     BPointExtractionDrost2022,
     BPointExtractionForouzanfar2018,
     BPointExtractionSherwood1990,
     CPointExtractionScipyFindPeaks,
 )
-from fau_colors import cmaps
-from matplotlib import pyplot as plt
-
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.plotting._base_plotting import _plot_signals_one_axis
 from pepbench.plotting._utils import (
@@ -41,7 +42,7 @@ __all__ = [
     "plot_q_peak_extraction_neurokit_dwt",
     "plot_q_wave_onset_extraction_van_lien_2013",
     "plot_b_point_extraction_sherwood1990",
-    "plot_b_point_extraction_debski1993",
+    "plot_b_point_extraction_debski1993_second_derivative",
     "plot_b_point_extraction_drost2022",
     "plot_b_point_extraction_arbol2017_isoelectric_crossings",
     "plot_b_point_extraction_arbol2017_second_derivative",
@@ -216,6 +217,136 @@ def plot_q_wave_onset_extraction_van_lien_2013(
     return fig, ax
 
 
+def plot_b_point_extraction_stern1985(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_max_cols", 4)
+    rect = _get_rect(**kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    icg_data = icg_data.squeeze()
+
+    icg_2nd_der = np.gradient(icg_data)
+    icg_2nd_der = pd.DataFrame(icg_2nd_der, index=icg_data.index, columns=["ICG 2nd Deriv. $(d^2Z/dt^2)$"])
+
+    # compute zero crossings of the second derivative
+    icg_2nd_der_zero_crossings = np.where(np.diff(np.signbit(icg_2nd_der.squeeze())))[0]
+
+    algo_params_c_point = {
+        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
+    }
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionStern1985(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+
+    # get only the zero crossings between heartbeat start and c_point_sample
+    zero_crossings_filtered = []
+    for idx, row in heartbeats.iterrows():
+        zero_crossings_filtered.append(
+            icg_2nd_der_zero_crossings[
+                (icg_2nd_der_zero_crossings > row["start_sample"])
+                & (icg_2nd_der_zero_crossings < c_point_samples.loc[idx] - 1)
+            ]
+        )
+    zero_crossings_filtered = np.concatenate(zero_crossings_filtered)
+
+    _plot_signals_one_axis(
+        df=icg_data,
+        ax=axs[0],
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech[0],
+        **kwargs,
+    )
+    _plot_signals_one_axis(
+        df=icg_2nd_der,
+        ax=axs[1],
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech_dark[0],
+        **kwargs,
+    )
+
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[0], **kwargs)
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[1], **kwargs)
+
+    _add_icg_c_points(icg_data, c_point_samples, ax=axs[0], **kwargs)
+    _add_icg_c_points(icg_data, c_point_samples, ax=axs[1], c_point_plot_marker=False, **kwargs)
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples_reference,
+        ax=axs[0],
+        b_point_label="Reference B-Points",
+        b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples,
+        ax=axs[0],
+        b_point_label="Detected B-Points",
+        **kwargs,
+    )
+
+    # plot the zero crossings of the second derivative
+    _add_icg_b_points(
+        icg_2nd_der,
+        zero_crossings_filtered,
+        ax=axs[1],
+        b_point_label="Zero Crossings of $d^2Z/dt^2$ before C-Point",
+        b_point_color=cmaps.phil[2],
+        **kwargs,
+    )
+
+    # add zero line to second derivative plot
+    axs[1].axhline(
+        0,
+        color=cmaps.tech_dark[1],
+        linestyle="--",
+        linewidth=2,
+        label="Zero Line",
+    )
+
+    _handle_legend_two_axes(fig=fig, axs=axs, **kwargs)
+
+    fig.align_ylabels()
+    fig.tight_layout(rect=rect)
+
+    return fig, axs
+
+
 def plot_b_point_extraction_sherwood1990(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
@@ -289,8 +420,16 @@ def plot_b_point_extraction_sherwood1990(
         icg_data,
         b_point_samples_reference,
         ax=ax,
-        b_point_label="Reference B Points",
+        b_point_label="Reference B-Points",
         b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples,
+        ax=ax,
+        b_point_label="Detected B-Points",
         **kwargs,
     )
 
@@ -300,14 +439,6 @@ def plot_b_point_extraction_sherwood1990(
         ax=ax,
         b_point_label="Zero Crossings before C-Point",
         b_point_color=cmaps.phil[2],
-        **kwargs,
-    )
-
-    _add_icg_b_points(
-        icg_data,
-        b_point_samples,
-        ax=ax,
-        b_point_label="Detected B Points",
         **kwargs,
     )
 
@@ -325,7 +456,7 @@ def plot_b_point_extraction_sherwood1990(
     return fig, ax
 
 
-def plot_b_point_extraction_debski1993(
+def plot_b_point_extraction_debski1993_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Optional[Sequence[int]] = None,
@@ -362,7 +493,7 @@ def plot_b_point_extraction_debski1993(
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
 
-    b_point_algo = BPointExtractionDebski1993(**algo_params_b_point)
+    b_point_algo = BPointExtractionDebski1993SecondDerivative(**algo_params_b_point)
     b_point_algo.extract(
         icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
     )
@@ -416,7 +547,7 @@ def plot_b_point_extraction_debski1993(
         icg_data,
         b_point_samples_reference,
         ax=axs[0],
-        b_point_label="Reference B Points",
+        b_point_label="Reference B-Points",
         b_point_color=cmaps.phil_dark[0],
         **kwargs,
     )
@@ -424,15 +555,15 @@ def plot_b_point_extraction_debski1993(
         icg_data,
         b_point_samples,
         ax=axs[0],
-        b_point_label="Detected B Points",
+        b_point_label="Detected B-Points",
         **kwargs,
     )
 
     for _idx, row in search_window.iterrows():
         start = icg_2nd_der.index[row["r_peak_sample"]]
         end = icg_2nd_der.index[row["c_point_sample"]]
-        axs[0].axvspan(start, end, color=cmaps.fau_light[1], alpha=0.3, zorder=0, label="B Point Search Windows")
-        axs[1].axvspan(start, end, color=cmaps.fau_light[1], alpha=0.3, zorder=0, label="B Point Search Windows")
+        axs[0].axvspan(start, end, color=cmaps.fau_light[1], alpha=0.3, zorder=0, label="B-Point Search Windows")
+        axs[1].axvspan(start, end, color=cmaps.fau_light[1], alpha=0.3, zorder=0, label="B-Point Search Windows")
 
     _handle_legend_two_axes(
         fig=fig,
@@ -540,7 +671,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         icg_data,
         b_point_samples_reference,
         ax=ax,
-        b_point_label="Reference B Points",
+        b_point_label="Reference B-Points",
         b_point_color=cmaps.phil_dark[0],
         **kwargs,
     )
@@ -549,7 +680,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         icg_data,
         b_point_samples,
         ax=ax,
-        b_point_label="Detected B Points",
+        b_point_label="Detected B-Points",
         **kwargs,
     )
 
@@ -645,7 +776,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         icg_data,
         b_point_samples_reference,
         ax=axs[0],
-        b_point_label="Reference B Points",
+        b_point_label="Reference B-Points",
         b_point_color=cmaps.phil_dark[0],
         **kwargs,
     )
@@ -653,7 +784,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         icg_data,
         b_point_samples,
         ax=axs[0],
-        b_point_label="Detected B Points",
+        b_point_label="Detected B-Points",
         **kwargs,
     )
     _add_icg_b_points(
@@ -672,7 +803,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         search_window_start,
         ax=axs[0],
         c_point_color=cmaps.wiso_light[1],
-        c_point_label="C Points - 150 ms",
+        c_point_label="C-Points - 150 ms",
         **kwargs,
     )
     _add_icg_c_points(icg_data, c_point_samples, ax=axs[1], c_point_plot_marker=False, **kwargs)
@@ -688,10 +819,10 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         start = icg_data.index[row["search_window_start"]]
         end = icg_data.index[row["search_window_end"]]
         axs[0].axvspan(
-            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows: 50 ms"
+            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B-Point Search Windows: 50 ms"
         )
         axs[1].axvspan(
-            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows: 50 ms"
+            start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B-Point Search Windows: 50 ms"
         )
 
     _handle_legend_two_axes(
@@ -782,7 +913,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         icg_data,
         b_point_samples_reference,
         ax=axs[0],
-        b_point_label="Reference B Points",
+        b_point_label="Reference B-Points",
         b_point_color=cmaps.phil_dark[0],
         **kwargs,
     )
@@ -790,7 +921,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         icg_data,
         b_point_samples,
         ax=axs[0],
-        b_point_label="Detected B Points",
+        b_point_label="Detected B-Points",
         **kwargs,
     )
     _add_icg_b_points(
@@ -809,7 +940,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         c_point_minus_300_samples,
         ax=axs[0],
         c_point_color=cmaps.wiso_light[1],
-        c_point_label="C Points - 300 ms",
+        c_point_label="C-Points - 300 ms",
         **kwargs,
     )
     _add_icg_c_points(icg_data, c_point_samples, ax=axs[1], c_point_plot_marker=False, **kwargs)
@@ -824,8 +955,8 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     for _idx, row in search_window.iterrows():
         start = icg_data.index[row["c_point_sample_minus_300"]]
         end = icg_data.index[row["c_point_sample"]]
-        axs[0].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows")
-        axs[1].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows")
+        axs[0].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B-Point Search Windows")
+        axs[1].axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B-Point Search Windows")
 
     _handle_legend_two_axes(
         fig=fig,
@@ -900,7 +1031,7 @@ def plot_b_point_extraction_drost2022(
         c_point_minus_150_samples,
         ax=ax,
         c_point_color=cmaps.wiso_light[1],
-        c_point_label="C Points - 150 ms",
+        c_point_label="C-Points - 150 ms",
         **kwargs,
     )
     for idx, row in search_window.iterrows():
@@ -934,7 +1065,7 @@ def plot_b_point_extraction_drost2022(
             icg_data,
             b_point_samples_reference,
             ax=ax,
-            b_point_label="Reference B Points",
+            b_point_label="Reference B-Points",
             b_point_color=cmaps.phil_dark[0],
             **kwargs,
         )
@@ -942,7 +1073,7 @@ def plot_b_point_extraction_drost2022(
             icg_data,
             b_point_sample,
             ax=ax,
-            b_point_label="Detected B Points",
+            b_point_label="Detected B-Points",
             **kwargs,
         )
 
@@ -973,7 +1104,7 @@ def plot_b_point_extraction_drost2022(
             zorder=10,
         )
 
-        ax.axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B Point Search Windows")
+        ax.axvspan(start, end, color=cmaps.tech_light[0], alpha=0.3, zorder=0, label="B-Point Search Windows")
 
     _handle_legend_one_axis(fig=fig, ax=ax, **kwargs)
 
@@ -1085,7 +1216,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             color=cmaps.tech_light[0],
             alpha=0.3,
             zorder=0,
-            label="A Point Search Windows",
+            label="A-Point Search Windows",
         )
         axs[1].axvspan(
             icg_data.index[start],
@@ -1093,7 +1224,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             color=cmaps.tech_light[0],
             alpha=0.3,
             zorder=0,
-            label="A Point Search Windows",
+            label="A-Point Search Windows",
         )
 
         # Detect the local minimum (A-Point) within one third of the beat to beat interval prior to the C-Point
@@ -1185,7 +1316,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             a_point,
             ax=axs[0],
             c_point_color=cmaps.wiso_light[1],
-            c_point_label="A Points",
+            c_point_label="A-Points",
             **kwargs,
         )
         _add_icg_c_points(
@@ -1193,7 +1324,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             a_point,
             ax=axs[1],
             c_point_color=cmaps.wiso_light[1],
-            c_point_label="A Points",
+            c_point_label="A-Points",
             **kwargs,
         )
 
@@ -1220,7 +1351,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             icg_data,
             b_point_samples_reference,
             ax=axs[0],
-            b_point_label="Reference B Points",
+            b_point_label="Reference B-Points",
             b_point_color=cmaps.phil_dark[0],
             **kwargs,
         )
@@ -1228,7 +1359,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
             icg_data,
             b_point,
             ax=axs[0],
-            b_point_label="Detected B Points",
+            b_point_label="Detected B-Points",
             **kwargs,
         )
 
