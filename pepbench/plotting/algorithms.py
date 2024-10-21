@@ -6,15 +6,15 @@ from typing import Any, Optional
 import numpy as np
 import pandas as pd
 from biopsykit.signals.ecg.event_extraction import (
-    QPeakExtractionMartinez2004Neurokit,
-    QPeakExtractionVanLien2013,
-    QPeakExtractionSciPyFindPeaksNeurokit,
     QPeakExtractionForounzafar2018,
+    QPeakExtractionMartinez2004Neurokit,
+    QPeakExtractionSciPyFindPeaksNeurokit,
+    QPeakExtractionVanLien2013,
 )
 from biopsykit.signals.icg.event_extraction import (
-    BPointExtractionStern1985,
     BPointExtractionLozano2007LinearRegression,
     BPointExtractionLozano2007QuadraticRegression,
+    BPointExtractionStern1985,
 )
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -937,7 +937,7 @@ def plot_b_point_extraction_lozano2007_linear_regression(
             zorder=3,
         )
         ax.annotate(
-            rf"R-C Interval",
+            r"R-C Interval",
             xy=(middle_x_rc, y_c_point_max),
             xytext=(0, 12),
             textcoords="offset points",
@@ -957,7 +957,7 @@ def plot_b_point_extraction_lozano2007_linear_regression(
             zorder=3,
         )
         ax.annotate(
-            rf"$0.55 \cdot RC + 4.45$",
+            r"$0.55 \cdot RC + 4.45$",
             xy=(middle_x_rb, y_r_peak_max),
             xytext=(0, 12),
             textcoords="offset points",
@@ -1054,7 +1054,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
             zorder=3,
         )
         ax.annotate(
-            rf"R-C Interval",
+            r"R-C Interval",
             xy=(middle_x_rc, y_c_point_max),
             xytext=(0, 12),
             textcoords="offset points",
@@ -1074,7 +1074,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
             zorder=3,
         )
         ax.annotate(
-            "$-3.2e^{-3} \cdot RC^2$\n $+1.233 \cdot RC$\n $-31.59$",
+            "$-3.2e^{-3} \\cdot RC^2$\n $+1.233 \\cdot RC$\n $-31.59$",
             xy=(middle_x_rb, y_r_peak_max),
             xytext=(0, 12),
             textcoords="offset points",
