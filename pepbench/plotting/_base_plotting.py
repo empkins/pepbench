@@ -137,7 +137,7 @@ def plot_signals_with_reference_pep(
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("legend_orientation", "vertical")
     kwargs.setdefault("legend_outside", False)
-    kwargs.setdefault("legend_max_cols", 5)
+    kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
     rect = _get_rect(**kwargs)
 
@@ -203,7 +203,7 @@ def plot_signals_with_algorithm_results(
     algorithm_results = algorithm.points_
 
     if isinstance(algorithm, BaseEcgExtraction):
-        q_waves = algorithm_results["q_wave_sample"]
+        q_waves = algorithm_results["q_wave_onset_sample"]
         q_waves = q_waves.loc[heartbeat_subset]
         q_waves = q_waves - heartbeats.iloc[0]
         if collapse:

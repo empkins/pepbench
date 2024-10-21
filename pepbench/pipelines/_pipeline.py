@@ -1,4 +1,4 @@
-from biopsykit.signals.ecg.event_extraction._q_peak_neurokit_dwt import CanHandleMissingEventsMixin
+from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from tpcp._dataset import DatasetT
 from typing_extensions import Self, get_args

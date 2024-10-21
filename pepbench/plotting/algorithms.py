@@ -5,7 +5,12 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
-from biopsykit.signals.ecg.event_extraction import QPeakExtractionNeurokitDwt, QWaveOnsetExtractionVanLien2013
+from biopsykit.signals.ecg.event_extraction import (
+    QPeakExtractionMartinez2004Neurokit,
+    QPeakExtractionVanLien2013,
+    QPeakExtractionSciPyFindPeaksNeurokit,
+    QPeakExtractionForounzafar2018,
+)
 from biopsykit.signals.icg.event_extraction import (
     BPointExtractionStern1985,
     BPointExtractionLozano2007LinearRegression,
@@ -25,8 +30,7 @@ from pepbench.algorithms.icg import (
     CPointExtractionScipyFindPeaks,
 )
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
-from pepbench.plotting import plot_signals, plot_signals_with_reference_labels
-from pepbench.plotting._base_plotting import _plot_signals_one_axis
+from pepbench.plotting._base_plotting import _plot_signals_one_axis, plot_signals
 from pepbench.plotting._utils import (
     _add_ecg_q_wave_onsets,
     _add_ecg_r_peaks,
@@ -44,8 +48,8 @@ from pepbench.plotting._utils import (
 )
 
 __all__ = [
-    "plot_q_peak_extraction_neurokit_dwt",
-    "plot_q_wave_onset_extraction_van_lien_2013",
+    "plot_q_peak_extraction_martinez2004_neurokit",
+    "plot_q_peak_extraction_vanlien2013",
     "plot_b_point_extraction_sherwood1990",
     "plot_b_point_extraction_debski1993_second_derivative",
     "plot_b_point_extraction_drost2022",
@@ -56,7 +60,7 @@ __all__ = [
 ]
 
 
-def plot_q_peak_extraction_neurokit_dwt(
+def plot_q_peak_extraction_martinez2004_neurokit(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Optional[Sequence[int]] = None,
@@ -81,8 +85,8 @@ def plot_q_peak_extraction_neurokit_dwt(
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(ecg_data, heartbeats)
 
-    q_wave_onset_algo = QPeakExtractionNeurokitDwt()
-    q_wave_onset_algo.extract(ecg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_ecg)
+    q_wave_onset_algo = QPeakExtractionMartinez2004Neurokit()
+    q_wave_onset_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_ecg)
 
     q_wave_onset_samples = q_wave_onset_algo.points_["q_wave_onset_sample"].dropna()
     q_wave_onset_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["q_wave_onsets"]
@@ -121,7 +125,72 @@ def plot_q_peak_extraction_neurokit_dwt(
     return fig, ax
 
 
-def plot_q_wave_onset_extraction_van_lien_2013(
+def plot_q_peak_extraction_scipy_findpeaks_neurokit(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    **kwargs: Any,
+) -> tuple[plt.Figure, plt.Axes]:
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+
+    rect = _get_rect(**kwargs)
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, _ = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+
+    if len(ecg_data) < 4 * datapoint.sampling_rate_ecg:
+        raise ValueError("ECG data is too short for Q-wave onset detection. Please provide more heartbeats.")
+
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(ecg_data, heartbeats)
+
+    q_wave_onset_algo = QPeakExtractionSciPyFindPeaksNeurokit()
+    q_wave_onset_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_ecg)
+
+    q_wave_onset_samples = q_wave_onset_algo.points_["q_wave_onset_sample"].dropna()
+    q_wave_onset_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["q_wave_onsets"]
+
+    fig, ax = _plot_signals_one_axis(
+        datapoint=datapoint,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        plot_icg=False,
+        **kwargs,
+    )
+
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_onset_samples_reference,
+        ax=ax,
+        q_wave_label="Reference Q-Wave Onsets",
+        q_wave_color=cmaps.med_dark[0],
+        **kwargs,
+    )
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_onset_samples,
+        ax=ax,
+        q_wave_label="Detected Q-Wave Onsets",
+        q_wave_color=cmaps.med[0],
+        **kwargs,
+    )
+
+    _add_heartbeat_borders(heartbeat_borders, ax=ax, **kwargs)
+
+    _handle_legend_one_axis(fig=fig, ax=ax, **kwargs)
+    fig.tight_layout(rect=rect)
+
+    return fig, ax
+
+
+def plot_q_peak_extraction_vanlien2013(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Optional[Sequence[int]] = None,
@@ -147,7 +216,7 @@ def plot_q_wave_onset_extraction_van_lien_2013(
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(ecg_data, heartbeats)
 
-    q_wave_onset_algo = QWaveOnsetExtractionVanLien2013(**algo_params)
+    q_wave_onset_algo = QPeakExtractionVanLien2013(**algo_params)
     q_wave_onset_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_ecg)
 
     r_peak_samples = heartbeats["r_peak_sample"].astype(int)
@@ -216,6 +285,96 @@ def plot_q_wave_onset_extraction_van_lien_2013(
 
     old_ylims = ax.get_ylim()
     ax.set_ylim(old_ylims[0], 1.15 * old_ylims[1])
+
+    fig.tight_layout(rect=rect)
+
+    return fig, ax
+
+
+def plot_q_peak_extraction_forounzafar2018(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, plt.Axes]:
+    fig, ax = plt.subplots(**kwargs)
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_max_cols", 4)
+    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    rect = _get_rect(**kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    ecg_data = ecg_data.squeeze()
+
+    q_wave_onset_algo = QPeakExtractionForounzafar2018(**algo_params)
+    q_wave_onset_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_ecg)
+
+    q_wave_onset_samples = q_wave_onset_algo.points_["q_wave_onset_sample"].dropna().astype(int)
+    q_wave_onset_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["q_wave_onsets"]
+
+    _plot_signals_one_axis(
+        df=ecg_data,
+        ax=ax,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.fau[0],
+        **kwargs,
+    )
+
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
+
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_onset_samples_reference,
+        q_wave_label="Reference Q-Wave Onsets",
+        q_wave_color=cmaps.med_dark[0],
+        ax=ax,
+        **kwargs,
+    )
+    _add_ecg_q_wave_onsets(
+        ecg_data,
+        q_wave_onset_samples,
+        q_wave_label="Detected Q-Wave Onsets",
+        ax=ax,
+        **kwargs,
+    )
+
+    for idx, row in heartbeats.iterrows():
+        start = row["start_sample"]
+        end = row["end_sample"]
+        r_peak = row["r_peak_sample"]
+
+        ecg_heartbeat = ecg_data[start:end]
+
+        threshold = -1.2 * ecg_data[r_peak] / datapoint.sampling_rate_ecg
+
+        # plot threshold per heartbeat
+        ax.hlines(
+            threshold,
+            xmin=ecg_heartbeat.index[0],
+            xmax=ecg_heartbeat.index[-1],
+            color=cmaps.fau_dark[2],
+            linestyle="--",
+            linewidth=2,
+            zorder=0,
+            label=r"Threshold $(-1.2 \cdot \text{R-Peak} / f_{s})$",
+        )
+
+    _handle_legend_one_axis(fig=fig, ax=ax, **kwargs)
 
     fig.tight_layout(rect=rect)
 
@@ -756,8 +915,8 @@ def plot_b_point_extraction_lozano2007_linear_regression(
     _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
     _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
 
-    y_c_point_max = np.max(icg_data.iloc[c_point_samples])[0]
-    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples])[0]
+    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
+    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
 
     # draw arrow from R-peak to Q-wave onset
     for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
@@ -873,8 +1032,8 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
     _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
     _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
 
-    y_c_point_max = np.max(icg_data.iloc[c_point_samples])[0]
-    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples])[0]
+    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
+    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
 
     # draw arrow from R-peak to Q-wave onset
     for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):

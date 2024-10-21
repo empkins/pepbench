@@ -407,7 +407,7 @@ def _handle_legend_two_axes(
         fig.legend(handles, labels, ncols=ncols, loc=legend_loc)
     else:
         for ax in axs:
-            ax.legend(loc=legend_loc)
+            _handle_legend_one_axis(fig, ax, **kwargs)
 
 
 def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:
