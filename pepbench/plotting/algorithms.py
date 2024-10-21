@@ -1247,6 +1247,7 @@ def plot_b_point_extraction_drost2022(
         icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
     )
 
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
     c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
     c_point_minus_150_samples = c_point_samples - int(150 / 1000 * datapoint.sampling_rate_icg)
     c_point_minus_150_samples.name = "c_point_sample_minus_150"
@@ -1273,6 +1274,16 @@ def plot_b_point_extraction_drost2022(
         c_point_label="C-Points - 150 ms",
         **kwargs,
     )
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples_reference,
+        ax=ax,
+        b_point_label="Reference B-Points",
+        b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+    _add_icg_b_points(icg_data, b_point_samples, ax=ax, b_point_label="Detected B-Points", **kwargs)
+
     for idx, row in search_window.iterrows():
         start_sample = row["c_point_sample_minus_150"]
         end_sample = row["c_point_sample"]
@@ -1284,45 +1295,14 @@ def plot_b_point_extraction_drost2022(
         c_point_y = float(icg_data.iloc[c_point_sample])
 
         line_vals = b_point_algo._get_straight_line(start_x, start_y, c_point_sample, c_point_y)
-        line_vals.index /= datapoint.sampling_rate_icg
-        line_vals.index += start
+        line_vals.index = icg_data.index[start_x:c_point_sample]
+        line_vals.columns = ["Straight Line Connection"]
 
         icg_slice = icg_data.iloc[start_sample:end_sample]
         distance = line_vals.squeeze().to_numpy() - icg_slice.squeeze().to_numpy()
         b_point_sample = start_sample + np.argmax(distance)
 
-        ax.plot(
-            line_vals.index,
-            line_vals["result"],
-            color=cmaps.wiso_dark[1],
-            linestyle="--",
-            linewidth=2,
-            label="Straight Line Connection",
-        )
-
-        _add_icg_b_points(
-            icg_data,
-            b_point_samples_reference,
-            ax=ax,
-            b_point_label="Reference B-Points",
-            b_point_color=cmaps.phil_dark[0],
-            **kwargs,
-        )
-        _add_icg_b_points(
-            icg_data,
-            b_point_sample,
-            ax=ax,
-            b_point_label="Detected B-Points",
-            **kwargs,
-        )
-
-        # ax.plot(
-        #     [icg_data.index[b_point_sample], icg_data.index[b_point_sample]],
-        #     [icg_data.iloc[b_point_sample], line_vals.iloc[np.argmax(distance)]],
-        #     zorder=10,
-        #     label=r"$d_{max}$",
-        #     color=cmaps.fau[0],
-        # )
+        line_vals.plot(ax=ax, color=cmaps.wiso_dark[1], linestyle="--", linewidth=2)
 
         ax.annotate(
             "",
