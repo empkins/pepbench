@@ -152,7 +152,7 @@ def _add_icg_b_points(
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("b_point_color", cmaps.phil[0])
-    b_point_label = kwargs.get("b_point_label", "B Points")
+    b_point_label = kwargs.get("b_point_label", "B-Points")
     marker = kwargs.get("b_point_marker", "o")
     linestyle = kwargs.get("b_point_linestyle", "-")
     alpha = kwargs.get("b_point_alpha", 0.7)
@@ -181,7 +181,7 @@ def _add_icg_b_point_artefacts(
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("b_point_artefact_color", cmaps.phil_dark[0])
-    label = kwargs.get("b_point_artefact_label", "B Point Artefacts")
+    label = kwargs.get("b_point_artefact_label", "B-Point Artefacts")
     marker = kwargs.get("b_point_artefact_marker", "X")
     linestyle = kwargs.get("b_point_artefact_linestyle", "-")
 

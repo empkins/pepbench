@@ -190,6 +190,7 @@ def plot_signals_with_algorithm_results(
         use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
+        b_point_label="Reference B-Points",
         **kwargs,
     )
 
@@ -210,7 +211,7 @@ def plot_signals_with_algorithm_results(
                 ecg_data,
                 q_waves,
                 axs,
-                q_wave_label="Detected Q Waves",
+                q_wave_label="Detected Q-Waves",
                 q_wave_color=cmaps.med_dark[0],
                 **kwargs,
             )
@@ -219,7 +220,7 @@ def plot_signals_with_algorithm_results(
                 ecg_data,
                 q_waves,
                 axs[0],
-                q_wave_label="Detected Q Waves",
+                q_wave_label="Detected Q-Waves",
                 q_wave_color=cmaps.med_dark[0],
                 **kwargs,
             )
@@ -232,7 +233,7 @@ def plot_signals_with_algorithm_results(
                 icg_data,
                 b_points,
                 axs,
-                b_point_label="Detected B Points",
+                b_point_label="Detected B-Points",
                 b_point_color=cmaps.phil_dark[0],
                 **kwargs,
             )
@@ -241,7 +242,7 @@ def plot_signals_with_algorithm_results(
                 icg_data,
                 b_points,
                 axs[1],
-                b_point_label="Detected B Points",
+                b_point_label="Detected B-Points",
                 b_point_color=cmaps.phil_dark[0],
                 **kwargs,
             )
@@ -251,6 +252,8 @@ def plot_signals_with_algorithm_results(
     else:
         _handle_legend_two_axes(fig, axs, **kwargs)
 
+    if not collapse:
+        fig.align_ylabels()
     fig.tight_layout(rect=rect)
     return fig, axs
 

@@ -1,6 +1,8 @@
 """Module for ICG event extraction algorithms."""
 
 from biopsykit.signals.icg.event_extraction import (
+    BPointExtractionLozano2007LinearRegression,
+    BPointExtractionLozano2007QuadraticRegression,
     BPointExtractionArbol2017IsoelectricCrossings,
     BPointExtractionArbol2017SecondDerivative,
     BPointExtractionArbol2017ThirdDerivative,
@@ -15,6 +17,8 @@ from biopsykit.signals.icg.event_extraction import (
 __all__ = [
     "CPointExtractionScipyFindPeaks",
     "BPointExtractionStern1985",
+    "BPointExtractionLozano2007LinearRegression",
+    "BPointExtractionLozano2007QuadraticRegression",
     "BPointExtractionArbol2017IsoelectricCrossings",
     "BPointExtractionArbol2017ThirdDerivative",
     "BPointExtractionArbol2017SecondDerivative",
