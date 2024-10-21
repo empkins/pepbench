@@ -495,13 +495,7 @@ def plot_b_point_extraction_stern1985(
     )
 
     # add zero line to second derivative plot
-    axs[1].axhline(
-        0,
-        color=cmaps.tech_dark[1],
-        linestyle="--",
-        linewidth=2,
-        label="Zero Line",
-    )
+    axs[1].axhline(0, color="black", linestyle="--", linewidth=1, zorder=0)
 
     _handle_legend_two_axes(fig=fig, axs=axs, **kwargs)
 
@@ -1557,19 +1551,19 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
-        color=cmaps.tech_dark[1],
-        **kwargs,
-    )
-    _plot_signals_one_axis(
-        df=icg_2nd_der,
-        ax=axs[1],
-        use_clean=use_clean,
-        normalize_time=normalize_time,
-        heartbeat_subset=heartbeat_subset,
         color=cmaps.tech_dark[0],
         **kwargs,
     )
-    axs[0].axhline(0, color="black", linestyle="--", linewidth=1, zorder=0)
+    # _plot_signals_one_axis(
+    #     df=icg_2nd_der,
+    #     ax=axs[1],
+    #     use_clean=use_clean,
+    #     normalize_time=normalize_time,
+    #     heartbeat_subset=heartbeat_subset,
+    #     color=cmaps.tech_dark[0],
+    #     **kwargs,
+    # )
+    # axs[0].axhline(0, color="black", linestyle="--", linewidth=1, zorder=0)
     axs[1].axhline(0, color="black", linestyle="--", linewidth=1, zorder=0)
 
     _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[0], **kwargs)
@@ -1613,8 +1607,8 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         c_amplitude = icg_data.iloc[c_point]
 
         # Get the most prominent monotonic increasing segment between the A-Point and the C-Point
-        start_sample, end_sample = b_point_algo._get_monotonic_increasing_segments_2nd_der(
-            icg_segment, icg_2nd_der_segment.to_numpy(), c_amplitude
+        start_sample, end_sample = b_point_algo._get_most_prominent_monotonic_increasing_segment(
+            icg_segment, c_amplitude
         )
 
         start_sample += a_point
@@ -1658,15 +1652,13 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         height = icg_data.iloc[c_point] - icg_data.iloc[a_point]
 
         # Compute the significant zero_crossings
-        significant_zero_crossings = b_point_algo._get_zero_crossings(
-            monotonic_segment_3rd_der, monotonic_segment_2nd_der, height, datapoint.sampling_rate_icg
+        significant_zero_crossings = b_point_algo._get_zero_crossings_3rd_derivative(
+            monotonic_segment_3rd_der, monotonic_segment_2nd_der, height
         )
         significant_zero_crossings += start
 
         # Compute the significant local maximums of the 3rd derivative of the most prominent monotonic segment
-        significant_local_maximums = b_point_algo._get_local_maxima(
-            monotonic_segment_3rd_der, height, datapoint.sampling_rate_icg
-        )
+        significant_local_maximums = b_point_algo._get_local_maxima_3rd_derivative(monotonic_segment_3rd_der, height)
         significant_local_maximums += start
 
         # Label the last zero crossing/ local maximum as the B-Point
@@ -1674,20 +1666,8 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         significant_features = pd.concat([significant_zero_crossings, significant_local_maximums], axis=0)
         b_point = significant_features.iloc[np.argmin(c_point - significant_features)][0]
 
-        _plot_signals_one_axis(
-            df=icg_monotonic_increasing_segment,
-            ax=axs[0],
-            color=cmaps.fau[0],
-            normalize_time=normalize_time,
-            **kwargs,
-        )
-        _plot_signals_one_axis(
-            df=icg_2nd_der.iloc[start_sample : end_sample + 1],
-            ax=axs[1],
-            color=cmaps.fau[0],
-            normalize_time=normalize_time,
-            **kwargs,
-        )
+        icg_monotonic_increasing_segment.columns = ["Mono. Incr. Segment"]
+        icg_monotonic_increasing_segment.plot(ax=axs[0], color=cmaps.fau[0])
 
         _add_icg_c_points(
             icg_data,
@@ -1707,20 +1687,20 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         )
 
         _add_icg_b_points(
-            icg_2nd_der,
+            icg_3rd_der,
             significant_zero_crossings.squeeze(),
             ax=axs[1],
-            b_point_label="$d^2Z/dt^2$ Zero Crossings",
-            b_point_color=cmaps.nat_dark[0],
+            b_point_label="$d^3Z/dt^3$ Zero Crossings",
+            b_point_color=cmaps.med[0],
             b_point_marker="X",
             **kwargs,
         )
         _add_icg_b_points(
-            icg_2nd_der,
+            icg_3rd_der,
             significant_local_maximums.squeeze(),
             ax=axs[1],
             b_point_label="$d^3Z/dt^3$ Local Max.",
-            b_point_color=cmaps.nat_dark[1],
+            b_point_color=cmaps.nat[0],
             b_point_marker="X",
             **kwargs,
         )
