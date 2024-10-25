@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import FloatAggregator, no_agg
+from tpcp.validate import no_agg
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
