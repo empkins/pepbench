@@ -7,11 +7,11 @@ from typing_extensions import Self, get_args
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 
-__all__ = ["PepExtractionPipelineReferenceQWave"]
+__all__ = ["PepExtractionPipelineReferenceQPeak"]
 
 
-class PepExtractionPipelineReferenceQWave(BasePepExtractionPipeline):
-    """tpcp Pipeline for PEP extraction that uses reference Q-points for Q-wave onset detection."""
+class PepExtractionPipelineReferenceQPeak(BasePepExtractionPipeline):
+    """tpcp Pipeline for PEP extraction that uses reference Q-peaks for Q-peak detection."""
 
     def run(self, datapoint: DatasetT) -> Self:
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):

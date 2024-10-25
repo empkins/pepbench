@@ -1614,7 +1614,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         start_sample += a_point
         end_sample += a_point
         icg_monotonic_increasing_segment = icg_data.iloc[start_sample : end_sample + 1]
-        icg_monotonic_increasing_segment.columns = ["Mono. Incr. Segment"]
+        icg_monotonic_increasing_segment.name = "Monotonic Increasing Segment"
 
         if (start_sample == a_point) & (end_sample == a_point):
             # no monotonic increasing segment found
@@ -1666,7 +1666,6 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         significant_features = pd.concat([significant_zero_crossings, significant_local_maximums], axis=0)
         b_point = significant_features.iloc[np.argmin(c_point - significant_features)][0]
 
-        icg_monotonic_increasing_segment.columns = ["Mono. Incr. Segment"]
         icg_monotonic_increasing_segment.plot(ax=axs[0], color=cmaps.fau[0])
 
         _add_icg_c_points(
