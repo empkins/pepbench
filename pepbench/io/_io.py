@@ -6,7 +6,7 @@ import pandas as pd
 from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 
-__all__ = ["load_challenge_results_from_folder"]
+__all__ = ["load_challenge_results_from_folder", "convert_hz_to_ms"]
 
 
 def load_challenge_results_from_folder(
@@ -94,3 +94,15 @@ def load_challenge_results_from_folder(
         return ChallengeResults(results_agg_mean_std, results_agg_total, results_single, results_per_sample)
 
     return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
+
+def convert_hz_to_ms(sampling_frequency):
+    """
+    Convert Hz to ms
+
+    Parameters
+    ----------
+    sampling_frequency: int
+    The sampling freqency that should be converted in milliseconds
+    """
+    conversion_factor = 1000 / sampling_frequency
+    return conversion_factor
