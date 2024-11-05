@@ -152,19 +152,26 @@ def _add_icg_b_points(
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("b_point_color", cmaps.phil[0])
-    b_point_label = kwargs.get("b_point_label", "B Points")
+    b_point_label = kwargs.get("b_point_label", "B-Points")
     marker = kwargs.get("b_point_marker", "o")
     linestyle = kwargs.get("b_point_linestyle", "-")
     alpha = kwargs.get("b_point_alpha", 0.7)
 
     b_points = b_points.astype(int)
 
-    _base_add_scatter(
-        x=icg_data.index[b_points], y=icg_data.iloc[b_points], color=color, label=b_point_label, marker=marker, ax=ax
-    )
-    _base_add_vlines(
-        x=icg_data.index[b_points], color=color, alpha=alpha, label=b_point_label, linestyle=linestyle, ax=ax
-    )
+    if kwargs.get("b_point_plot_marker", True):
+        _base_add_scatter(
+            x=icg_data.index[b_points],
+            y=icg_data.iloc[b_points],
+            color=color,
+            label=b_point_label,
+            marker=marker,
+            ax=ax,
+        )
+    if kwargs.get("b_point_plot_vlines", True):
+        _base_add_vlines(
+            x=icg_data.index[b_points], color=color, alpha=alpha, label=b_point_label, linestyle=linestyle, ax=ax
+        )
 
 
 def _add_icg_b_point_artefacts(
@@ -174,19 +181,14 @@ def _add_icg_b_point_artefacts(
     **kwargs: Any,
 ) -> None:
     color = kwargs.get("b_point_artefact_color", cmaps.phil_dark[0])
-    label = kwargs.get("b_point_artefact_label", "B Point Artefacts")
+    label = kwargs.get("b_point_artefact_label", "B-Point Artefacts")
     marker = kwargs.get("b_point_artefact_marker", "X")
     linestyle = kwargs.get("b_point_artefact_linestyle", "-")
 
     kwargs = kwargs.copy()
     kwargs.update(b_point_color=color, b_point_label=label, b_point_marker=marker, b_point_linestyle=linestyle)
 
-    _add_icg_b_points(
-        icg_data,
-        b_points,
-        ax,
-        **kwargs,
-    )
+    _add_icg_b_points(icg_data, b_points, ax, **kwargs)
 
 
 def _add_icg_c_points(
@@ -236,7 +238,6 @@ def _base_add_vlines(
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
-
     ax.vlines(
         x=x,
         ymin=0,
@@ -259,7 +260,6 @@ def _base_add_scatter(
     marker: str,
     ax: plt.Axes,
 ) -> None:
-
     ax.scatter(
         x=x,
         y=y,
@@ -407,7 +407,7 @@ def _handle_legend_two_axes(
         fig.legend(handles, labels, ncols=ncols, loc=legend_loc)
     else:
         for ax in axs:
-            ax.legend(loc=legend_loc)
+            _handle_legend_one_axis(fig, ax, **kwargs)
 
 
 def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:

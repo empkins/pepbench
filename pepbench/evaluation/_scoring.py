@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import FloatAggregator, no_agg
+from tpcp.validate import no_agg
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
@@ -60,18 +60,21 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
     ).to_numpy(na_value=np.nan)
 
     per_sample_aggregator = PerSampleAggregator(mean_and_std)
-    sum_aggregator = FloatAggregator(np.nansum)
 
     return {
+        # first averaged over single datapoint and then aggregated (mean, std) on total dataset
         "pep_reference_ms": np.nanmean(pep_reference),
         "pep_estimated_ms": np.nanmean(pep_estimated),
         "error_ms": np.nanmean(pep_error),
         "absolute_error_ms": np.nanmean(pep_abs_error),
         "absolute_relative_error_percent": np.nanmean(pep_abs_rel_error),
-        "num_pep_total": sum_aggregator(num_peps),
-        "num_pep_valid": sum_aggregator(num_valid_peps),
-        "num_pep_invalid": sum_aggregator(num_invalid_peps),
+        # first summed over single datapoint and then aggregated (mean, std) on total dataset
+        "num_pep_total": np.nansum(num_peps),
+        "num_pep_valid": np.nansum(num_valid_peps),
+        "num_pep_invalid": np.nansum(num_invalid_peps),
+        # no aggregation, keep per-sample values
         "pep_estimation_per_sample": no_agg(pep_merged_filter),
+        # direct aggregation (mean, std) over all samples without intermediate aggregation on single datapoint
         "error_per_sample_ms": per_sample_aggregator(pep_error),
         "absolute_error_per_sample_ms": per_sample_aggregator(pep_abs_error),
         "absolute_relative_error_per_sample_percent": per_sample_aggregator(pep_abs_rel_error),

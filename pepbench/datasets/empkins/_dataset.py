@@ -1,24 +1,24 @@
 from collections.abc import Sequence
-from functools import cached_property
+from functools import cached_property, lru_cache
 from itertools import product
 from typing import ClassVar, Optional, Union
 
 import pandas as pd
+from biopsykit.metadata import bmi
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
 from biopsykit.utils.file_handling import get_subject_dirs
-from joblib import Memory
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import path_t
 
-# _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
-cache_dir = "./cachedir"
-memory = Memory(location=cache_dir, verbose=0)
-_cached_get_biopac_data = memory.cache(_load_biopac_data)
+_cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
+# cache_dir = "./cachedir"
+# memory = Memory(location=cache_dir, verbose=0)
+# _cached_get_biopac_data = memory.cache(_load_biopac_data)
 
 
 class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
@@ -30,9 +30,7 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     CONDITIONS: ClassVar[Sequence[str]] = ["tsst", "ftsst"]
 
-    MISSING_DATA: ClassVar[Sequence[str]] = [
-        "VP_045",
-    ]  # Missing data (add participant IDs here)
+    GENDER_MAPPING: ClassVar[dict[int, str]] = {1: "Female", 2: "Male"}
 
     def __init__(
         self,
@@ -261,3 +259,22 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
         return heartbeats
+
+    @property
+    def metadata(self) -> pd.DataFrame:
+        data = pd.read_csv(self.base_path.joinpath("metadata/demographics.csv"))
+        data = data.set_index("participant")
+
+        return data.loc[self.index["participant"].unique()]
+
+    @property
+    def age(self) -> pd.DataFrame:
+        return self.metadata[["Age"]]
+
+    @property
+    def gender(self) -> pd.DataFrame:
+        return self.metadata[["Gender"]].replace(self.GENDER_MAPPING)
+
+    @property
+    def bmi(self) -> pd.DataFrame:
+        return bmi(self.metadata[["Weight", "Height"]])

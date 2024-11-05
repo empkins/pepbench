@@ -14,7 +14,6 @@ __all__ = ["BasePepExtractionPipeline"]
 
 
 class BasePepExtractionPipeline(Pipeline):
-
     heartbeat_segmentation_algo: Parameter[BaseHeartbeatSegmentation]
     q_wave_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]

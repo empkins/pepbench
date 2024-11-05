@@ -73,7 +73,6 @@ def compute_pep_performance_metrics(
     sortby: Optional[str_t] = ("absolute_error_per_sample_ms", "mean"),
     ascending: Optional[bool] = True,
 ) -> pd.DataFrame:
-
     if metrics is None:
         metrics = ["mean", "std"]
     results_per_sample = results_per_sample.copy()

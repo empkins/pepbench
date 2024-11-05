@@ -42,7 +42,6 @@ def _fill_unlabeled_artefacts(
 
 
 def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFrame:
-
     heartbeats = subset.reference_heartbeats
     reference_icg = subset.reference_labels_icg
     reference_ecg = subset.reference_labels_ecg

@@ -1,12 +1,13 @@
 from collections.abc import Sequence
+from functools import lru_cache
 from itertools import product
 from typing import ClassVar, Optional, Union
 
 import pandas as pd
+from biopsykit.metadata import bmi
 from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import clean_icg_deriv
-from joblib import Memory
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
@@ -16,10 +17,10 @@ from pepbench.utils._types import path_t
 __all__ = ["GuardianDataset"]
 
 
-# _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
-cache_dir = "./cachedir"
-memory = Memory(location=cache_dir, verbose=0)
-_cached_get_tfm_data = memory.cache(_load_tfm_data)
+_cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
+# cache_dir = "./cachedir"
+# memory = Memory(location=cache_dir, verbose=0)
+# _cached_get_tfm_data = memory.cache(_load_tfm_data)
 
 
 class GuardianDataset(BaseUnifiedPepExtractionDataset):
@@ -30,6 +31,8 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg_1": 500, "ecg_2": 500, "icg_der": 500}
     PHASES: ClassVar[tuple[str, ...]] = ["Pause", "Valsalva", "HoldingBreath", "TiltUp", "TiltDown"]
+
+    GENDER_MAPPING: ClassVar[dict[str, str]] = {"M": "Male", "F": "Female"}
 
     SUBSET_NO_RECORDED_DATA = (
         ("GDN0006", "HoldingBreath"),
@@ -248,3 +251,22 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         end = borders.index[-1]
         data = data.loc[start:end]
         return data
+
+    @property
+    def metadata(self) -> pd.DataFrame:
+        data = pd.read_csv(self.base_path.joinpath("metadata/demographics.csv"))
+        data = data.set_index("participant")
+
+        return data.loc[self.index["participant"].unique()]
+
+    @property
+    def age(self) -> pd.DataFrame:
+        return self.metadata[["Age"]]
+
+    @property
+    def gender(self) -> pd.DataFrame:
+        return self.metadata[["Gender"]].replace(self.GENDER_MAPPING)
+
+    @property
+    def bmi(self) -> pd.DataFrame:
+        return bmi(self.metadata[["Weight", "Height"]])
