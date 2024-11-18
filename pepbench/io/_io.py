@@ -6,7 +6,7 @@ import pandas as pd
 from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 
-__all__ = ["load_challenge_results_from_folder", "convert_hz_to_ms"]
+__all__ = ["load_challenge_results_from_folder", "load_best_performing_algos", "convert_hz_to_ms"]
 
 
 def load_challenge_results_from_folder(
@@ -15,7 +15,8 @@ def load_challenge_results_from_folder(
     index_cols_per_sample: Optional[Sequence[str]] = None,
     return_as_df: Optional[bool] = True,
 ) -> ChallengeResults:
-    """Load challenge results from a folder.
+    """
+    Load challenge results from a folder.
 
     Parameters
     ----------
@@ -94,6 +95,45 @@ def load_challenge_results_from_folder(
         return ChallengeResults(results_agg_mean_std, results_agg_total, results_single, results_per_sample)
 
     return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
+
+def load_best_performing_algos(
+        folder_path: path_t,
+        n_best: Optional[int] = 5,
+):
+    """
+    Load the best performing B-Point Detection algorithms from folder based on the mean absolute error
+    
+    Parameters
+    ----------
+    folder_path : str or :class:`pathlib.Path`
+        The folder path containing the results.
+    n_best: int, optional
+
+    Returns
+    -------
+    pd.Dataframe
+        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe
+    """
+    assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
+
+    if type(n_best) is not int:
+        raise TypeError(f"Expected type int, received type {type(n_best)}!")
+    
+    result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
+    dict_agg_mean_std = {}
+
+    for file in result_files_agg_mean_std:
+        file_paras = file.stem.split("_")
+        algo_types = tuple(file_paras[3:6])
+        data = pd.read_csv(file, index_col=0)
+        data.index.name = "metric"
+        dict_agg_mean_std[algo_types] = data
+
+    agg_mean_std = pd.concat(dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]).droplevel("q_wave_algorithm")
+
+    best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
+
+    return best_agg_mean_std
 
 def convert_hz_to_ms(sampling_frequency):
     """
