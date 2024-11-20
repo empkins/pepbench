@@ -143,6 +143,11 @@ def convert_hz_to_ms(sampling_frequency):
     ----------
     sampling_frequency: int
     The sampling freqency that should be converted in milliseconds
+
+    Returns
+    -------
+    float 
+        The conversion factor from samples to ms
     """
     conversion_factor = 1000 / sampling_frequency
     return conversion_factor
