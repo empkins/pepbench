@@ -91,6 +91,16 @@ def load_challenge_results_from_folder(
         results_per_sample = pd.concat(
             dict_per_sample, names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
+        # all columns with suffix "_sample" or "_id" should be "Int64"
+        # all columns with suffix "_ms" or "_percent" should be "Float64"
+        dtype_dict = {col: "Int64" for col in results_per_sample.columns if col[0].endswith("_id")}
+        dtype_dict.update({col: "Int64" for col in results_per_sample.columns if col[0].endswith("_sample")})
+        # TODO: this is, for now, commented out because the nan-safe pandas data types fail with the currently
+        #  installed seaborn and pingouin versions => this should be fixed in the future
+        # dtype_dict.update({col: "Float64" for col in results_per_sample.columns if col[0].endswith("_ms")})
+        # dtype_dict.update({col: "Float64" for col in results_per_sample.columns if col[0].endswith("_percent")})
+        results_per_sample = results_per_sample.astype(dtype_dict)
+
         return ChallengeResults(results_agg_mean_std, results_agg_total, results_single, results_per_sample)
 
     return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
