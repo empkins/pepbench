@@ -21,7 +21,7 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
             )
 
         heartbeat_algo = self.heartbeat_segmentation_algo.clone()
-        q_wave_algo = self.q_wave_algo.clone()
+        q_peak_algo = self.q_peak_algo.clone()
         outlier_algo = self.outlier_correction_algo.clone()
 
         reference_pep = datapoint.reference_pep
@@ -31,7 +31,7 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
 
         # set handle_missing parameter for all algorithms
         if self.handle_missing_events is not None:
-            for algo in (heartbeat_algo, q_wave_algo, outlier_algo):
+            for algo in (heartbeat_algo, q_peak_algo, outlier_algo):
                 if isinstance(algo, CanHandleMissingEventsMixin):
                     # this overwrites the default value of the handle_missing parameter
                     algo.set_params(handle_missing_events=self.handle_missing_events)
@@ -40,9 +40,9 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
         heartbeat_algo.extract(ecg=ecg_data, sampling_rate_hz=fs_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
 
-        # run Q-wave extraction
-        q_wave_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=fs_ecg)
-        q_wave_onset_samples = q_wave_algo.points_
+        # run Q-peak extraction
+        q_peak_algo.extract(ecg=ecg_data, heartbeats=heartbeats, sampling_rate_hz=fs_ecg)
+        q_peak_samples = q_peak_algo.points_
 
         heartbeat_matching = match_heartbeat_lists(
             heartbeats_reference=datapoint.reference_heartbeats,
@@ -53,11 +53,11 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
 
         # TODO: handle false negatives and false positives, i.e. heartbeats that are not matched
         tp_matches = heartbeat_matching.query("match_type == 'tp'")
-        q_wave_onset_samples_tp = q_wave_onset_samples.loc[tp_matches["heartbeat_id"]]
+        q_peak_samples_tp = q_peak_samples.loc[tp_matches["heartbeat_id"]]
         b_point_samples = reference_pep[["b_point_sample", "nan_reason"]].copy()
         b_point_samples_tp = b_point_samples.loc[tp_matches["heartbeat_id_reference"]]
 
-        q_wave_onset_samples_tp.index = tp_matches.index
+        q_peak_samples_tp.index = tp_matches.index
         b_point_samples_tp.index = tp_matches.index
 
         # add nan_reason column to match extracted b-points
@@ -74,13 +74,13 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
 
         pep_results = self._compute_pep(
             heartbeats=heartbeats,
-            q_wave_onset_samples=q_wave_onset_samples_tp,
+            q_peak_samples=q_peak_samples_tp,
             b_point_samples=b_point_samples_after_outlier,
             sampling_rate_hz=fs_ecg,
         )
 
         self.heartbeat_segmentation_results_ = heartbeats
-        self.q_wave_results_ = q_wave_onset_samples
+        self.q_peak_results_ = q_peak_samples
         self.c_point_results_ = None
         self.b_point_results_ = b_point_samples
         self.b_point_after_outlier_correction_results_ = b_point_samples_after_outlier

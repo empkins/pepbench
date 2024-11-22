@@ -61,34 +61,34 @@ class PepExtractionPipelineReferenceQPeak(BasePepExtractionPipeline):
         # TODO: handle false negatives and false positives, i.e. heartbeats that are not matched
         tp_matches = heartbeat_matching.query("match_type == 'tp'")
 
-        # run Q-wave extraction
-        q_wave_onset_samples = reference_pep[["q_wave_onset_sample"]].copy()
-        q_wave_onset_samples_tp = q_wave_onset_samples.loc[tp_matches["heartbeat_id_reference"]]
+        # run Q-Peak extraction
+        q_peak_samples = reference_pep[["q_peak_sample"]].copy()
+        q_peak_samples_tp = q_peak_samples.loc[tp_matches["heartbeat_id_reference"]]
 
         b_point_samples = b_point_algo.points_
         b_point_samples_tp = b_point_samples.loc[tp_matches["heartbeat_id"]]
         c_point_samples = c_point_algo.points_
         c_point_samples_tp = c_point_samples.loc[tp_matches["heartbeat_id"]]
 
-        q_wave_onset_samples_tp.index = tp_matches.index
+        q_peak_samples_tp.index = tp_matches.index
         c_point_samples_tp.index = tp_matches.index
         b_point_samples_tp.index = tp_matches.index
 
         # add nan_reason column to match extracted b-points
-        q_wave_onset_samples_tp["nan_reason"] = pd.NA
+        q_peak_samples_tp["nan_reason"] = pd.NA
 
         outlier_algo.correct_outlier(b_points=b_point_samples_tp, c_points=c_point_samples_tp, sampling_rate_hz=fs_icg)
         b_point_samples_after_outlier = outlier_algo.points_
 
         pep_results = self._compute_pep(
             heartbeats=heartbeats,
-            q_wave_onset_samples=q_wave_onset_samples_tp,
+            q_peak_samples=q_peak_samples_tp,
             b_point_samples=b_point_samples_after_outlier,
             sampling_rate_hz=fs_icg,
         )
 
         self.heartbeat_segmentation_results_ = heartbeats
-        self.q_wave_results_ = q_wave_onset_samples_tp
+        self.q_peak_results_ = q_peak_samples_tp
         self.c_point_results_ = c_point_samples_tp
         self.b_point_results_ = b_point_samples_tp
         self.b_point_after_outlier_correction_results_ = b_point_samples_after_outlier

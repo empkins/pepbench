@@ -7,9 +7,10 @@ from fau_colors import cmaps
 from matplotlib import pyplot as plt
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.heartbeat_matching import match_heartbeat_lists
 
 
-def _get_fig_ax(**kwargs: Any) -> tuple[plt.Figure, plt.Axes]:
+def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
     ax = kwargs.pop("ax", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs = kwargs.copy()
@@ -23,10 +24,11 @@ def _get_fig_ax(**kwargs: Any) -> tuple[plt.Figure, plt.Axes]:
         fig = ax.get_figure()
     else:
         fig, ax = plt.subplots(**kwargs)
+
     return fig, ax
 
 
-def _get_fig_axs(**kwargs: Any) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     axs: Union[plt.Axes, None] = kwargs.pop("axs", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs = kwargs.copy()
@@ -94,26 +96,26 @@ def _add_ecg_r_peak_artefacts(
     )
 
 
-def _add_ecg_q_wave_onsets(
+def _add_ecg_q_peaks(
     ecg_data: pd.DataFrame,
-    q_wave_onsets: pd.DataFrame,
+    q_peaks: pd.DataFrame,
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
-    label = kwargs.get("q_wave_label", "Q-Wave Onsets")
-    color = kwargs.get("q_wave_color", cmaps.med[0])
-    marker = kwargs.get("q_wave_marker", "o")
-    linestyle = kwargs.get("q_wave_linestyle", "-")
-    linewidth = kwargs.get("q_wave_linewidth", None)
-    alpha = kwargs.get("q_wave_alpha", 0.7)
+    label = kwargs.get("q_peak_label", "Q-Peaks")
+    color = kwargs.get("q_peak_color", cmaps.med[0])
+    marker = kwargs.get("q_peak_marker", "o")
+    linestyle = kwargs.get("q_peak_linestyle", "-")
+    linewidth = kwargs.get("q_peak_linewidth", None)
+    alpha = kwargs.get("q_peak_alpha", 0.7)
 
-    q_wave_onsets = q_wave_onsets.astype(int)
+    q_peaks = q_peaks.astype(int)
 
     _base_add_scatter(
-        x=ecg_data.index[q_wave_onsets], y=ecg_data.iloc[q_wave_onsets], color=color, label=label, marker=marker, ax=ax
+        x=ecg_data.index[q_peaks], y=ecg_data.iloc[q_peaks], color=color, label=label, marker=marker, ax=ax
     )
     _base_add_vlines(
-        x=ecg_data.index[q_wave_onsets],
+        x=ecg_data.index[q_peaks],
         color=color,
         alpha=alpha,
         label=label,
@@ -123,23 +125,23 @@ def _add_ecg_q_wave_onsets(
     )
 
 
-def _add_ecg_q_wave_onset_artefacts(
+def _add_ecg_q_peak_artefacts(
     ecg_data: pd.DataFrame,
-    q_wave_artefacts: pd.DataFrame,
+    q_peak_artefacts: pd.DataFrame,
     ax: plt.Axes,
     **kwargs: Any,
 ) -> None:
-    label = kwargs.get("q_wave_artefact_label", "Q-Wave Artefacts")
-    color = kwargs.get("q_wave_artefact_color", cmaps.med_dark[0])
-    marker = kwargs.get("q_wave_artefact_marker", "X")
-    linestyle = kwargs.get("q_wave_artefact_linestyle", "-")
+    label = kwargs.get("q_peak_artefact_label", "Q-Peak Artefacts")
+    color = kwargs.get("q_peak_artefact_color", cmaps.med_dark[0])
+    marker = kwargs.get("q_peak_artefact_marker", "X")
+    linestyle = kwargs.get("q_peak_artefact_linestyle", "-")
 
     kwargs = kwargs.copy()
-    kwargs.update(q_wave_label=label, q_wave_color=color, q_wave_marker=marker, q_wave_linestyle=linestyle)
+    kwargs.update(q_peak_label=label, q_peak_color=color, q_peak_marker=marker, q_peak_linestyle=linestyle)
 
-    _add_ecg_q_wave_onsets(
+    _add_ecg_q_peaks(
         ecg_data,
-        q_wave_artefacts,
+        q_peak_artefacts,
         ax,
         **kwargs,
     )
@@ -450,7 +452,7 @@ def _get_data(
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
 
     if heartbeat_subset is not None:
-        heartbeat_borders = datapoint.reference_heartbeats
+        heartbeat_borders = datapoint.heartbeats
         start = heartbeat_borders["start_sample"].iloc[heartbeat_subset[0]]
         end = heartbeat_borders["end_sample"].iloc[heartbeat_subset[-1]]
 
@@ -468,32 +470,54 @@ def _get_reference_labels(
     datapoint: BaseUnifiedPepExtractionDataset,
     heartbeat_subset: Optional[Sequence[int]] = None,
 ) -> dict[str, pd.DataFrame]:
+    heartbeats = datapoint.heartbeats
+    heartbeats = heartbeats[["start_sample", "end_sample"]]
     reference_heartbeats = datapoint.reference_heartbeats
     reference_labels_ecg = datapoint.reference_labels_ecg
     reference_labels_icg = datapoint.reference_labels_icg
-    q_wave_onsets = reference_labels_ecg.xs("ECG", level="channel")["sample_relative"]
-    q_wave_artefacts = reference_labels_ecg.reindex(["Artefact"], level="channel")["sample_relative"]
+
+    q_peaks = reference_labels_ecg.xs("ECG", level="channel")["sample_relative"]
+    q_peak_artefacts = reference_labels_ecg.reindex(["Artefact"], level="channel")["sample_relative"]
     b_points = reference_labels_icg.xs("ICG", level="channel")["sample_relative"]
     b_point_artefacts = reference_labels_icg.reindex(["Artefact"], level="channel")["sample_relative"]
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
 
+    # match the heartbeats to the reference labels
+    heartbeat_matching = match_heartbeat_lists(
+        heartbeats_reference=reference_heartbeats,
+        heartbeats_extracted=heartbeats,
+        tolerance_ms=100,
+        sampling_rate_hz=datapoint.sampling_rate_ecg,
+    )
+
+    tp_matches = heartbeat_matching.query("match_type == 'tp'")
+
+    reference_heartbeats = reference_heartbeats.loc[tp_matches["heartbeat_id_reference"]]
+    heartbeats = heartbeats.loc[tp_matches["heartbeat_id"]]
+
     if heartbeat_subset is not None:
         reference_heartbeats = reference_heartbeats.iloc[heartbeat_subset]
-        q_wave_onsets = q_wave_onsets.reindex(heartbeat_subset, level="heartbeat_id").dropna()
-        q_wave_artefacts = q_wave_artefacts.reindex(heartbeat_subset, level="heartbeat_id").dropna()
-        b_points = b_points.reindex(heartbeat_subset, level="heartbeat_id").dropna()
-        b_point_artefacts = b_point_artefacts.reindex(heartbeat_subset, level="heartbeat_id").dropna()
+        heartbeats = heartbeats.iloc[heartbeat_subset]
+        q_peaks = q_peaks.reindex(reference_heartbeats.index, level="heartbeat_id").dropna()
+        q_peak_artefacts = q_peak_artefacts.reindex(reference_heartbeats.index, level="heartbeat_id").dropna()
+        b_points = b_points.reindex(reference_heartbeats.index, level="heartbeat_id").dropna()
+        b_point_artefacts = b_point_artefacts.reindex(reference_heartbeats.index, level="heartbeat_id").dropna()
 
     return_dict = {
-        "reference_heartbeats": reference_heartbeats,
-        "q_wave_onsets": q_wave_onsets,
-        "q_wave_artefacts": q_wave_artefacts,
+        "heartbeats": heartbeats,
+        "q_peaks": q_peaks,
+        "q_peak_artefacts": q_peak_artefacts,
         "b_points": b_points,
         "b_point_artefacts": b_point_artefacts,
     }
 
-    start_sample = reference_heartbeats["start_sample"].iloc[0]
+    # compute the start_sample of the first heartbeat in the subset to get relative sample indices, corrected by the
+    # offset between the reference heartbeat borders and the extracted heartbeat borders
+    start_sample = reference_heartbeats["start_sample"].iloc[0] - (
+        reference_heartbeats["start_sample"].iloc[0] - heartbeats["start_sample"].iloc[0]
+    )
+
     # subtract start_sample to get relative sample indices
     return {key: value - start_sample for key, value in return_dict.items()}
 
@@ -509,23 +533,23 @@ def _get_labels_from_challenge_results(
 
     start_index = heartbeats_start.iloc[0]
 
-    q_wave_labels_reference = pep_results_per_sample[("q_wave_onset_sample", "reference")]
-    q_wave_labels_estimated = pep_results_per_sample[("q_wave_onset_sample", "estimated")]
+    q_peak_labels_reference = pep_results_per_sample[("q_peak_sample", "reference")]
+    q_peak_labels_estimated = pep_results_per_sample[("q_peak_sample", "estimated")]
     b_point_labels_reference = pep_results_per_sample[("b_point_sample", "reference")]
     b_point_labels_estimated = pep_results_per_sample[("b_point_sample", "estimated")]
 
     return_dict = {
         "heartbeats_start": heartbeats_start,
         "heartbeats_end": heartbeats_end,
-        "q_wave_labels_reference": q_wave_labels_reference,
-        "q_wave_labels_estimated": q_wave_labels_estimated,
+        "q_peak_labels_reference": q_peak_labels_reference,
+        "q_peak_labels_estimated": q_peak_labels_estimated,
         "b_point_labels_reference": b_point_labels_reference,
         "b_point_labels_estimated": b_point_labels_estimated,
     }
     return {key: (val.dropna() - start_index).astype(int) for key, val in return_dict.items()}
 
 
-def _get_rect(**kwargs: Any) -> tuple[float, ...]:
+def _get_rect(kwargs: dict[str, Any]) -> tuple[float, ...]:
     rect = kwargs.pop("rect", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -537,8 +561,8 @@ def _get_rect(**kwargs: Any) -> tuple[float, ...]:
     return (0, 0, 1, 1)
 
 
-def _get_legend_loc(**kwargs: Any) -> str:
-    legend_loc = kwargs.get("legend_loc", None)
+def _get_legend_loc(kwargs: dict[str, Any]) -> str:
+    legend_loc = kwargs.get("legend_loc")
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
 

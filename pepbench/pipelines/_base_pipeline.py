@@ -15,14 +15,14 @@ __all__ = ["BasePepExtractionPipeline"]
 
 class BasePepExtractionPipeline(Pipeline):
     heartbeat_segmentation_algo: Parameter[BaseHeartbeatSegmentation]
-    q_wave_algo: Parameter[BaseEcgExtraction]
+    q_peak_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]
     outlier_correction_algo: Parameter[BaseOutlierCorrection]
     handle_negative_pep: NEGATIVE_PEP_HANDLING
     handle_missing_events: HANDLE_MISSING_EVENTS
 
     heartbeat_segmentation_results_: pd.DataFrame
-    q_wave_results_: pd.DataFrame
+    q_peak_results_: pd.DataFrame
     c_point_results_: Optional[pd.DataFrame]
     b_point_results_: pd.DataFrame
     b_point_after_outlier_correction_results_: pd.DataFrame
@@ -32,14 +32,14 @@ class BasePepExtractionPipeline(Pipeline):
         self,
         *,
         heartbeat_segmentation_algo: BaseHeartbeatSegmentation,
-        q_wave_algo: BaseEcgExtraction,
+        q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
         outlier_correction_algo: BaseOutlierCorrection,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Optional[Literal[HANDLE_MISSING_EVENTS]] = None,
     ) -> None:
         self.heartbeat_segmentation_algo = heartbeat_segmentation_algo
-        self.q_wave_algo = q_wave_algo
+        self.q_peak_algo = q_peak_algo
         self.b_point_algo = b_point_algo
         self.c_point_algo = CPointExtractionScipyFindPeaks()
         self.outlier_correction_algo = outlier_correction_algo
@@ -54,14 +54,14 @@ class BasePepExtractionPipeline(Pipeline):
         self,
         *,
         heartbeats: pd.DataFrame,
-        q_wave_onset_samples: pd.DataFrame,
+        q_peak_samples: pd.DataFrame,
         b_point_samples: pd.DataFrame,
         sampling_rate_hz: int,
     ) -> pd.DataFrame:
         pep_extraction_algo = PepExtraction(handle_negative_pep=self.handle_negative_pep)
         pep_extraction_algo.extract(
             heartbeats=heartbeats,
-            q_wave_onset_samples=q_wave_onset_samples,
+            q_peak_samples=q_peak_samples,
             b_point_samples=b_point_samples,
             sampling_rate_hz=sampling_rate_hz,
         )

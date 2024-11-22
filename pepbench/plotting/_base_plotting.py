@@ -10,8 +10,8 @@ from matplotlib import pyplot as plt
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.plotting._utils import (
-    _add_ecg_q_wave_onset_artefacts,
-    _add_ecg_q_wave_onsets,
+    _add_ecg_q_peak_artefacts,
+    _add_ecg_q_peaks,
     _add_heartbeat_borders,
     _add_icg_b_point_artefacts,
     _add_icg_b_points,
@@ -92,32 +92,32 @@ def plot_signals_with_reference_labels(
     )
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subset=heartbeat_subset)
-    reference_heartbeats = reference_labels["reference_heartbeats"]
-    q_wave_onsets = reference_labels["q_wave_onsets"]
-    q_wave_artefacts = reference_labels["q_wave_artefacts"]
+    heartbeats = reference_labels["heartbeats"]
+    q_peaks = reference_labels["q_peaks"]
+    q_peak_artefacts = reference_labels["q_peak_artefacts"]
     b_points = reference_labels["b_points"]
     b_point_artefacts = reference_labels["b_point_artefacts"]
 
-    # plot q-wave onsets and b-points
+    # plot q-peak onsets and b-points
     if collapse:
-        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax, **kwargs)
-        _add_ecg_q_wave_onsets(ecg_data, q_wave_onsets, ax, **kwargs)
+        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax, **kwargs)
+        _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
         _add_icg_b_points(icg_data, b_points, ax, **kwargs)
         if plot_artefacts:
-            if not q_wave_artefacts.empty:
-                _add_ecg_q_wave_onset_artefacts(ecg_data, q_wave_artefacts, ax, **kwargs)
+            if not q_peak_artefacts.empty:
+                _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax, **kwargs)
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax, **kwargs)
 
         _handle_legend_one_axis(fig, ax, **kwargs)
     else:
-        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[0], **kwargs)
-        _add_heartbeat_borders(ecg_data.index[reference_heartbeats["start_sample"]], ax[1], **kwargs)
-        _add_ecg_q_wave_onsets(ecg_data, q_wave_onsets, ax[0], **kwargs)
+        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax[0], **kwargs)
+        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax[1], **kwargs)
+        _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
         _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
         if plot_artefacts:
-            if not q_wave_artefacts.empty:
-                _add_ecg_q_wave_onset_artefacts(ecg_data, q_wave_artefacts, ax[0], **kwargs)
+            if not q_peak_artefacts.empty:
+                _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax[0], **kwargs)
             if not b_point_artefacts.empty:
                 _add_icg_b_point_artefacts(icg_data, b_point_artefacts, ax[1], **kwargs)
 
@@ -156,7 +156,7 @@ def plot_signals_with_reference_pep(
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subset=heartbeat_subset)
     reference_labels_ecg = (
-        pd.concat([reference_labels["q_wave_onsets"], reference_labels["q_wave_artefacts"]]).sort_index().reset_index()
+        pd.concat([reference_labels["q_peaks"], reference_labels["q_peak_artefacts"]]).sort_index().reset_index()
     )
     reference_labels_icg = (
         pd.concat([reference_labels["b_points"], reference_labels["b_point_artefacts"]]).sort_index().reset_index()
@@ -203,25 +203,25 @@ def plot_signals_with_algorithm_results(
     algorithm_results = algorithm.points_
 
     if isinstance(algorithm, BaseEcgExtraction):
-        q_waves = algorithm_results["q_wave_onset_sample"]
-        q_waves = q_waves.loc[heartbeat_subset]
-        q_waves = q_waves - heartbeats.iloc[0]
+        q_peaks = algorithm_results["q_peak_sample"]
+        q_peaks = q_peaks.loc[heartbeat_subset]
+        q_peaks = q_peaks - heartbeats.iloc[0]
         if collapse:
-            _add_ecg_q_wave_onsets(
+            _add_ecg_q_peaks(
                 ecg_data,
-                q_waves,
+                q_peaks,
                 axs,
-                q_wave_label="Detected Q-Waves",
-                q_wave_color=cmaps.med_dark[0],
+                q_peak_label="Detected Q-Peaks",
+                q_peak_color=cmaps.med_dark[0],
                 **kwargs,
             )
         else:
-            _add_ecg_q_wave_onsets(
+            _add_ecg_q_peaks(
                 ecg_data,
-                q_waves,
+                q_peaks,
                 axs[0],
-                q_wave_label="Detected Q-Waves",
-                q_wave_color=cmaps.med_dark[0],
+                q_peak_label="Detected Q-Peaks",
+                q_peak_color=cmaps.med_dark[0],
                 **kwargs,
             )
     if isinstance(algorithm, BaseBPointExtraction):
@@ -290,13 +290,13 @@ def plot_signals_from_challenge_results(
 
     heartbeats_start = ecg_data.index[labels_from_challenge["heartbeats_start"]]
     heartbeats_end = ecg_data.index[labels_from_challenge["heartbeats_end"] - 1]
-    q_wave_labels_reference = labels_from_challenge["q_wave_labels_reference"]
-    q_wave_labels_estimated = labels_from_challenge["q_wave_labels_estimated"]
+    q_peak_labels_reference = labels_from_challenge["q_peak_labels_reference"]
+    q_peak_labels_estimated = labels_from_challenge["q_peak_labels_estimated"]
     b_point_labels_reference = labels_from_challenge["b_point_labels_reference"]
     b_point_labels_estimated = labels_from_challenge["b_point_labels_estimated"]
 
-    labels_reference = pd.concat({"ecg": q_wave_labels_reference, "icg": b_point_labels_reference}, axis=1)
-    labels_estimated = pd.concat({"ecg": q_wave_labels_estimated, "icg": b_point_labels_estimated}, axis=1)
+    labels_reference = pd.concat({"ecg": q_peak_labels_reference, "icg": b_point_labels_reference}, axis=1)
+    labels_estimated = pd.concat({"ecg": q_peak_labels_estimated, "icg": b_point_labels_estimated}, axis=1)
 
     if collapse:
         ax_ecg = axs
@@ -311,20 +311,20 @@ def plot_signals_from_challenge_results(
         _add_heartbeat_borders(heartbeats_start, ax_icg)
         _add_heartbeat_borders(heartbeats_end, ax_icg)
 
-    _add_ecg_q_wave_onsets(
+    _add_ecg_q_peaks(
         ecg_data,
-        q_wave_labels_reference,
+        q_peak_labels_reference,
         ax_ecg,
-        q_wave_color=cmaps.med[0],
-        q_wave_label="Q-Wave Reference",
+        q_peak_color=cmaps.med[0],
+        q_peak_label="Q-Peak Reference",
         plot_artifacts=False,
     )
-    _add_ecg_q_wave_onsets(
+    _add_ecg_q_peaks(
         ecg_data,
-        q_wave_labels_estimated,
+        q_peak_labels_estimated,
         ax_ecg,
-        q_wave_color=cmaps.med_dark[0],
-        q_wave_label="Q-Wave Estimated",
+        q_peak_color=cmaps.med_dark[0],
+        q_peak_label="Q-Peak Estimated",
         plot_artifacts=False,
     )
 
@@ -403,7 +403,7 @@ def _plot_signals_one_axis(
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     plot_ecg = kwargs.get("plot_ecg", True)
     plot_icg = kwargs.get("plot_icg", True)
@@ -414,9 +414,9 @@ def _plot_signals_one_axis(
     if datapoint is None and df is None:
         raise ValueError("Either `datapoint` or `df` must be provided.")
 
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
-    fig, ax = _get_fig_ax(**kwargs)
+    fig, ax = _get_fig_ax(kwargs)
     kwargs.pop("ax", None)
 
     if datapoint is not None:

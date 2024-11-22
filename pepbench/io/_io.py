@@ -80,16 +80,16 @@ def load_challenge_results_from_folder(
 
     if return_as_df:
         results_agg_mean_std = pd.concat(
-            dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+            dict_agg_mean_std, names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
         results_agg_total = pd.concat(
-            dict_agg_total, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+            dict_agg_total, names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
         results_single = pd.concat(
-            dict_single, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+            dict_single, names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
         results_per_sample = pd.concat(
-            dict_per_sample, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+            dict_per_sample, names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
         )
         return ChallengeResults(results_agg_mean_std, results_agg_total, results_single, results_per_sample)
 
