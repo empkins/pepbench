@@ -51,10 +51,10 @@ def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFra
     b_point_artefacts = b_points.reindex(["Artefact"], level="channel").droplevel("channel")
     b_points = b_points.reindex(["ICG"], level="channel").droplevel("channel")
 
-    q_wave_onsets = reference_ecg.reindex(["ECG", "Artefact"], level="channel").droplevel("label")
-    q_wave_onsets = _fill_unlabeled_artefacts(q_wave_onsets, reference_ecg, heartbeats)
-    q_wave_onset_artefacts = q_wave_onsets.reindex(["Artefact"], level="channel").droplevel("channel")
-    q_wave_onsets = q_wave_onsets.reindex(["ECG"], level="channel").droplevel("channel")
+    q_peaks = reference_ecg.reindex(["ECG", "Artefact"], level="channel").droplevel("label")
+    q_peaks = _fill_unlabeled_artefacts(q_peaks, reference_ecg, heartbeats)
+    q_peak_artefacts = q_peaks.reindex(["Artefact"], level="channel").droplevel("channel")
+    q_peaks = q_peaks.reindex(["ECG"], level="channel").droplevel("channel")
 
     pep_reference = heartbeats.copy()
     pep_reference.columns = [
@@ -62,17 +62,15 @@ def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFra
     ]
 
     pep_reference = pep_reference.assign(
-        q_wave_onset_sample=q_wave_onsets["sample_relative"],
+        q_peak_sample=q_peaks["sample_relative"],
         b_point_sample=b_points["sample_relative"],
         nan_reason=pd.NA,
     )
     # fill nan_reason column with artefact information
     pep_reference.loc[b_point_artefacts.index, "nan_reason"] = "icg_artefact"
-    pep_reference.loc[q_wave_onset_artefacts.index, "nan_reason"] = "ecg_artefact"
+    pep_reference.loc[q_peak_artefacts.index, "nan_reason"] = "ecg_artefact"
 
-    pep_reference = pep_reference.assign(
-        pep_sample=pep_reference["b_point_sample"] - pep_reference["q_wave_onset_sample"]
-    )
+    pep_reference = pep_reference.assign(pep_sample=pep_reference["b_point_sample"] - pep_reference["q_peak_sample"])
     pep_reference = pep_reference.assign(pep_ms=pep_reference["pep_sample"] / subset.sampling_rate_ecg * 1000)
 
     # reorder columns
@@ -80,7 +78,7 @@ def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFra
         [
             "heartbeat_start_sample",
             "heartbeat_end_sample",
-            "q_wave_onset_sample",
+            "q_peak_sample",
             "b_point_sample",
             "pep_sample",
             "pep_ms",
