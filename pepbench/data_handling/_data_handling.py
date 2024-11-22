@@ -2,24 +2,29 @@ from collections.abc import Sequence
 from typing import Optional
 
 import pandas as pd
+import pingouin as pg
+
+from pepbench.utils._types import str_t
 
 __all__ = [
+    "get_error_by_group",
     "get_reference_data",
     "get_reference_pep",
     "get_pep_for_algo",
     "get_data_for_algo",
     "describe_pep_values",
     "compute_pep_performance_metrics",
+    "rr_interval_to_heart_rate",
+    "correlation_reference_pep_heart_rate",
 ]
 
-from pepbench.utils._types import str_t
 
-_algo_levels = ["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+_algo_levels = ["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
 
 _pep_error_metric_map = {
     "absolute_error_per_sample_ms": "Mean Absolute Error [ms]",
     "error_per_sample_ms": "Mean Error [ms]",
-    "absolute_relative_error_per_sample_percent": "Mean Relative Error [%]",
+    "absolute_relative_error_per_sample_percent": "Mean Absolute Relative Error [%]",
 }
 _pep_number_map = {
     "num_pep_valid": "Valid PEPs",
@@ -31,7 +36,6 @@ _pep_number_map = {
 def get_reference_data(results_per_sample: pd.DataFrame) -> pd.DataFrame:
     reference_pep = results_per_sample.xs("reference", level=-1, axis=1)
     reference_pep = reference_pep.groupby(_algo_levels)
-
     reference_pep = reference_pep.get_group(next(iter(reference_pep.groups))).droplevel(_algo_levels)
 
     return reference_pep
@@ -41,10 +45,12 @@ def get_reference_pep(results_per_sample: pd.DataFrame) -> pd.DataFrame:
     return get_reference_data(results_per_sample)[["pep_ms"]]
 
 
-def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]) -> pd.DataFrame:
-    pep = results_per_sample.xs(tuple(algo_combi), level=_algo_levels)
-
-    return pep
+def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: str_t) -> pd.DataFrame:
+    algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
+    if isinstance(algo_combi, str):
+        algo_combi = (algo_combi,)
+    data = results_per_sample.xs(tuple(algo_combi), level=algo_levels)
+    return data
 
 
 def get_pep_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]) -> pd.DataFrame:
@@ -76,8 +82,9 @@ def compute_pep_performance_metrics(
     if metrics is None:
         metrics = ["mean", "std"]
     results_per_sample = results_per_sample.copy()
+    algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
     results_per_sample = results_per_sample[_pep_error_metric_map.keys()].droplevel(level=-1, axis=1)
-    results_per_sample = results_per_sample.groupby(_algo_levels)
+    results_per_sample = results_per_sample.groupby(algo_levels)
     results_per_sample = results_per_sample.agg(metrics)
 
     num_heartbeats = num_heartbeats.unstack().swaplevel(axis=1)
@@ -99,4 +106,34 @@ def get_performance_metric(results_per_sample: pd.DataFrame, metric: str) -> pd.
 
 
 def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
-    return data.assign(heart_rate_bpm=60 * 1000 / data["rr_interval_ms"])
+    heart_rate_bpm = 60 * 1000 / data[["rr_interval_ms"]]
+    heart_rate_bpm = heart_rate_bpm.rename(columns={"rr_interval_ms": "heart_rate_bpm"})
+    return data.join(heart_rate_bpm)
+
+
+def correlation_reference_pep_heart_rate(data: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    data = get_reference_data(data)
+    data = rr_interval_to_heart_rate(data)
+
+    # compute a linear regression model
+    linreg = pg.linear_regression(X=data["heart_rate_bpm"], y=data["pep_ms"], remove_na=True)
+    corr = pg.corr(data["heart_rate_bpm"], data["pep_ms"], method="pearson")
+
+    return {"linear_regression": linreg, "correlation": corr}
+
+
+def get_error_by_group(
+    results_per_sample: pd.DataFrame, error_metric: str = "absolute_error_per_sample_ms", grouper: str_t = "participant"
+) -> pd.DataFrame:
+    algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
+    if isinstance(grouper, str):
+        grouper = [grouper]
+
+    error = results_per_sample[[error_metric]].groupby([*algo_levels, *grouper]).agg(["mean", "std"])
+    error = (
+        error.droplevel(1, axis=1)
+        .unstack(algo_levels)
+        .reorder_levels([0, *range(2, 2 + len(algo_levels)), 1], axis=1)
+        .sort_index(axis=1)
+    )
+    return error
