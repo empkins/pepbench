@@ -3,7 +3,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from tpcp.validate import no_agg
+from tpcp.validate import FloatAggregator, no_agg
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
@@ -15,7 +15,8 @@ __all__ = ["score_pep_evaluation", "mean_and_std"]
 
 
 def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtractionDataset) -> dict:
-    pipeline = pipeline.clone()
+    # not necessary anymore
+    # pipeline = pipeline.clone()
     pipeline = pipeline.safe_run(datapoint)
     pep_estimated = pipeline.pep_results_
     pep_reference = datapoint.reference_pep
@@ -46,8 +47,14 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
     num_invalid_peps = len(estimated_pep_nan_idxs)
     num_valid_peps = len(pep_merged_filter) - num_invalid_peps
 
-    pep_reference = pep_merged_filter[("pep_ms", "reference")].to_numpy(na_value=np.nan)
-    pep_estimated = pep_merged_filter[("pep_ms", "estimated")].to_numpy(na_value=np.nan)
+    pep_reference = pep_merged_filter[("pep_ms", "reference")].to_numpy(na_value=np.nan).astype(float)
+    pep_estimated = pep_merged_filter[("pep_ms", "estimated")].to_numpy(na_value=np.nan).astype(float)
+
+    nan_mask = ~np.logical_or(np.isnan(pep_reference), np.isnan(pep_estimated))
+
+    # compute cross-correlation coefficient
+    corr_coeff = np.corrcoef(np.compress(nan_mask, pep_reference), np.compress(nan_mask, pep_estimated))
+    corr_coeff = corr_coeff[0][1]
 
     pep_error = error(pep_merged_filter[("pep_ms", "reference")], pep_merged_filter[("pep_ms", "estimated")]).to_numpy(
         na_value=np.nan
@@ -60,21 +67,24 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
     ).to_numpy(na_value=np.nan)
 
     per_sample_aggregator = PerSampleAggregator(mean_and_std)
+    sum_aggregator = FloatAggregator(np.nansum)
 
     return {
-        # first averaged over single datapoint and then aggregated (mean, std) on total dataset
+        # *first* averaged over single datapoint and *then* aggregated (mean, std) on total dataset
         "pep_reference_ms": np.nanmean(pep_reference),
         "pep_estimated_ms": np.nanmean(pep_estimated),
         "error_ms": np.nanmean(pep_error),
         "absolute_error_ms": np.nanmean(pep_abs_error),
         "absolute_relative_error_percent": np.nanmean(pep_abs_rel_error),
-        # first summed over single datapoint and then aggregated (mean, std) on total dataset
-        "num_pep_total": np.nansum(num_peps),
-        "num_pep_valid": np.nansum(num_valid_peps),
-        "num_pep_invalid": np.nansum(num_invalid_peps),
+        # no aggregation here necessary since
+        "pearson_r": corr_coeff,
+        # single values per datapoint => aggregated on total dataset by summing it up (thus the sum_aggregator)
+        "num_pep_total": sum_aggregator(num_peps),
+        "num_pep_valid": sum_aggregator(num_valid_peps),
+        "num_pep_invalid": sum_aggregator(num_invalid_peps),
         # no aggregation, keep per-sample values
         "pep_estimation_per_sample": no_agg(pep_merged_filter),
-        # direct aggregation (mean, std) over all samples without intermediate aggregation on single datapoint
+        # direct aggregation (mean, std) over all samples *without* intermediate aggregation on single datapoint
         "error_per_sample_ms": per_sample_aggregator(pep_error),
         "absolute_error_per_sample_ms": per_sample_aggregator(pep_abs_error),
         "absolute_relative_error_per_sample_percent": per_sample_aggregator(pep_abs_rel_error),
@@ -114,7 +124,18 @@ def _merge_extracted_and_reference_pep(
 
     # add rr_intervals to the dataframe; needs to be handled separately since it's not part of the reference data
     rr_interval_extracted = extracted_original[["rr_interval_ms"]].reset_index()
-    rr_interval_extracted.columns = pd.MultiIndex.from_product([["heartbeat_id", "rr_interval_ms"], ["estimated"]])
+    rr_interval_extracted = pd.concat([rr_interval_extracted, rr_interval_extracted], axis=1)
+    rr_interval_extracted.columns = pd.MultiIndex.from_tuples(
+        [
+            ("heartbeat_id", "estimated"),
+            ("rr_interval_ms", "estimated"),
+            ("heartbeat_id", "reference"),
+            ("rr_interval_ms", "reference"),
+        ]
+    )
+    # drop ("heartbeat_id", "reference")
+    rr_interval_extracted = rr_interval_extracted.drop(("heartbeat_id", "reference"), axis=1)
+
     # set index to join on the MultiIndex
     matches = matches.set_index(("heartbeat_id", "estimated"))
     rr_interval_extracted = rr_interval_extracted.set_index(("heartbeat_id", "estimated"))
@@ -126,7 +147,7 @@ def _merge_extracted_and_reference_pep(
             "heartbeat_id",
             "heartbeat_start_sample",
             "heartbeat_end_sample",
-            "q_wave_onset_sample",
+            "q_peak_sample",
             "b_point_sample",
             "rr_interval_ms",
             "pep_sample",
@@ -137,4 +158,24 @@ def _merge_extracted_and_reference_pep(
         level=0,
     )
 
-    return matches.convert_dtypes(infer_objects=True)
+    return matches.astype(
+        {
+            ("heartbeat_id", "estimated"): "Int64",
+            ("heartbeat_start_sample", "reference"): "Int64",
+            ("heartbeat_start_sample", "estimated"): "Int64",
+            ("heartbeat_end_sample", "reference"): "Int64",
+            ("heartbeat_end_sample", "estimated"): "Int64",
+            ("q_peak_sample", "reference"): "Int64",
+            ("q_peak_sample", "estimated"): "Int64",
+            ("b_point_sample", "reference"): "Int64",
+            ("b_point_sample", "estimated"): "Int64",
+            ("rr_interval_ms", "reference"): "Float64",
+            ("rr_interval_ms", "estimated"): "Float64",
+            ("pep_sample", "reference"): "Int64",
+            ("pep_sample", "estimated"): "Int64",
+            ("pep_ms", "reference"): "Float64",
+            ("pep_ms", "estimated"): "Float64",
+            ("nan_reason", "reference"): "object",
+            ("nan_reason", "estimated"): "object",
+        }
+    )
