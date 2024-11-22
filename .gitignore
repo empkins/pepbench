@@ -2,6 +2,9 @@
 config.json
 paper_path.json
 
+# ignore playground folder
+playground
+
 # ignore local cachedir
 cachedir
 
