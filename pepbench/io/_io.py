@@ -7,7 +7,7 @@ from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
 
-__all__ = ["load_challenge_results_from_folder", "load_best_performing_algos", "get_best_pipeline_results", "get_best_estimator", "get_pipeline_steps", "convert_hz_to_ms"]
+__all__ = ["load_challenge_results_from_folder", "load_best_performing_algos_b_point", "load_best_performing_algos_q_wave", "get_best_pipeline_results", "get_best_estimator", "get_pipeline_steps", "convert_hz_to_ms"]
 
 
 def load_challenge_results_from_folder(
@@ -97,12 +97,13 @@ def load_challenge_results_from_folder(
 
     return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
 
-def load_best_performing_algos(
+def load_best_performing_algos_b_point(
         folder_path: path_t,
         n_best: Optional[int] = 5,
+        outlier_correction: Optional[bool] = False,
 ):
     """
-    Load the best performing B-Point Detection algorithms from folder based on their mean absolute error
+    Load the best performing B-Point Detection algorithms from folder based on their mean absolute error.
     
     Parameters
     ----------
@@ -110,11 +111,13 @@ def load_best_performing_algos(
         The folder path containing the results.
     n_best: int, optional
         The amount of algorithms that should be returned. Default: ``5``
+    outlier_correction: bool, optional
+        Specifies whether the outlier correction algorithms should be taken into account. Default: ```False``
 
     Returns
     -------
     pd.Dataframe
-        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe
+        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe.
 
     """
     assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
@@ -133,6 +136,50 @@ def load_best_performing_algos(
         dict_agg_mean_std[algo_types] = data
 
     agg_mean_std = pd.concat(dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]).droplevel("q_wave_algorithm")
+
+    if outlier_correction == False:
+        agg_mean_std = agg_mean_std.xs(key='none', level='outlier_correction_algorithm', drop_level=True)
+
+    best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
+
+    return best_agg_mean_std
+
+def load_best_performing_algos_q_wave(
+        folder_path: path_t,
+        n_best: Optional[int] = 5,
+):
+    """
+    Load the best performing B-Point Detection algorithms from folder based on their mean absolute error.
+    
+    Parameters
+    ----------
+    folder_path : str or :class:`pathlib.Path`
+        The folder path containing the results.
+    n_best: int, optional
+        The amount of algorithms that should be returned. Default: ``5``
+
+    Returns
+    -------
+    pd.Dataframe
+        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe.
+
+    """
+    assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
+
+    if type(n_best) is not int:
+        raise TypeError(f"Expected type int, received type {type(n_best)}!")
+    
+    result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
+    dict_agg_mean_std = {}
+
+    for file in result_files_agg_mean_std:
+        file_paras = file.stem.split("_")
+        algo_types = tuple(file_paras[3:6])
+        data = pd.read_csv(file, index_col=0)
+        data.index.name = "metric"
+        dict_agg_mean_std[algo_types] = data
+
+    agg_mean_std = pd.concat(dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]).droplevel(["b_point_algorithm", "outlier_correction_algorithm"])
 
     best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
 
@@ -243,7 +290,7 @@ def get_pipeline_steps(
     
     for pipeline in best_estimator.pipeline:
         if reduce_dim_model == "RFE":
-            selected_feature_mask = pipeline.named_steps["reduce_dim"].support_
+            selected_feature_mask = pipeline.named_steps["reduce_dim"].get_support()
         elif reduce_dim_model == "SelectKBest":
             selected_feature_mask = pipeline.named_steps["reduce_dim"].get_support()
         else:
@@ -255,17 +302,17 @@ def get_pipeline_steps(
 
 def convert_hz_to_ms(sampling_frequency):
     """
-    Convert Hz to ms
+    Convert Hz to ms.
 
     Parameters
     ----------
     sampling_frequency: int
-    The sampling freqency that should be converted in milliseconds
+    The sampling freqency that should be converted in milliseconds.
 
     Returns
     -------
     float 
-        The conversion factor from samples to ms
+        The conversion factor from samples to ms.
     """
     conversion_factor = 1000 / sampling_frequency
     return conversion_factor
