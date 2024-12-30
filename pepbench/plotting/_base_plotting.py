@@ -1,12 +1,16 @@
 from collections.abc import Sequence
 from typing import Any, Optional, Union
 
+import numpy as np
 import pandas as pd
+import seaborn as sns
 from biopsykit.signals._base_extraction import BaseExtraction
 from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
 from biopsykit.signals.icg.event_extraction import BaseBPointExtraction
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
+from matplotlib import transforms
+from scipy import stats
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.plotting._utils import (
@@ -17,6 +21,7 @@ from pepbench.plotting._utils import (
     _add_icg_b_points,
     _add_pep_from_reference,
     _add_pep_from_results,
+    _get_bbox_coords,
     _get_data,
     _get_fig_ax,
     _get_fig_axs,
@@ -27,6 +32,7 @@ from pepbench.plotting._utils import (
     _handle_legend_one_axis,
     _handle_legend_two_axes,
     _sanitize_heartbeat_subset,
+    add_fancy_patch_around,
 )
 
 __all__ = [
@@ -35,6 +41,8 @@ __all__ = [
     "plot_signals_from_challenge_results",
     "plot_signals_with_reference_pep",
     "plot_signals_with_algorithm_results",
+    "plot_paired",
+    "plot_blandaltman",
 ]
 
 
@@ -75,9 +83,9 @@ def plot_signals_with_reference_labels(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
     kwargs.setdefault("legend_max_cols", 6)
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     plot_artefacts = kwargs.get("plot_artefacts", False)
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     fig, ax = plot_signals(
         datapoint,
@@ -100,7 +108,7 @@ def plot_signals_with_reference_labels(
 
     # plot q-peak onsets and b-points
     if collapse:
-        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax, **kwargs)
+        _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax, **kwargs)
         _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
         _add_icg_b_points(icg_data, b_points, ax, **kwargs)
         if plot_artefacts:
@@ -111,8 +119,8 @@ def plot_signals_with_reference_labels(
 
         _handle_legend_one_axis(fig, ax, **kwargs)
     else:
-        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax[0], **kwargs)
-        _add_heartbeat_borders(ecg_data.index[heartbeats["start_sample"]], ax[1], **kwargs)
+        _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[0], **kwargs)
+        _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[1], **kwargs)
         _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
         _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
         if plot_artefacts:
@@ -138,8 +146,8 @@ def plot_signals_with_reference_pep(
     kwargs.setdefault("legend_orientation", "vertical")
     kwargs.setdefault("legend_outside", False)
     kwargs.setdefault("legend_max_cols", 6)
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
 
     fig, ax = plot_signals_with_reference_labels(
         datapoint,
@@ -269,9 +277,9 @@ def plot_signals_from_challenge_results(
     add_pep: Optional[bool] = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     fig, axs = plot_signals(
         datapoint,
@@ -439,7 +447,8 @@ def _plot_signals_one_axis(
 
     _handle_legend_one_axis(fig, ax, **kwargs)
 
-    fig.tight_layout(rect=rect)
+    if kwargs.get("use_tight", True):
+        fig.tight_layout(rect=rect)
 
     return fig, ax
 
@@ -453,10 +462,10 @@ def _plot_signals_two_axes(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     figsize = kwargs.pop("figsize", None)
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
 
-    rect = kwargs.get("rect", _get_rect(**kwargs))
+    rect = kwargs.get("rect", _get_rect(kwargs))
 
     fig, axs = _get_fig_axs(figsize=figsize, nrows=2, sharex=True)
 
@@ -481,3 +490,506 @@ def _plot_signals_two_axes(
         ax.set_ylabel("Amplitude [a.u.]")
 
     return fig, axs
+
+
+def plot_blandaltman(
+    x: Union[pd.Series, np.ndarray, list],
+    y: Union[pd.Series, np.ndarray, list],
+    agreement: float = 1.96,
+    xaxis: str = "mean",
+    confidence: float = 0.95,
+    annotate: bool = True,
+    ax: Optional[plt.Axes] = None,
+    **kwargs: Any,
+) -> plt.Axes:
+    """
+    Generate a Bland-Altman plot to compare two sets of measurements.
+
+    Parameters
+    ----------
+    x, y : pd.Series, np.array, or list
+        First and second measurements.
+    agreement : float
+        Multiple of the standard deviation to plot agreement limits.
+        The defaults is 1.96, which corresponds to 95% confidence interval if
+        the differences are normally distributed.
+    xaxis : str
+        Define which measurements should be used as the reference (x-axis).
+        Default is to use the average of x and y ("mean"). Accepted values are
+        "mean", "x" or "y".
+    confidence : float
+        If not None, plot the specified percentage confidence interval of
+        the mean and limits of agreement. The CIs of the mean difference and
+        agreement limits describe a possible error in the
+        estimate due to a sampling error. The greater the sample size,
+        the narrower the CIs will be.
+    annotate : bool
+        If True (default), annotate the values for the mean difference
+        and agreement limits.
+    ax : matplotlib axes
+        Axis on which to draw the plot.
+    **kwargs : optional
+        Optional argument(s) passed to :py:func:`matplotlib.pyplot.scatter`.
+
+    Returns
+    -------
+    ax : Matplotlib Axes instance
+        Returns the Axes object with the plot for further tweaking.
+
+    Notes
+    -----
+    Bland-Altman plots [1]_ are extensively used to evaluate the agreement
+    among two different instruments or two measurements techniques.
+    They allow identification of any systematic difference between the
+    measurements (i.e., fixed bias) or possible outliers.
+
+    The mean difference (= x - y) is the estimated bias, and the SD of the
+    differences measures the random fluctuations around this mean.
+    If the mean value of the difference differs significantly from 0 on the
+    basis of a 1-sample t-test, this indicates the presence of fixed bias.
+    If there is a consistent bias, it can be adjusted for by subtracting the
+    mean difference from the new method.
+
+    It is common to compute 95% limits of agreement for each comparison
+    (average difference ± 1.96 standard deviation of the difference), which
+    tells us how far apart measurements by 2 methods were more likely to be
+    for most individuals. If the differences within mean ± 1.96 SD are not
+    clinically important, the two methods may be used interchangeably.
+    The 95% limits of agreement can be unreliable estimates of the population
+    parameters especially for small sample sizes so, when comparing methods
+    or assessing repeatability, it is important to calculate confidence
+    intervals for the 95% limits of agreement.
+
+    The code is an adaptation of the
+    `PyCompare <https://github.com/jaketmp/pyCompare>`_ package. The present
+    implementation is a simplified version; please refer to the original
+    package for more advanced functionalities.
+
+    References
+    ----------
+    .. [1] Bland, J. M., & Altman, D. (1986). Statistical methods for assessing
+           agreement between two methods of clinical measurement. The lancet,
+           327(8476), 307-310.
+
+    .. [2] Giavarina, D. (2015). Understanding bland altman analysis.
+           Biochemia medica, 25(2), 141-151.
+
+    Examples
+    --------
+    Bland-Altman plot (example data from [2]_)
+    """
+    # Safety check
+    assert xaxis in ["mean", "x", "y"]
+    # Get names before converting to NumPy array
+    xname = x.name if isinstance(x, pd.Series) else "x"
+    yname = y.name if isinstance(y, pd.Series) else "y"
+    x = np.asarray(x)
+    y = np.asarray(y)
+    assert x.ndim == 1 and y.ndim == 1
+    assert x.size == y.size
+    assert not np.isnan(x).any(), "Missing values in x or y are not supported."
+    assert not np.isnan(y).any(), "Missing values in x or y are not supported."
+
+    _annotate_kwargs = {key: val for key, val in kwargs.items() if key.startswith("annotate")}
+    # remove annotate kwargs from kwargs
+    kwargs = {key: val for key, val in kwargs.items() if not key.startswith("annotate")}
+
+    # Update default kwargs with specified inputs
+    _scatter_kwargs = {"color": "tab:blue", "alpha": 0.8}
+    _scatter_kwargs.update(kwargs)
+
+    # Calculate mean, STD and SEM of x - y
+    n = x.size
+    dof = n - 1
+    diff = x - y
+    mean_diff = np.mean(diff)
+    std_diff = np.std(diff, ddof=1)
+    mean_diff_se = np.sqrt(std_diff**2 / n)
+    # Limits of agreements
+    high = mean_diff + agreement * std_diff
+    low = mean_diff - agreement * std_diff
+    high_low_se = np.sqrt(3 * std_diff**2 / n)
+
+    # Define x-axis
+    if xaxis == "mean":
+        xval = np.vstack((x, y)).mean(0)
+        xlabel = f"Mean of {xname} and {yname}"
+    elif xaxis == "x":
+        xval = x
+        xlabel = xname
+    else:
+        xval = y
+        xlabel = yname
+
+    # Start the plot
+    if ax is None:
+        ax = plt.gca()
+
+    # Plot the mean diff, limits of agreement and scatter
+    ax.scatter(xval, diff, **_scatter_kwargs)
+    ax.axhline(mean_diff, color="k", linestyle="-", lw=2)
+    ax.axhline(high, color="k", linestyle=":", lw=1.5)
+    ax.axhline(low, color="k", linestyle=":", lw=1.5)
+
+    # Annotate values
+    if annotate:
+        loa_range = high - low
+        offset = (loa_range / 100.0) * 1.5
+        trans = transforms.blended_transform_factory(ax.transAxes, ax.transData)
+        annotate_fontsize = _annotate_kwargs.get("annotate_fontsize", "medium")
+        annotate_bbox = _annotate_kwargs.get("annotate_bbox", False)
+
+        bbox = transforms.Bbox.null()
+        xloc = 0.98
+        t = ax.text(
+            xloc,
+            mean_diff + offset,
+            "Mean",
+            ha="right",
+            va="bottom",
+            transform=trans,
+            # bbox=bbox,
+            fontdict={"fontsize": annotate_fontsize},
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+
+        t = ax.text(
+            xloc,
+            mean_diff - offset,
+            "%.2f" % mean_diff,
+            ha="right",
+            va="top",
+            transform=trans,
+            # bbox=bbox,
+            fontdict={"fontsize": annotate_fontsize},
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+
+        t = ax.text(
+            xloc,
+            high + offset,
+            "+%.2f SD" % agreement,
+            ha="right",
+            va="bottom",
+            transform=trans,
+            # bbox=bbox,
+            fontdict={"fontsize": annotate_fontsize},
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+
+        t = ax.text(
+            xloc,
+            high - offset,
+            "%.2f" % high,
+            ha="right",
+            va="top",
+            transform=trans,
+            # bbox=bbox,
+            fontdict={"fontsize": annotate_fontsize},
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+
+        t = ax.text(
+            xloc,
+            low + offset,
+            "%.2f" % low,
+            ha="right",
+            va="bottom",
+            transform=trans,
+            # bbox=bbox,
+            fontdict={"fontsize": annotate_fontsize},
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+
+        t = ax.text(
+            xloc,
+            low - offset,
+            "-%.2f SD" % agreement,
+            ha="right",
+            va="top",
+            transform=trans,
+            # bbox=bbox,
+            fontsize=annotate_fontsize,
+        )
+        bbox.update_from_data_xy(_get_bbox_coords(t, ax), ignore=False)
+        if annotate_bbox:
+            add_fancy_patch_around(ax, bbox)
+
+    # Add 95% confidence intervals for mean bias and limits of agreement
+    if confidence is not None:
+        assert 0 < confidence < 1
+        ci = dict()
+        ci["mean"] = stats.t.interval(confidence, dof, loc=mean_diff, scale=mean_diff_se)
+        ci["high"] = stats.t.interval(confidence, dof, loc=high, scale=high_low_se)
+        ci["low"] = stats.t.interval(confidence, dof, loc=low, scale=high_low_se)
+        ax.axhspan(ci["mean"][0], ci["mean"][1], facecolor="tab:grey", alpha=0.2)
+        ax.axhspan(ci["high"][0], ci["high"][1], facecolor=_scatter_kwargs["color"], alpha=0.2)
+        ax.axhspan(ci["low"][0], ci["low"][1], facecolor=_scatter_kwargs["color"], alpha=0.2)
+
+    # Labels
+    ax.set_ylabel(f"{xname} - {yname}")
+    ax.set_xlabel(xlabel)
+    sns.despine(ax=ax)
+    return ax
+
+
+def plot_paired(
+    data: pd.DataFrame,
+    dv: str,
+    within: str,
+    subject: str,
+    order: Optional[Sequence[str]] = None,
+    boxplot: bool = True,
+    boxplot_in_front: bool = False,
+    orient: str = "v",
+    ax: Optional[plt.Axes] = None,
+    colors: Optional[Sequence[str]] = None,
+    pointplot_kwargs: Optional[dict] = None,
+    boxplot_kwargs: Optional[dict] = None,
+):
+    """
+    Paired plot.
+
+    Parameters
+    ----------
+    data : :py:class:`pandas.DataFrame`
+        Long-format dataFrame.
+    dv : string
+        Name of column containing the dependent variable.
+    within : string
+        Name of column containing the within-subject factor.
+    subject : string
+        Name of column containing the subject identifier.
+    order : list of str
+        List of values in ``within`` that define the order of elements on the
+        x-axis of the plot. If None, uses alphabetical order.
+    boxplot : boolean
+        If True, add a boxplot to the paired lines using the
+        :py:func:`seaborn.boxplot` function.
+    boxplot_in_front : boolean
+        If True, the boxplot is plotted on the foreground (i.e. above the
+        individual lines) and with a slight transparency. This makes the
+        overall plot more readable when plotting a large numbers of subjects.
+
+        .. versionadded:: 0.3.8
+    orient : string
+        Plot the boxplots vertically and the subjects on the x-axis if
+        ``orient='v'`` (default). Set to ``orient='h'`` to rotate the plot by
+        by 90 degrees.
+
+        .. versionadded:: 0.3.9
+    ax : matplotlib axes
+        Axis on which to draw the plot.
+    colors : list of str
+        Line colors names. Default is green when value increases from A to B,
+        indianred when value decreases from A to B and grey when the value is
+        the same in both measurements.
+    pointplot_kwargs : dict
+        Dictionnary of optional arguments that are passed to the
+        :py:func:`seaborn.pointplot` function.
+    boxplot_kwargs : dict
+        Dictionnary of optional arguments that are passed to the
+        :py:func:`seaborn.boxplot` function.
+
+    Returns
+    -------
+    ax : Matplotlib Axes instance
+        Returns the Axes object with the plot for further tweaking.
+
+    Notes
+    -----
+    Data must be a long-format pandas DataFrame. Missing values are automatically removed using a
+    strict listwise approach (= complete-case analysis).
+
+    Examples
+    --------
+    Default paired plot:
+
+    .. plot::
+
+        >>> import pingouin as pg
+        >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
+        >>> df = df.query("Group == 'Meditation' and Subject > 40")
+        >>> ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject")
+
+    Paired plot on an existing axis (no boxplot and uniform color):
+
+    .. plot::
+
+        >>> import pingouin as pg
+        >>> import matplotlib.pyplot as plt
+        >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
+        >>> df = df.query("Group == 'Meditation' and Subject > 40")
+        >>> fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+        >>> pg.plot_paired(
+        ...     data=df,
+        ...     dv="Scores",
+        ...     within="Time",
+        ...     subject="Subject",
+        ...     ax=ax1,
+        ...     boxplot=False,
+        ...     colors=["grey", "grey", "grey"],
+        ... )  # doctest: +SKIP
+
+    Horizontal paired plot with three unique within-levels:
+
+    .. plot::
+
+        >>> import pingouin as pg
+        >>> import matplotlib.pyplot as plt
+        >>> df = pg.read_dataset("mixed_anova").query("Group == 'Meditation'")
+        >>> # df = df.query("Group == 'Meditation' and Subject > 40")
+        >>> pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", orient="h")  # doctest: +SKIP
+
+    With the boxplot on the foreground:
+
+    .. plot::
+
+        >>> import pingouin as pg
+        >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
+        >>> df = df.query("Group == 'Control'")
+        >>> ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
+    """
+    from pingouin.utils import _check_dataframe
+
+    # Set default colors
+    if colors is None:
+        colors = ["green", "grey", "indianred"]
+
+    if pointplot_kwargs is None:
+        pointplot_kwargs = {}
+    if boxplot_kwargs is None:
+        boxplot_kwargs = {}
+
+    # Update default kwargs with specified inputs
+    _pointplot_kwargs = {"scale": 0.6, "marker": "."}
+    _pointplot_kwargs.update(pointplot_kwargs)
+    _boxplot_kwargs = {"color": "lightslategrey", "width": 0.2}
+    _boxplot_kwargs.update(boxplot_kwargs)
+    # Extract pointplot alpha, if set
+    pp_alpha = _pointplot_kwargs.pop("alpha", 1.0)
+
+    # Calculate size of the plot elements by scale as in Seaborn pointplot
+    scale = _pointplot_kwargs.pop("scale")
+    lw = plt.rcParams["lines.linewidth"] * 1.8 * scale  # get the linewidth
+    mew = lw * 0.75  # get the markeredgewidth
+    markersize = np.pi * np.square(lw) * 2  # get the markersize
+
+    # Set boxplot in front of Line2D plot (zorder=2 for both) and add alpha
+    if boxplot_in_front:
+        _boxplot_kwargs.update(
+            {
+                "boxprops": {"zorder": 2},
+                "whiskerprops": {"zorder": 2},
+                "zorder": 2,
+            }
+        )
+
+    # Validate args
+    data = _check_dataframe(data=data, dv=dv, within=within, subject=subject, effects="within")
+
+    # Pivot and melt the table. This has several effects:
+    # 1) Force missing values to be explicit (a NaN cell is created)
+    # 2) Automatic collapsing to the mean if multiple within factors are present
+    # 3) If using dropna, remove rows with missing values (listwise deletion).
+    # The latter is the same behavior as JASP (= strict complete-case analysis).
+    data_piv = data.pivot_table(index=subject, columns=within, values=dv, observed=True)
+    data_piv = data_piv.dropna()
+    data = data_piv.melt(ignore_index=False, value_name=dv).reset_index()
+
+    # Extract within-subject level (alphabetical order)
+    x_cat = np.unique(data[within])
+
+    if order is None:
+        order = x_cat
+    else:
+        assert len(order) == len(
+            x_cat
+        ), "Order must have the same number of elements as the number of levels in `within`."
+
+    # Substitue within by integer order of the ordered columns to allow for
+    # changing the order of numeric withins.
+    data["wthn"] = data[within].replace({_ordr: i for i, _ordr in enumerate(order)})
+    order_num = range(len(order))  # Make numeric order
+
+    # Start the plot
+    if ax is None:
+        ax = plt.gca()
+
+    # Set x and y depending on orientation using the num. replacement within
+    _x = "wthn" if orient == "v" else dv
+    _y = dv if orient == "v" else "wthn"
+
+    for cat in range(len(x_cat) - 1):
+        _order = (order_num[cat], order_num[cat + 1])
+        # Extract data of the current subject-combination
+        data_now = data.loc[data["wthn"].isin(_order), [dv, "wthn", subject]]
+        # Select colors for all lines between the current subjects
+        y1 = data_now.loc[data_now["wthn"] == _order[0], dv].to_numpy()
+        y2 = data_now.loc[data_now["wthn"] == _order[1], dv].to_numpy()
+        # Line and scatter colors depending on subject dv trend
+        _colors = np.where(y1 < y2, colors[0], np.where(y1 > y2, colors[2], colors[1]))
+        # Line and scatter colors as hue-indexed dictionary
+        _colors = {subj: clr for subj, clr in zip(data_now[subject].unique(), _colors)}
+        # Plot individual lines using Seaborn
+        sns.lineplot(
+            data=data_now,
+            x=_x,
+            y=_y,
+            hue=subject,
+            palette=_colors,
+            ls="-",
+            lw=lw,
+            legend=False,
+            ax=ax,
+        )
+        # Plot individual markers using Seaborn
+        sns.scatterplot(
+            data=data_now,
+            x=_x,
+            y=_y,
+            hue=subject,
+            palette=_colors,
+            edgecolor="face",
+            lw=mew,
+            sizes=[markersize] * data_now.shape[0],
+            legend=False,
+            ax=ax,
+            **_pointplot_kwargs,
+        )
+
+    # Set zorder and alpha of pointplot markers and lines
+    _ = plt.setp(ax.collections, alpha=pp_alpha, zorder=2)  # Set marker alpha
+    _ = plt.setp(ax.lines, alpha=pp_alpha, zorder=2)  # Set line alpha
+
+    if boxplot:
+        # Set boxplot x and y depending on orientation
+        _xbp = within if orient == "v" else dv
+        _ybp = dv if orient == "v" else within
+        sns.boxplot(data=data, x=_xbp, y=_ybp, order=order, ax=ax, orient=orient, **_boxplot_kwargs)
+
+        # Set alpha to patch of boxplot but not to whiskers
+        for patch in ax.artists:
+            r, g, b, a = patch.get_facecolor()
+            patch.set_facecolor((r, g, b, 0.75))
+    else:
+        # If no boxplot, axis needs manual styling as in Seaborn pointplot
+        if orient == "v":
+            xlabel, ylabel = within, dv
+            ax.set_xticks(np.arange(len(x_cat)))
+            ax.set_xticklabels(order)
+            ax.xaxis.grid(False)
+            ax.set_xlim(-0.5, len(x_cat) - 0.5, auto=None)
+        else:
+            xlabel, ylabel = dv, within
+            ax.set_yticks(np.arange(len(x_cat)))
+            ax.set_yticklabels(order)
+            ax.yaxis.grid(False)
+            ax.set_ylim(-0.5, len(x_cat) - 0.5, auto=None)
+            ax.invert_yaxis()
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+    # Despine and trim
+    sns.despine(trim=True, ax=ax)
+    return ax

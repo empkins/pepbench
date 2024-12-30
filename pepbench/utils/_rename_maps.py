@@ -1,5 +1,13 @@
 import numpy as np
 
+from pepbench.utils._types import str_t
+
+__all__ = [
+    "rename_metrics",
+    "rename_algorithms",
+    "get_nan_reason_mapping",
+]
+
 _ylabel_mapping = {
     "pep_ms": "PEP [ms]",
     "rr_interval_ms": "RR-Interval [ms]",
@@ -45,3 +53,45 @@ _metric_mapping = {
     "error_per_sample_ms": "Error [ms]",
     "relative_error_per_sample_percent": "Relative Error [%]",
 }
+
+_nan_reason_mapping = {
+    "c_point_nan": "No C-Point detected",
+    "r_peak_nan": "No R-Peak detected",
+    "negative_pep": "Negative PEP",
+    "no_iso_crossing_before_c_point": "No Isoelectric Crossing before C-Point detected",
+    "no_local_minimum": "No Local Minimum detected",
+    "no_monotonic_segment": "No Monotonically Increasing Segment detected",
+    "no_zero_crossing": "No Zero Crossings detected",
+    "invalid_b_point_search_window": "Invalid B-Point Search Window",
+}
+
+_nan_reason_mapping_short = {
+    "c_point_nan": "No C",
+    "r_peak_nan": "No R",
+    "negative_pep": "Neg. PEP",
+    "no_iso_crossing_before_c_point": "No IC",
+    "no_local_minimum": "No Loc. Min.",
+    "no_monotonic_segment": "No Mon. Incr.",
+    "no_zero_crossing": "No ZCs",
+    "invalid_b_point_search_window": "Inv. B Window",
+    # TODO remove after algo re-run
+    "no_c_point": "n/a",
+    "no_local_minima": "n/a",
+    "r_peak_or_c_point_nan": "n/a",
+}
+
+
+def rename_metrics(metrics: str_t) -> str_t:
+    if isinstance(metrics, str):
+        return _metric_mapping.get(metrics, metrics)
+    return [_metric_mapping.get(metric, metric) for metric in metrics]
+
+
+def rename_algorithms(algorithms: str_t) -> str_t:
+    if isinstance(algorithms, str):
+        return _algorithm_mapping.get(algorithms, algorithms)
+    return [_algorithm_mapping.get(algo, algo) for algo in algorithms]
+
+
+def get_nan_reason_mapping() -> dict:
+    return {_nan_reason_mapping_short[k]: _nan_reason_mapping[k] for k in _nan_reason_mapping}

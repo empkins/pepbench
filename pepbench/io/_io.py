@@ -36,11 +36,11 @@ def load_challenge_results_from_folder(
     """
     assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
 
-    if index_cols_single is None:
-        index_cols_single = ["participant"]
-
     if index_cols_per_sample is None:
         index_cols_per_sample = ["participant"]
+
+    if index_cols_single is None:
+        index_cols_single = index_cols_per_sample
 
     result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
     result_files_agg_total = sorted(folder_path.glob("*_agg_total.csv"))
@@ -76,6 +76,7 @@ def load_challenge_results_from_folder(
         algo_types = tuple(file_paras[3:6])
         index_cols = list(range(len(index_cols_per_sample) + 1))
         data = pd.read_csv(file, header=[0, 1], index_col=index_cols)
+        data.index = data.index.set_names("id", level=-1)
         dict_per_sample[algo_types] = data
 
     if return_as_df:

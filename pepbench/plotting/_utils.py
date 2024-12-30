@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
+from matplotlib.patches import FancyBboxPatch
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.heartbeat_matching import match_heartbeat_lists
@@ -13,17 +14,19 @@ from pepbench.heartbeat_matching import match_heartbeat_lists
 def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
     ax = kwargs.pop("ax", None)
     # filter out the kwargs that are not needed for plt.subplots
-    kwargs = kwargs.copy()
-    kwargs = {
+    kwargs_subplot = {
         key: value
         for key, value in kwargs.items()
         if key in plt.subplots.__code__.co_varnames + plt.figure.__code__.co_varnames
     }
+    # remove the kwargs that are used for plt.subplots
+    for key in kwargs_subplot:
+        kwargs.pop(key)
 
     if ax is not None:
         fig = ax.get_figure()
     else:
-        fig, ax = plt.subplots(**kwargs)
+        fig, ax = plt.subplots(**kwargs_subplot)
 
     return fig, ax
 
@@ -31,13 +34,16 @@ def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
 def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     axs: Union[plt.Axes, None] = kwargs.pop("axs", None)
     # filter out the kwargs that are not needed for plt.subplots
-    kwargs = kwargs.copy()
-    kwargs = {key: value for key, value in kwargs.items() if key in plt.subplots.__code__.co_varnames}
+    kwargs_subplot = {
+        key: value
+        for key, value in kwargs.items()
+        if key in plt.subplots.__code__.co_varnames + plt.figure.__code__.co_varnames
+    }
 
     if axs is not None:
         fig = axs[0].get_figure()
     else:
-        fig, axs = plt.subplots(**kwargs)
+        fig, axs = plt.subplots(**kwargs_subplot)
     return fig, axs
 
 
@@ -51,7 +57,7 @@ def _add_ecg_r_peaks(
     color = kwargs.get("r_peak_color", cmaps.wiso[0])
     marker = kwargs.get("r_peak_marker", "o")
     linestyle = kwargs.get("r_peak_linestyle", "-")
-    linewidth = kwargs.get("r_peak_linewidth", None)
+    linewidth = kwargs.get("r_peak_linewidth")
     alpha = kwargs.get("r_peak_alpha", 0.7)
     plot_marker = kwargs.get("r_peak_plot_marker", True)
     plot_vline = kwargs.get("r_peak_plot_vline", True)
@@ -106,7 +112,7 @@ def _add_ecg_q_peaks(
     color = kwargs.get("q_peak_color", cmaps.med[0])
     marker = kwargs.get("q_peak_marker", "o")
     linestyle = kwargs.get("q_peak_linestyle", "-")
-    linewidth = kwargs.get("q_peak_linewidth", None)
+    linewidth = kwargs.get("q_peak_linewidth")
     alpha = kwargs.get("q_peak_alpha", 0.7)
 
     q_peaks = q_peaks.astype(int)
@@ -203,7 +209,7 @@ def _add_icg_c_points(
     c_point_label = kwargs.get("c_point_label", "C Points")
     marker = kwargs.get("c_point_marker", "X")
     linestyle = kwargs.get("c_point_linestyle", "--")
-    linewidth = kwargs.get("c_point_linewidth", None)
+    linewidth = kwargs.get("c_point_linewidth")
     alpha = kwargs.get("c_point_alpha", 0.7)
     plot_marker = kwargs.get("c_point_plot_marker", True)
     plot_vline = kwargs.get("c_point_plot_vline", True)
@@ -287,7 +293,7 @@ def _add_pep_from_reference(
     facecolor_artefact = kwargs.get("pep_artefact_facecolor", color_artefact)
     pep_label = kwargs.get("pep_label", "PEP")
 
-    hatch = kwargs.get("pep_hatch", None)
+    hatch = kwargs.get("pep_hatch")
     if hatch is not None:
         facecolor = "none"
         facecolor_artefact = "none"
@@ -331,7 +337,7 @@ def _add_pep_from_results(
     facecolor = kwargs.get("pep_facecolor", color)
     label = kwargs.get("pep_label", "PEP")
 
-    hatch = kwargs.get("pep_hatch", None)
+    hatch = kwargs.get("pep_hatch")
     if hatch is not None:
         facecolor = "none"
 
@@ -368,7 +374,7 @@ def _handle_legend_one_axis(fig: plt.Figure, ax: plt.Axes, **kwargs: Any) -> Non
     legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_loc = kwargs.get("legend_loc", None)
+    legend_loc = kwargs.get("legend_loc")
 
     handles, labels = ax.get_legend_handles_labels()
     handles, labels = _remove_duplicate_legend_entries(handles, labels)
@@ -392,7 +398,7 @@ def _handle_legend_two_axes(
     legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
-    legend_loc = kwargs.get("legend_loc", None)
+    legend_loc = kwargs.get("legend_loc")
 
     if len(fig.legends) > 0:
         fig.legends[0].remove()
@@ -587,3 +593,19 @@ def _get_annotation_bbox_no_edge() -> dict[str, Any]:
         "ec": "none",
         "boxstyle": "round",
     }
+
+
+def _get_bbox_coords(
+    artist: plt.Artist,
+    ax: plt.Axes,
+) -> np.ndarray:
+    return artist.get_window_extent().transformed(ax.transData.inverted()).get_points()
+
+
+def add_fancy_patch_around(ax, bb, **kwargs):
+    kwargs.setdefault("fc", (1, 1, 1, plt.rcParams["legend.framealpha"]))
+    kwargs.setdefault("ec", "none")
+    kwargs.setdefault("boxstyle", "round,pad=5")
+    fancy = FancyBboxPatch(bb.p0, bb.width, bb.height, **kwargs)
+    ax.add_patch(fancy)
+    return fancy

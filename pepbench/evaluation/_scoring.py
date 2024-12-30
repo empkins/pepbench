@@ -136,11 +136,27 @@ def _merge_extracted_and_reference_pep(
     # drop ("heartbeat_id", "reference")
     rr_interval_extracted = rr_interval_extracted.drop(("heartbeat_id", "reference"), axis=1)
 
+    # add heart_rate_bpm to the dataframe; needs to be handled separately since it's not part of the reference data
+    heart_rate_extracted = extracted_original[["heart_rate_bpm"]].reset_index()
+    heart_rate_extracted = pd.concat([heart_rate_extracted, heart_rate_extracted], axis=1)
+    heart_rate_extracted.columns = pd.MultiIndex.from_tuples(
+        [
+            ("heartbeat_id", "estimated"),
+            ("heart_rate_bpm", "estimated"),
+            ("heartbeat_id", "reference"),
+            ("heart_rate_bpm", "reference"),
+        ]
+    )
+    # drop ("heartbeat_id", "reference")
+    heart_rate_extracted = heart_rate_extracted.drop(("heartbeat_id", "reference"), axis=1)
+
     # set index to join on the MultiIndex
     matches = matches.set_index(("heartbeat_id", "estimated"))
     rr_interval_extracted = rr_interval_extracted.set_index(("heartbeat_id", "estimated"))
+    heart_rate_extracted = heart_rate_extracted.set_index(("heartbeat_id", "estimated"))
+
     # join the rr_intervals to the DataFrame and reset the index
-    matches = matches.join(rr_interval_extracted).reset_index()
+    matches = matches.join(rr_interval_extracted).join(heart_rate_extracted).reset_index()
 
     matches = matches.reindex(
         [
@@ -150,6 +166,7 @@ def _merge_extracted_and_reference_pep(
             "q_peak_sample",
             "b_point_sample",
             "rr_interval_ms",
+            "heart_rate_bpm",
             "pep_sample",
             "pep_ms",
             "nan_reason",
@@ -171,6 +188,8 @@ def _merge_extracted_and_reference_pep(
             ("b_point_sample", "estimated"): "Int64",
             ("rr_interval_ms", "reference"): "Float64",
             ("rr_interval_ms", "estimated"): "Float64",
+            ("heart_rate_bpm", "reference"): "Float64",
+            ("heart_rate_bpm", "estimated"): "Float64",
             ("pep_sample", "reference"): "Int64",
             ("pep_sample", "estimated"): "Int64",
             ("pep_ms", "reference"): "Float64",

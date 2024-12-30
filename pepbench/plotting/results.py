@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import biopsykit as bp
 import numpy as np
@@ -10,20 +10,16 @@ from fau_colors import cmaps, colors_all
 from matplotlib import pyplot as plt
 
 from pepbench.data_handling import get_data_for_algo
-from pepbench.data_handling._data_handling import (
-    get_performance_metric,
-    get_reference_data,
-    rr_interval_to_heart_rate,
-)
-from pepbench.plotting._utils import _get_fig_ax
+from pepbench.data_handling._data_handling import get_performance_metric, get_reference_data
+from pepbench.plotting._base_plotting import plot_blandaltman, plot_paired
+from pepbench.plotting._utils import _get_fig_ax, _get_fig_axs, _remove_duplicate_legend_entries
 from pepbench.utils._rename_maps import (
-    _ylabel_mapping,
-    _algorithm_mapping,
-    _xlabel_mapping,
-    _metric_mapping,
     _algo_level_mapping,
+    _algorithm_mapping,
+    _metric_mapping,
+    _xlabel_mapping,
+    _ylabel_mapping,
 )
-
 
 __all__ = [
     "boxplot_reference_pep",
@@ -34,8 +30,12 @@ __all__ = [
     "residual_plot_pep_participant",
     "residual_plot_pep_phase",
     "residual_plot_pep_heart_rate",
+    "histplot_heart_rate",
     "regplot_error_heart_rate",
     "regplot_pep_heart_rate",
+    "paired_plot_error_outlier_correction",
+    "paired_plot_error_pep_pipeline",
+    "plot_q_wave_detection_waveform_detailed_comparison",
 ]
 
 from pepbench.utils._types import str_t
@@ -67,9 +67,6 @@ def _plot_helper_reference_pep(
     title = kwargs.pop("title", None)
 
     meanprops = _get_meanprops(**kwargs)
-
-    if "ax" in kwargs:
-        kwargs.pop("ax")
 
     if hue is None:
         plot_func(data=data.reset_index(), x=x, y=y, ax=ax, meanprops=meanprops, **kwargs)
@@ -153,6 +150,8 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> t
     kwargs.setdefault("color", cmaps.fau[0])
     kwargs.setdefault("alpha", 0.3)
 
+    show_upper_limit = kwargs.pop("show_upper_limit", False)
+
     if isinstance(algorithm, str):
         algorithm = [algorithm]
 
@@ -166,18 +165,19 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> t
     data = data.dropna()
 
     # filter kwargs for plt.scatter
-    kwargs_scatter = {k: v for k, v in kwargs.items() if k in (*plt.scatter.__code__.co_varnames, "color", "alpha")}
+    # kwargs_scatter = {k: v for k, v in kwargs.items() if k in (*plt.scatter.__code__.co_varnames, "color", "alpha", )}
 
-    pg.plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs_scatter)
+    plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs)
 
-    if len(algo_levels) == 1:
-        title = f"{_algo_level_mapping[algo_levels[0]]}: {_pep_pipeline_to_str(algorithm)}"
-    else:
-        title = f"PEP Pipeline:\n{_pep_pipeline_to_str(algorithm)}"
+    title = _format_title(algo_levels, algorithm)
 
     ax.set_xlabel("Reference PEP [ms]")
     ax.set_ylabel("Reference - Estimated PEP [ms]")
     ax.set_title(title, fontdict={"fontweight": "bold"})
+
+    if show_upper_limit:
+        xvals = np.arange(0, int(ax.get_ylim()[1]), 1)
+        ax.plot(xvals, xvals, color=cmaps.wiso[0], ls="--")
 
     fig.tight_layout()
     return fig, ax
@@ -203,8 +203,8 @@ def residual_plot_pep_heart_rate(
     data: pd.DataFrame, algorithm: Sequence[str], bins: Optional[Union[int, str, Sequence[int]]] = 10, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("rect", (0, 0, 0.85, 1))
+    kwargs.setdefault("base_color", "Spectral_r")
 
-    data = rr_interval_to_heart_rate(data)
     histogram, bin_edges = np.histogram(data["heart_rate_bpm"].dropna(), bins=bins)
 
     # add category for heart rate
@@ -228,28 +228,46 @@ def _residual_plot_error_detailed_helper(
     n_colors = data.index.get_level_values(grouper).nunique()
     base_color = kwargs.pop("base_color", "Spectral")
     palette = sns.color_palette(base_color, n_colors=n_colors)
+    show_upper_limit = kwargs.pop("show_upper_limit", False)
+    show_legend = kwargs.pop("show_legend", True)
+
+    fig, ax = _get_fig_ax(kwargs)
 
     # use residual plot to only plot mean and confidence interval of all data;
     # manually plot the scatter plot using participant as hue variable afterwards
     kwargs_new = kwargs.copy()
     kwargs_new.update(alpha=0.0)
 
-    fig, ax = residual_plot_pep(data, algorithm, **kwargs_new)
+    data_scatter = get_data_for_algo(data, algorithm)
 
-    data = get_data_for_algo(data, algorithm)
-
-    data = data["pep_ms"].reset_index()
-    data = data.assign(x=data["reference"], y=data["reference"] - data["estimated"])
+    data_scatter = data_scatter["pep_ms"].reset_index()
+    data_scatter = data_scatter.assign(
+        x=data_scatter["reference"], y=data_scatter["reference"] - data_scatter["estimated"]
+    )
 
     # filter kwargs for plt.scatter
     kwargs_scatter = {
         k: v for k, v in kwargs.items() if k in sns.scatterplot.__code__.co_varnames + plt.scatter.__code__.co_varnames
     }
-    sns.scatterplot(data=data, x="x", y="y", hue=grouper, **kwargs_scatter, palette=palette)
 
+    sns.scatterplot(data=data_scatter, x="x", y="y", hue=grouper, ax=ax, **kwargs_scatter, palette=palette)
+
+    fig, ax = residual_plot_pep(data, algorithm, ax=ax, **kwargs_new)
+
+    if show_upper_limit:
+        xvals = np.arange(0, int(ax.get_ylim()[1]), 1)
+        ax.plot(xvals, xvals, color=cmaps.wiso[0], ls="--")
+
+    handles, labels = ax.get_legend_handles_labels()
     ax.legend().remove()
-    if kwargs.get("show_legend", True):
-        fig.legend(title=" ".join([s.capitalize() for s in grouper.split("_")]), loc="upper right")
+    handles, labels = _remove_duplicate_legend_entries(handles, labels)
+    if show_legend:
+        fig.legend(
+            handles=handles,
+            labels=labels,
+            title=" ".join([s.capitalize() for s in grouper.split("_")]),
+            loc="upper right",
+        )
 
     fig.tight_layout(rect=rect)
 
@@ -267,6 +285,32 @@ def _add_corr_coeff(data, x: str, y: str, ax: plt.Axes):
         verticalalignment="top",
         horizontalalignment="right",
     )
+
+
+def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
+    kwargs.setdefault("stat", "percent")
+    kwargs.setdefault("kde", True)
+    show_legend = kwargs.pop("show_legend", True)
+
+    # legend_loc = kwargs.pop("legend_loc", "upper right")
+    if show_legend:
+        rect_default = (0, 0, 0.85, 1)
+    else:
+        rect_default = (0, 0, 1, 1)
+
+    rect = kwargs.pop("rect", rect_default)
+
+    fig, ax = _get_fig_ax(kwargs)
+    ax = sns.histplot(data=data.reset_index(), x="heart_rate_bpm", hue=hue, ax=ax, **kwargs)
+
+    ax.set_xlabel("Heart Rate [bpm]")
+
+    fig.tight_layout()
+    # fig.tight_layout(rect=rect)
+    # if show_legend and hue is not None:
+    #    fig.legend(title=hue.capitalize(), handles=handles, labels=labels, loc=legend_loc)
+
+    return fig, ax
 
 
 def regplot_pep_heart_rate(
@@ -290,8 +334,6 @@ def regplot_pep_heart_rate(
 
     if data.columns.nlevels > 1:
         data = data.xs("estimated", level=-1, axis=1)
-
-    data = rr_interval_to_heart_rate(data)
 
     # filter kwargs for sns.regplot
     kwargs_regplot = {
@@ -332,7 +374,6 @@ def regplot_error_heart_rate(
         algorithm = [algorithm]
     algo_levels = [s for s in data.index.names if s in _algo_level_mapping.keys()]
 
-    data = rr_interval_to_heart_rate(data)
     data = get_data_for_algo(data, algorithm)
 
     data = data.reindex(["estimated", "metric"], level=-1, axis=1)
@@ -355,10 +396,107 @@ def regplot_error_heart_rate(
     return fig, ax
 
 
+def paired_plot_error_outlier_correction(
+    data: pd.DataFrame, outlier_algo_combis: Sequence[Sequence[str]], dv: str, **kwargs: dict[str, Any]
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    kwargs.setdefault("ncols", len(outlier_algo_combis))
+    fig, axs = _get_fig_axs(kwargs)
+
+    if "error" in dv:
+        colors = kwargs.pop("colors", ["indianred", "grey", "green"])
+    else:
+        colors = kwargs.pop("colors", ["grey", "green", "indianred"])
+    pointplot_kwargs = kwargs.pop("pointplot_kwargs", {"scale": 0.6, "marker": ".", "alpha": 0.5})
+
+    for i, (ax, outlier_combi) in enumerate(zip(axs, outlier_algo_combis)):
+        data_plot = data.reindex(outlier_combi, level="outlier_correction_algorithm")
+        data_plot = data_plot.unstack("outlier_correction_algorithm")
+        eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
+        data_plot = data_plot.loc[eq_mask].stack()
+
+        # rename outlier correction algorithms
+        data_plot = data_plot.rename(index=_algorithm_mapping)
+        outlier_combi = [_algorithm_mapping[algo] for algo in outlier_combi]
+        ax = plot_paired(
+            data=data_plot,
+            dv=dv,
+            within="outlier_correction_algorithm",
+            subject="id_concat",
+            order=outlier_combi,
+            colors=colors,
+            pointplot_kwargs=pointplot_kwargs,
+            ax=ax,
+        )
+
+        if i == 0:
+            ax.set_ylabel(_ylabel_mapping[dv])
+        ax.set_xlabel(_algo_level_mapping["outlier_correction_algorithm"])
+
+        xmax = len(outlier_combi) - 1 + 0.15
+        ax.set_xlim([-0.15, 1.15])
+    if "title" in kwargs:
+        fig.suptitle(f"B-Point Algorithm: {_algorithm_mapping[kwargs.pop('title')]}", fontweight="bold")
+
+    fig.tight_layout()
+
+    return fig, axs
+
+
+def paired_plot_error_pep_pipeline(
+    data: pd.DataFrame, pep_pipelines: Sequence[Sequence[str]], dv: str, **kwargs: dict[str, Any]
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    kwargs.setdefault("ncols", len(pep_pipelines))
+    fig, axs = _get_fig_axs(kwargs)
+    if "error" in dv:
+        colors = kwargs.pop("colors", ["#C50F3C", "#8C9FB1", "#7BB725"])
+    else:
+        colors = kwargs.pop("colors", ["#8C9FB1", "#7BB725", "#C50F3C"])
+    pointplot_kwargs = kwargs.pop("pointplot_kwargs", {"scale": 0.6, "marker": ".", "alpha": 0.2})
+
+    for i, (ax, pep_pipeline) in enumerate(zip(axs, pep_pipelines)):
+        pep_pipeline = ["_".join(p) for p in pep_pipeline]
+        data_plot = data.reindex(pep_pipeline, level="pipeline")
+        data_plot = data_plot.unstack("pipeline")
+        eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
+        data_plot = data_plot.loc[eq_mask].stack()
+
+        # rename outlier correction algorithms
+        ax = plot_paired(
+            data=data_plot,
+            dv=dv,
+            within="pipeline",
+            subject="id_concat",
+            order=pep_pipeline,
+            colors=colors,
+            pointplot_kwargs=pointplot_kwargs,
+            ax=ax,
+        )
+
+        if i == 0:
+            ax.set_ylabel(_ylabel_mapping[dv])
+        # ax.set_xlabel(_algo_level_mapping["outlier_correction_algorithm"])
+        xmax = len(pep_pipeline) - 1 + 0.15
+        ax.set_xlim([-0.15, xmax])
+    if "title" in kwargs:
+        fig.suptitle(f"B-Point Algorithm: {_algorithm_mapping[kwargs.pop('title')]}", fontweight="bold")
+
+    fig.tight_layout()
+
+    return fig, axs
+
+
 def _get_meanprops(**kwargs: dict) -> dict:
     if "meanprops" in kwargs:
         return kwargs["meanprops"]
     return {"marker": "X", "markerfacecolor": "white", "markeredgecolor": "black", "markersize": "6"}
+
+
+def _format_title(algo_levels, algorithm):
+    if len(algo_levels) == 1:
+        title = f"{_algo_level_mapping[algo_levels[0]]}: {_pep_pipeline_to_str(algorithm)}"
+    else:
+        title = f"PEP Pipeline:\n{_pep_pipeline_to_str(algorithm)}"
+    return title
 
 
 def _pep_pipeline_to_str(pipeline: Sequence[str]) -> str:
@@ -385,3 +523,72 @@ def _format_pep_pipeline(algo_levels: Sequence[str]) -> str:
         pipeline_str = " | ".join([_algo_level_mapping[algo_level] for algo_level in algo_levels])
 
     return pipeline_str
+
+
+from typing import Union, Callable
+
+import pandas as pd
+from matplotlib import pyplot as plt
+
+
+def plot_q_wave_detection_waveform_detailed_comparison(
+    datapoint_01: pd.DataFrame,
+    datapoint_02: pd.DataFrame,
+    base_plot_func: Callable,
+    plot_func_01_params: dict,
+    plot_func_02_params: dict,
+    ax_inset_01_params: dict,
+    ax_inset_02_params: dict,
+    datapoint_01_name: str,
+    datapoint_02_name: str,
+) -> Union[plt.Figure, Sequence[plt.Axes]]:
+    fig, axs = plt.subplots(
+        nrows=2, gridspec_kw=dict(left=0.075, bottom=0.1, top=0.85, right=0.75, hspace=0.25), sharex=True, sharey=True
+    )
+
+    plot_func_01_params.setdefault("normalize_time", True)
+    plot_func_02_params.setdefault("normalize_time", True)
+    plot_func_01_params.setdefault("use_tight", False)
+    plot_func_02_params.setdefault("use_tight", False)
+
+    base_plot_func(datapoint=datapoint_01, ax=axs[0], **plot_func_01_params)
+    base_plot_func(datapoint=datapoint_02, ax=axs[1], **plot_func_02_params)
+
+    xlim = axs[0].get_xlim()
+    ylim = axs[0].get_ylim()
+
+    xmin_01 = ax_inset_01_params.pop("xmin", 0)
+    xmax_01 = ax_inset_01_params.pop("xmax", 1)
+
+    ax_inset1 = axs[0].inset_axes(
+        **ax_inset_01_params, yticks=[], yticklabels=[], xlim=(xmax_01, xmax_01), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
+    )
+    base_plot_func(datapoint=datapoint_01, ax=ax_inset1, **plot_func_01_params)
+
+    ax_inset1.tick_params(axis="both", length=0, labelbottom=False, labelleft=False)
+    ax_inset1.set_xlim(xmin_01, xmax_01)
+    ax_inset1.set_xlabel(None)
+    ax_inset1.set_ylabel(None)
+
+    xmin_02 = ax_inset_02_params.pop("xmin", 0)
+    xmax_02 = ax_inset_02_params.pop("xmax", 1)
+
+    ax_inset2 = axs[1].inset_axes(
+        **ax_inset_02_params, yticks=[], yticklabels=[], xlim=(xmax_02, xmax_02), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
+    )
+    base_plot_func(datapoint=datapoint_02, ax=ax_inset2, **plot_func_02_params)
+
+    ax_inset2.tick_params(axis="both", length=0, labelbottom=False, labelleft=False)
+    ax_inset2.set_xlim(xmin_02, xmax_02)
+    ax_inset2.set_xlabel(None)
+    ax_inset2.set_ylabel(None)
+
+    axs[0].set_xlim(0.1, xlim[0] + 0.33 * (xlim[1] - xlim[0]))
+
+    axs[0].indicate_inset_zoom(ax_inset1, edgecolor="black")
+    axs[1].indicate_inset_zoom(ax_inset2, edgecolor="black")
+
+    axs[0].text(x=0.5, y=1.05, s=datapoint_01_name, transform=axs[0].transAxes, fontdict={"fontweight": "bold"})
+    axs[1].text(x=0.5, y=1.05, s=datapoint_02_name, transform=axs[1].transAxes, fontdict={"fontweight": "bold"})
+
+    return fig, axs

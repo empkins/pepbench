@@ -45,6 +45,7 @@ from pepbench.plotting._utils import (
     _handle_legend_one_axis,
     _handle_legend_two_axes,
     _sanitize_heartbeat_subset,
+    _get_fig_ax,
 )
 
 __all__ = [
@@ -72,6 +73,8 @@ def plot_q_peak_extraction_martinez2004_neurokit(
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
 
+    fig, ax = _get_fig_ax(kwargs)
+
     rect = _get_rect(kwargs)
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
@@ -91,14 +94,16 @@ def plot_q_peak_extraction_martinez2004_neurokit(
     q_peak_samples = q_peak_algo.points_["q_peak_sample"].dropna()
     q_peak_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["q_peaks"]
 
-    fig, ax = _plot_signals_one_axis(
+    _plot_signals_one_axis(
         datapoint=datapoint,
         use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_icg=False,
+        ax=ax,
         **kwargs,
     )
+
     _add_ecg_q_peaks(
         ecg_data,
         q_peak_samples_reference,
@@ -119,7 +124,10 @@ def plot_q_peak_extraction_martinez2004_neurokit(
     _add_heartbeat_borders(heartbeat_borders, ax=ax, **kwargs)
 
     _handle_legend_one_axis(fig=fig, ax=ax, **kwargs)
-    fig.tight_layout(rect=rect)
+
+    # check if figure is a figure (and not a SubFigure) and not already constrained layout
+    if kwargs.get("use_tight", True):
+        fig.tight_layout(rect=rect)
 
     return fig, ax
 
@@ -306,8 +314,8 @@ def plot_q_peak_extraction_forounzafar2018(
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_max_cols", 4)
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -360,9 +368,9 @@ def plot_q_peak_extraction_forounzafar2018(
         end = row["end_sample"]
         r_peak = row["r_peak_sample"]
 
-        ecg_heartbeat = ecg_data[start:end]
+        ecg_heartbeat = ecg_data.iloc[start:end]
 
-        threshold = -1.2 * ecg_data[r_peak] / datapoint.sampling_rate_ecg
+        threshold = -1.2 * ecg_data.iloc[r_peak] / datapoint.sampling_rate_ecg
 
         # plot threshold per heartbeat
         ax.hlines(
@@ -628,8 +636,8 @@ def plot_b_point_extraction_debski1993_second_derivative(
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -750,8 +758,8 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -796,7 +804,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         end = row["end_sample"]
 
         # get isoelectric line per heartbeat
-        icg_heartbeat = icg_data[start:end]
+        icg_heartbeat = icg_data.iloc[start:end]
         iso_line = icg_heartbeat.mean()
 
         # compute isoelectric line crossings
@@ -858,240 +866,6 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
     return fig, ax
 
 
-def plot_b_point_extraction_lozano2007_linear_regression(
-    datapoint: BaseUnifiedPepExtractionDataset,
-    *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
-    **kwargs: Any,
-) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    kwargs.setdefault("legend_outside", True)
-    kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
-
-    if algo_params is None:
-        algo_params = {}
-
-    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
-    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
-    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
-
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
-    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
-    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
-    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
-
-    b_point_algo = BPointExtractionLozano2007LinearRegression(**algo_params_b_point)
-    b_point_algo.extract(
-        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
-    )
-
-    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
-    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
-    r_peak_samples = heartbeats["r_peak_sample"].astype(int)
-
-    fig, ax = plot_signals(
-        datapoint=datapoint,
-        use_clean=use_clean,
-        normalize_time=normalize_time,
-        heartbeat_subset=heartbeat_subset,
-        collapse=True,
-        **kwargs,
-    )
-    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
-    _add_ecg_r_peaks(ecg_data, r_peak_samples, ax=ax, **kwargs)
-    _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
-    _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
-
-    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
-    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
-
-    # draw arrow from R-peak to Q-peak
-    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
-        x_r_peak = ecg_data.index[r_peak]
-        x_c_point = icg_data.index[c_point]
-        x_b_point = icg_data.index[b_point]
-
-        middle_x_rc = x_r_peak + (x_c_point - x_r_peak) / 2
-        middle_x_rb = x_r_peak + (x_b_point - x_r_peak) / 2
-        # align text to the center of the array
-        ax.annotate(
-            "",
-            xy=(x_c_point, y_c_point_max),
-            xytext=(x_r_peak, y_c_point_max),
-            # align text to the center of the array
-            arrowprops={"arrowstyle": "<->", "color": cmaps.tech_dark[0], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
-            ha="center",
-            zorder=3,
-        )
-        ax.annotate(
-            r"R-C Interval",
-            xy=(middle_x_rc, y_c_point_max),
-            xytext=(0, 12),
-            textcoords="offset points",
-            fontsize="small",
-            bbox=_get_annotation_bbox_no_edge(),
-            ha="center",
-        )
-
-        # align text to the center of the array
-        ax.annotate(
-            "",
-            xy=(x_b_point, y_r_peak_max),
-            xytext=(x_r_peak, y_r_peak_max),
-            # align text to the center of the array
-            arrowprops={"arrowstyle": "->", "color": cmaps.tech_dark[1], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
-            ha="center",
-            zorder=3,
-        )
-        ax.annotate(
-            r"$0.55 \cdot RC + 4.45$",
-            xy=(middle_x_rb, y_r_peak_max),
-            xytext=(0, 12),
-            textcoords="offset points",
-            fontsize="small",
-            bbox=_get_annotation_bbox_no_edge(),
-            ha="center",
-        )
-
-    _handle_legend_one_axis(
-        fig=fig,
-        ax=ax,
-        **kwargs,
-    )
-
-    fig.tight_layout(rect=rect)
-    ylims = ax.get_ylim()
-    ax.set_ylim(ylims[0], 1.25 * y_c_point_max)
-
-    return fig, ax
-
-
-def plot_b_point_extraction_lozano2007_quadratic_regression(
-    datapoint: BaseUnifiedPepExtractionDataset,
-    *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
-    **kwargs: Any,
-) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    kwargs.setdefault("legend_outside", True)
-    kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
-
-    if algo_params is None:
-        algo_params = {}
-
-    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
-    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
-    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
-
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
-    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
-    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
-    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
-
-    b_point_algo = BPointExtractionLozano2007QuadraticRegression(**algo_params_b_point)
-    b_point_algo.extract(
-        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
-    )
-
-    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
-    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
-    r_peak_samples = heartbeats["r_peak_sample"].astype(int)
-
-    fig, ax = plot_signals(
-        datapoint=datapoint,
-        use_clean=use_clean,
-        normalize_time=normalize_time,
-        heartbeat_subset=heartbeat_subset,
-        collapse=True,
-        **kwargs,
-    )
-    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
-    _add_ecg_r_peaks(ecg_data, r_peak_samples, ax=ax, **kwargs)
-    _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
-    _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
-
-    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
-    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
-
-    # draw arrow from R-peak to Q-peak
-    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
-        x_r_peak = ecg_data.index[r_peak]
-        x_c_point = icg_data.index[c_point]
-        x_b_point = icg_data.index[b_point]
-
-        middle_x_rc = x_r_peak + (x_c_point - x_r_peak) / 2
-        middle_x_rb = x_r_peak + (x_b_point - x_r_peak) / 2
-        # align text to the center of the array
-        ax.annotate(
-            "",
-            xy=(x_c_point, y_c_point_max),
-            xytext=(x_r_peak, y_c_point_max),
-            # align text to the center of the array
-            arrowprops={"arrowstyle": "<->", "color": cmaps.tech_dark[0], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
-            ha="center",
-            zorder=3,
-        )
-        ax.annotate(
-            r"R-C Interval",
-            xy=(middle_x_rc, y_c_point_max),
-            xytext=(0, 12),
-            textcoords="offset points",
-            fontsize="small",
-            bbox=_get_annotation_bbox_no_edge(),
-            ha="center",
-        )
-
-        # align text to the center of the array
-        ax.annotate(
-            "",
-            xy=(x_b_point, y_r_peak_max),
-            xytext=(x_r_peak, y_r_peak_max),
-            # align text to the center of the array
-            arrowprops={"arrowstyle": "->", "color": cmaps.tech_dark[1], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
-            ha="center",
-            zorder=3,
-        )
-        ax.annotate(
-            "$-3.2e^{-3} \\cdot RC^2$\n $+1.233 \\cdot RC$\n $-31.59$",
-            xy=(middle_x_rb, y_r_peak_max),
-            xytext=(0, 12),
-            textcoords="offset points",
-            fontsize="small",
-            bbox=_get_annotation_bbox_no_edge(),
-            ha="center",
-        )
-
-    _handle_legend_one_axis(
-        fig=fig,
-        ax=ax,
-        **kwargs,
-    )
-
-    fig.tight_layout(rect=rect)
-    ylims = ax.get_ylim()
-    ax.set_ylim(ylims[0], 1.25 * y_c_point_max)
-
-    return fig, ax
-
-
 def plot_b_point_extraction_arbol2017_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
@@ -1105,9 +879,9 @@ def plot_b_point_extraction_arbol2017_second_derivative(
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("rect", (0, 0, 1, 0.8))
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -1244,9 +1018,9 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("rect", (0, 0, 1, 0.8))
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -1364,6 +1138,240 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     return fig, axs
 
 
+def plot_b_point_extraction_lozano2007_linear_regression(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    algo_params_c_point = {
+        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
+    }
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionLozano2007LinearRegression(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+    r_peak_samples = heartbeats["r_peak_sample"].astype(int)
+
+    fig, ax = plot_signals(
+        datapoint=datapoint,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        collapse=True,
+        **kwargs,
+    )
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
+    _add_ecg_r_peaks(ecg_data, r_peak_samples, ax=ax, **kwargs)
+    _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
+    _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
+
+    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
+    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
+
+    # draw arrow from R-peak to Q-peak
+    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
+        x_r_peak = ecg_data.index[r_peak]
+        x_c_point = icg_data.index[c_point]
+        x_b_point = icg_data.index[b_point]
+
+        middle_x_rc = x_r_peak + (x_c_point - x_r_peak) / 2
+        middle_x_rb = x_r_peak + (x_b_point - x_r_peak) / 2
+        # align text to the center of the array
+        ax.annotate(
+            "",
+            xy=(x_c_point, y_c_point_max),
+            xytext=(x_r_peak, y_c_point_max),
+            # align text to the center of the array
+            arrowprops={"arrowstyle": "<->", "color": cmaps.tech_dark[0], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
+            ha="center",
+            zorder=3,
+        )
+        ax.annotate(
+            r"R-C Interval",
+            xy=(middle_x_rc, y_c_point_max),
+            xytext=(0, 12),
+            textcoords="offset points",
+            fontsize="small",
+            bbox=_get_annotation_bbox_no_edge(),
+            ha="center",
+        )
+
+        # align text to the center of the array
+        ax.annotate(
+            "",
+            xy=(x_b_point, y_r_peak_max),
+            xytext=(x_r_peak, y_r_peak_max),
+            # align text to the center of the array
+            arrowprops={"arrowstyle": "->", "color": cmaps.tech_dark[1], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
+            ha="center",
+            zorder=3,
+        )
+        ax.annotate(
+            r"$0.55 \cdot RC + 4.45$",
+            xy=(middle_x_rb, y_r_peak_max),
+            xytext=(0, 12),
+            textcoords="offset points",
+            fontsize="small",
+            bbox=_get_annotation_bbox_no_edge(),
+            ha="center",
+        )
+
+    _handle_legend_one_axis(
+        fig=fig,
+        ax=ax,
+        **kwargs,
+    )
+
+    fig.tight_layout(rect=rect)
+    ylims = ax.get_ylim()
+    ax.set_ylim(ylims[0], 1.25 * y_c_point_max)
+
+    return fig, ax
+
+
+def plot_b_point_extraction_lozano2007_quadratic_regression(
+    datapoint: BaseUnifiedPepExtractionDataset,
+    *,
+    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: Optional[bool] = True,
+    normalize_time: Optional[bool] = False,
+    algo_params: Optional[dict] = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(
+        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
+    )
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    algo_params_c_point = {
+        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
+    }
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionLozano2007QuadraticRegression(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+    r_peak_samples = heartbeats["r_peak_sample"].astype(int)
+
+    fig, ax = plot_signals(
+        datapoint=datapoint,
+        use_clean=use_clean,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        collapse=True,
+        **kwargs,
+    )
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=ax, **kwargs)
+    _add_ecg_r_peaks(ecg_data, r_peak_samples, ax=ax, **kwargs)
+    _add_icg_c_points(icg_data, c_point_samples, ax=ax, **kwargs)
+    _add_icg_b_points(icg_data, b_point_samples, ax=ax, **kwargs)
+
+    y_c_point_max = np.max(icg_data.iloc[c_point_samples], axis=0).squeeze()
+    y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
+
+    # draw arrow from R-peak to Q-peak
+    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
+        x_r_peak = ecg_data.index[r_peak]
+        x_c_point = icg_data.index[c_point]
+        x_b_point = icg_data.index[b_point]
+
+        middle_x_rc = x_r_peak + (x_c_point - x_r_peak) / 2
+        middle_x_rb = x_r_peak + (x_b_point - x_r_peak) / 2
+        # align text to the center of the array
+        ax.annotate(
+            "",
+            xy=(x_c_point, y_c_point_max),
+            xytext=(x_r_peak, y_c_point_max),
+            # align text to the center of the array
+            arrowprops={"arrowstyle": "<->", "color": cmaps.tech_dark[0], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
+            ha="center",
+            zorder=3,
+        )
+        ax.annotate(
+            r"R-C Interval",
+            xy=(middle_x_rc, y_c_point_max),
+            xytext=(0, 12),
+            textcoords="offset points",
+            fontsize="small",
+            bbox=_get_annotation_bbox_no_edge(),
+            ha="center",
+        )
+
+        # align text to the center of the array
+        ax.annotate(
+            "",
+            xy=(x_b_point, y_r_peak_max),
+            xytext=(x_r_peak, y_r_peak_max),
+            # align text to the center of the array
+            arrowprops={"arrowstyle": "->", "color": cmaps.tech_dark[1], "lw": 2, "shrinkA": 0.0, "shrinkB": 0.0},
+            ha="center",
+            zorder=3,
+        )
+        ax.annotate(
+            "$-3.2e^{-3} \\cdot RC^2$\n $+1.233 \\cdot RC$\n $-31.59$",
+            xy=(middle_x_rb, y_r_peak_max),
+            xytext=(0, 12),
+            textcoords="offset points",
+            fontsize="small",
+            bbox=_get_annotation_bbox_no_edge(),
+            ha="center",
+        )
+
+    _handle_legend_one_axis(
+        fig=fig,
+        ax=ax,
+        **kwargs,
+    )
+
+    fig.tight_layout(rect=rect)
+    ylims = ax.get_ylim()
+    ax.set_ylim(ylims[0], 1.25 * y_c_point_max)
+
+    return fig, ax
+
+
 def plot_b_point_extraction_drost2022(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
@@ -1376,8 +1384,8 @@ def plot_b_point_extraction_drost2022(
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
-    rect = _get_rect(**kwargs)
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -1498,10 +1506,10 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("rect", (0, 0, 1, 0.8))
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
