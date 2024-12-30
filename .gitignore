@@ -1,6 +1,7 @@
 # ignore local config file that specifies local paths
 config.json
 paper_path.json
+*_timing_information.json
 
 # ignore playground folder
 playground
