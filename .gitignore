@@ -1,5 +1,6 @@
 # ignore local config file that specifies local paths
 config.json
+paper_path.json
 
 # ignore local cachedir
 cachedir
