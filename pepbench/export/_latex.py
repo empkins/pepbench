@@ -1,4 +1,5 @@
-from typing import Union, Sequence, Optional
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import pandas as pd
 from pandas.io.formats.style import Styler

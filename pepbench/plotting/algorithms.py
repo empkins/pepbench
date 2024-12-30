@@ -39,13 +39,13 @@ from pepbench.plotting._utils import (
     _add_icg_c_points,
     _get_annotation_bbox_no_edge,
     _get_data,
+    _get_fig_ax,
     _get_legend_loc,
     _get_rect,
     _get_reference_labels,
     _handle_legend_one_axis,
     _handle_legend_two_axes,
     _sanitize_heartbeat_subset,
-    _get_fig_ax,
 )
 
 __all__ = [

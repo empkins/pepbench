@@ -525,7 +525,7 @@ def _format_pep_pipeline(algo_levels: Sequence[str]) -> str:
     return pipeline_str
 
 
-from typing import Union, Callable
+from typing import Callable, Union
 
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -543,7 +543,10 @@ def plot_q_wave_detection_waveform_detailed_comparison(
     datapoint_02_name: str,
 ) -> Union[plt.Figure, Sequence[plt.Axes]]:
     fig, axs = plt.subplots(
-        nrows=2, gridspec_kw=dict(left=0.075, bottom=0.1, top=0.85, right=0.75, hspace=0.25), sharex=True, sharey=True
+        nrows=2,
+        gridspec_kw={"left": 0.075, "bottom": 0.1, "top": 0.85, "right": 0.75, "hspace": 0.25},
+        sharex=True,
+        sharey=True,
     )
 
     plot_func_01_params.setdefault("normalize_time", True)
