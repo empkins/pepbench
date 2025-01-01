@@ -74,10 +74,6 @@ _nan_reason_mapping_short = {
     "no_monotonic_segment": "No Mon. Incr.",
     "no_zero_crossing": "No ZCs",
     "invalid_b_point_search_window": "Inv. B Window",
-    # TODO remove after algo re-run
-    "no_c_point": "n/a",
-    "no_local_minima": "n/a",
-    "r_peak_or_c_point_nan": "n/a",
 }
 
 
