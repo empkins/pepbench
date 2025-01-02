@@ -49,6 +49,9 @@ _algorithm_mapping.update(**{f"vanlien2013-{i}-ms": f"Van13 ({i} ms)" for i in n
 _algorithm_mapping.update()
 
 _metric_mapping = {
+    "mean": "Mean",
+    "std": "SD",
+    "total": "Total",
     "absolute_error_per_sample_ms": "Absolute Error [ms]",
     "error_per_sample_ms": "Error [ms]",
     "relative_error_per_sample_percent": "Relative Error [%]",

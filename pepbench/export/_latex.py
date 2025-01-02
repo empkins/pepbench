@@ -9,9 +9,16 @@ from pepbench.utils._rename_maps import (
     _algorithm_mapping,
     _nan_reason_mapping,
     _nan_reason_mapping_short,
+    _metric_mapping,
 )
 
-__all__ = ["create_reference_pep_table", "create_algorithm_result_table", "create_nan_reason_table", "convert_to_latex"]
+__all__ = [
+    "create_reference_pep_table",
+    "create_algorithm_result_table",
+    "create_nan_reason_table",
+    "create_outlier_correction_table",
+    "convert_to_latex",
+]
 
 
 def create_reference_pep_table(data: pd.DataFrame) -> pd.DataFrame:
@@ -65,6 +72,18 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
         formatted_data = formatted_data.set_index("algo_merged").drop(columns=algo_levels)
 
     return formatted_data
+
+
+def create_outlier_correction_table(data: pd.DataFrame, outlier_algos: Optional[Sequence[str]] = None) -> pd.DataFrame:
+    data_index = data.index.get_level_values("b_point_algorithm").unique()
+    data = data.groupby("b_point_algorithm", group_keys=False).apply(
+        lambda df: df.reindex(outlier_algos, level="outlier_correction_algorithm")
+    )
+    data = data.reindex(data_index, level="b_point_algorithm")
+    data = data.rename(index=_algorithm_mapping)
+    data = data.rename(_metric_mapping, axis=1)
+    data.index.names = [_algo_level_mapping[s] for s in data.index.names]
+    return data
 
 
 def create_nan_reason_table(

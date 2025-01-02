@@ -22,7 +22,13 @@ def highlight_outlier_improvement(col: pd.Series) -> pd.Series:
         corresponding to the outlier improvement is styled with "background-color: Pink"
         and other elements are styled with "background-color: LightGreen".
     """
-    none_is_min = col.groupby("b_point_algorithm").transform(lambda s: "none" in s.idxmin())
+    if "b_point_algorithm" in col.index.names:
+        idx_name = "b_point_algorithm"
+    elif "B-Point Detection" in col.index.names:
+        idx_name = "B-Point Detection"
+    else:
+        raise ValueError("Index name 'b_point_algorithm' or 'B-Point Detection' not found in the index names.")
+    none_is_min = col.groupby(idx_name).transform(lambda s: any([t in s.idxmin() for t in ["none", "None"]]))
     return none_is_min.map(
         {
             True: "background-color: Pink",
