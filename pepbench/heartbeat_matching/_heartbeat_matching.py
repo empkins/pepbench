@@ -110,8 +110,9 @@ def match_heartbeat_lists(
     segmented_index_name = heartbeats_extracted.index.name + heartbeats_extracted_suffix
     reference_index_name = heartbeats_reference.index.name + heartbeats_reference_suffix
 
-    matches = matches.assign(match_type=0)
-    matches.loc[~matches.isna().any(axis=1), "match_type"] = "tp"
+    tp_idx = ~matches.isna().any(axis=1)
+    matches = matches.assign(match_type=pd.NA)
+    matches.loc[tp_idx, "match_type"] = "tp"
     matches.loc[matches[reference_index_name].isna(), "match_type"] = "fp"
     matches.loc[matches[segmented_index_name].isna(), "match_type"] = "fn"
 

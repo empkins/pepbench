@@ -270,7 +270,7 @@ def plot_q_peak_extraction_vanlien2013(
     for r_peak, q_peak in zip(r_peak_samples, q_peak_samples):
         x_q_peak = ecg_data.index[q_peak]
         x_r_peak = ecg_data.index[r_peak]
-        y = r_peak_amplitude
+        y = r_peak_amplitude.iloc[0]
         middle_x = x_q_peak + (x_r_peak - x_q_peak) / 2
         # align text to the center of the array
         ax.annotate(
@@ -363,7 +363,7 @@ def plot_q_peak_extraction_forounzafar2018(
         **kwargs,
     )
 
-    for idx, row in heartbeats.iterrows():
+    for _idx, row in heartbeats.iterrows():
         start = row["start_sample"]
         end = row["end_sample"]
         r_peak = row["r_peak_sample"]
@@ -403,9 +403,9 @@ def plot_b_point_extraction_stern1985(
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 4)
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -527,9 +527,9 @@ def plot_b_point_extraction_sherwood1990(
     fig, ax = plt.subplots(**kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 4)
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     if algo_params is None:
         algo_params = {}
@@ -1470,7 +1470,7 @@ def plot_b_point_extraction_drost2022(
         ax.annotate(
             "",
             xy=(icg_data.index[b_point_sample], icg_data.iloc[b_point_sample]),
-            xytext=(icg_data.index[b_point_sample], line_vals.iloc[np.argmax(distance)]),
+            xytext=(icg_data.index[b_point_sample], line_vals.iloc[np.argmax(distance)].iloc[0]),
             textcoords="data",
             arrowprops={"arrowstyle": "-", "color": cmaps.fau[0], "lw": 2},
             zorder=10,
@@ -1478,7 +1478,7 @@ def plot_b_point_extraction_drost2022(
 
         ax.annotate(
             r"$d_{max}$",
-            xy=(icg_data.index[b_point_sample], line_vals.iloc[np.argmax(distance)]),
+            xy=(icg_data.index[b_point_sample], line_vals.iloc[np.argmax(distance)].iloc[0]),
             xytext=(-10, -5),
             textcoords="offset points",
             bbox=_get_annotation_bbox_no_edge(),
@@ -1553,7 +1553,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     )
 
     # normalize 3rd der to have the same scale as the 2nd der
-    icg_3rd_der = icg_3rd_der / float(icg_3rd_der.abs().max()) * float(icg_2nd_der.abs().max())
+    icg_3rd_der = icg_3rd_der / float(icg_3rd_der.abs().max().iloc[0]) * float(icg_2nd_der.abs().max().iloc[0])
 
     _plot_signals_one_axis(
         df=icg_3rd_der,
@@ -1613,7 +1613,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         a_point = b_point_algo._get_a_point(icg_data, search_interval, c_point) + (c_point - search_interval)
 
         icg_segment = icg_data.iloc[a_point : c_point + 1]
-        icg_2nd_der_segment = icg_2nd_der.iloc[a_point : c_point + 1]
+        # icg_2nd_der_segment = icg_2nd_der.iloc[a_point : c_point + 1]
         c_amplitude = icg_data.iloc[c_point]
 
         # Get the most prominent monotonic increasing segment between the A-Point and the C-Point
@@ -1674,7 +1674,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         # Label the last zero crossing/ local maximum as the B-Point
         # If there are no zero crossings or local maximums use the first Point of the segment as B-Point
         significant_features = pd.concat([significant_zero_crossings, significant_local_maximums], axis=0)
-        b_point = significant_features.iloc[np.argmin(c_point - significant_features)][0]
+        b_point = significant_features.iloc[np.argmin(c_point - significant_features)].iloc[0]
 
         icg_monotonic_increasing_segment.plot(ax=axs[0], color=cmaps.fau[0])
 

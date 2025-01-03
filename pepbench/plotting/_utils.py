@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Sequence
 from typing import Any, Optional, Union
 
@@ -6,6 +7,7 @@ import pandas as pd
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyBboxPatch
+from matplotlib.transforms import Bbox
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.heartbeat_matching import match_heartbeat_lists
@@ -17,7 +19,9 @@ def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
     kwargs_subplot = {
         key: value
         for key, value in kwargs.items()
-        if key in plt.subplots.__code__.co_varnames + plt.figure.__code__.co_varnames
+        if key
+        in list(inspect.signature(plt.subplots).parameters.keys())
+        + list(inspect.signature(plt.figure).parameters.keys())
     }
     # remove the kwargs that are used for plt.subplots
     for key in kwargs_subplot:
@@ -37,7 +41,9 @@ def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]
     kwargs_subplot = {
         key: value
         for key, value in kwargs.items()
-        if key in plt.subplots.__code__.co_varnames + plt.figure.__code__.co_varnames
+        if key
+        in list(inspect.signature(plt.subplots).parameters.keys())
+        + list(inspect.signature(plt.figure).parameters.keys())
     }
 
     if axs is not None:
@@ -301,6 +307,7 @@ def _add_pep_from_reference(
     for _i, row in labels.iterrows():
         start = ecg_data.index[row[("ecg", "sample_relative")]]
         end = icg_data.index[row[("icg", "sample_relative")]]
+
         if row[("ecg", "label")] == "Artefact" or row[("icg", "label")] == "Artefact":
             ax.axvspan(
                 start,
@@ -482,9 +489,9 @@ def _get_reference_labels(
     reference_labels_ecg = datapoint.reference_labels_ecg
     reference_labels_icg = datapoint.reference_labels_icg
 
-    q_peaks = reference_labels_ecg.xs("ECG", level="channel")["sample_relative"]
+    q_peaks = reference_labels_ecg.reindex(["ECG"], level="channel")["sample_relative"]
     q_peak_artefacts = reference_labels_ecg.reindex(["Artefact"], level="channel")["sample_relative"]
-    b_points = reference_labels_icg.xs("ICG", level="channel")["sample_relative"]
+    b_points = reference_labels_icg.reindex(["ICG"], level="channel")["sample_relative"]
     b_point_artefacts = reference_labels_icg.reindex(["Artefact"], level="channel")["sample_relative"]
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
@@ -602,7 +609,11 @@ def _get_bbox_coords(
     return artist.get_window_extent().transformed(ax.transData.inverted()).get_points()
 
 
-def add_fancy_patch_around(ax, bb, **kwargs):
+def add_fancy_patch_around(
+    ax: plt.Axes,
+    bb: Bbox,
+    **kwargs: dict[str, Any],
+) -> FancyBboxPatch:
     kwargs.setdefault("fc", (1, 1, 1, plt.rcParams["legend.framealpha"]))
     kwargs.setdefault("ec", "none")
     kwargs.setdefault("boxstyle", "round,pad=5")

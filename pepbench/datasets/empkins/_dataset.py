@@ -167,8 +167,8 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
             return data, fs
         # cut biopac data to specified phase
         timelog = self.timelog
-        phase_start = timelog[phase]["start"][0]
-        phase_end = timelog[phase]["end"][0]
+        phase_start = timelog[phase]["start"].iloc[0]
+        phase_end = timelog[phase]["end"].iloc[0]
         data = data.loc[phase_start:phase_end]
         return data, fs
 

@@ -28,7 +28,7 @@ def highlight_outlier_improvement(col: pd.Series) -> pd.Series:
         idx_name = "B-Point Detection"
     else:
         raise ValueError("Index name 'b_point_algorithm' or 'B-Point Detection' not found in the index names.")
-    none_is_min = col.groupby(idx_name).transform(lambda s: any([t in s.idxmin() for t in ["none", "None"]]))
+    none_is_min = col.groupby(idx_name).transform(lambda s: any(t in s.idxmin() for t in ["none", "None"]))
     return none_is_min.map(
         {
             True: "background-color: Pink",

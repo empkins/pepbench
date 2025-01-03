@@ -1,5 +1,6 @@
+import inspect
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pandas as pd
 from pandas.io.formats.style import Styler
@@ -7,9 +8,9 @@ from pandas.io.formats.style import Styler
 from pepbench.utils._rename_maps import (
     _algo_level_mapping,
     _algorithm_mapping,
+    _metric_mapping,
     _nan_reason_mapping,
     _nan_reason_mapping_short,
-    _metric_mapping,
 )
 
 __all__ = [
@@ -54,7 +55,9 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
     export_cols_m_sd = [s for s in export_cols_m_sd if s in data.columns]
 
     for key in export_cols_m_sd:
-        formatted_data[key] = data.apply(lambda row: rf"{row[(key, 'mean')]:.1f} \pm {row[(key, 'std')]:.1f}", axis=1)
+        formatted_data[key] = data.apply(
+            lambda row, k=key: rf"{row[(k, 'mean')]:.1f} \pm {row[(k, 'std')]:.1f}", axis=1
+        )
 
     if "Invalid PEPs" in data.columns:
         formatted_data[r"Invalid PEPs"] = data.apply(
@@ -105,7 +108,9 @@ def create_nan_reason_table(
     return data
 
 
-def convert_to_latex(data: Union[pd.DataFrame, Styler], collapse_index_columns: bool = False, **kwargs):
+def convert_to_latex(
+    data: Union[pd.DataFrame, Styler], collapse_index_columns: bool = False, **kwargs: dict[str, Any]
+) -> str:
     kwargs.setdefault("hrules", True)
     kwargs.setdefault("position", "ht")
     kwargs.setdefault("siunitx", True)
@@ -135,16 +140,16 @@ def convert_to_latex(data: Union[pd.DataFrame, Styler], collapse_index_columns: 
 
     styler = styler.format_index(lambda x: x.replace("%", r"\%"), axis=1)
     if kwargs.get("column_header_bold", False):
-        styler = styler.applymap_index(lambda x: "font-weight: bold;", axis=1)
+        styler = styler.applymap_index(lambda _: "font-weight: bold;", axis=1)
     if kwargs.get("row_header_bold", False):
-        styler = styler.applymap_index(lambda x: "font-weight: bold;", axis=0)
+        styler = styler.applymap_index(lambda _: "font-weight: bold;", axis=0)
 
     if kwargs.get("escape_index", False):
         styler = styler.format_index(escape="latex", axis=0)
     if kwargs.get("escape_columns", False):
         styler = styler.format_index(escape="latex", axis=1)
 
-    kwargs_styler = {k: v for k, v in kwargs.items() if k in styler.to_latex.__code__.co_varnames}
+    kwargs_styler = {k: v for k, v in kwargs.items() if k in list(inspect.signature(styler.to_latex).parameters.keys())}
 
     latex_str = styler.to_latex(**kwargs_styler)
 

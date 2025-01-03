@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
@@ -108,7 +109,7 @@ def _plot_helper_algorithm_performance(
     data = data.dropna().astype({metric: "float"})
     data = data.replace(_algorithm_mapping)
 
-    algo_levels = [s for s in data.columns if s in _algo_level_mapping.keys()]
+    algo_levels = [s for s in data.columns if s in _algo_level_mapping]
     data = data.assign(algorithm=data[algo_levels].apply(lambda x: "\n".join(x), axis=1))
 
     # filter kwargs for sns.boxplot
@@ -116,20 +117,16 @@ def _plot_helper_algorithm_performance(
         k: v
         for k, v in kwargs.items()
         if k
-        in sns.boxplot.__code__.co_varnames
-        + plt.boxplot.__code__.co_varnames
-        + plt.violinplot.__code__.co_varnames
-        + sns.violinplot.__code__.co_varnames
+        in list(inspect.signature(sns.boxplot).parameters.keys())
+        + list(inspect.signature(sns.violinplot).parameters.keys())
+        + list(inspect.signature(plt.boxplot).parameters.keys())
+        + list(inspect.signature(plt.violinplot).parameters.keys())
     }
 
     meanprops = _get_meanprops(**kwargs)
 
-    plot_func(data, x="algorithm", y=metric, ax=ax, meanprops=meanprops, **kwargs_boxplot)
-    ax.set_ylabel(
-        _metric_mapping[metric],
-        # labelpad=12,
-        # fontweight="bold",
-    )
+    plot_func(data, x="algorithm", y=metric, hue="algorithm", ax=ax, meanprops=meanprops, **kwargs_boxplot)
+    ax.set_ylabel(_metric_mapping[metric])
 
     xlabel = _format_pep_pipeline(algo_levels)
 
@@ -157,15 +154,12 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> t
 
     fig, ax = _get_fig_ax(kwargs)
 
-    algo_levels = [s for s in data.index.names if s in _algo_level_mapping.keys()]
+    algo_levels = [s for s in data.index.names if s in _algo_level_mapping]
 
     data = get_data_for_algo(data, algorithm)
 
     data = data["pep_ms"]
     data = data.dropna()
-
-    # filter kwargs for plt.scatter
-    # kwargs_scatter = {k: v for k, v in kwargs.items() if k in (*plt.scatter.__code__.co_varnames, "color", "alpha", )}
 
     plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs)
 
@@ -247,7 +241,11 @@ def _residual_plot_error_detailed_helper(
 
     # filter kwargs for plt.scatter
     kwargs_scatter = {
-        k: v for k, v in kwargs.items() if k in sns.scatterplot.__code__.co_varnames + plt.scatter.__code__.co_varnames
+        k: v
+        for k, v in kwargs.items()
+        if k
+        in list(inspect.signature(sns.scatterplot).parameters.keys())
+        + list(inspect.signature(plt.scatter).parameters.keys())
     }
 
     sns.scatterplot(data=data_scatter, x="x", y="y", hue=grouper, ax=ax, **kwargs_scatter, palette=palette)
@@ -274,7 +272,7 @@ def _residual_plot_error_detailed_helper(
     return fig, ax
 
 
-def _add_corr_coeff(data, x: str, y: str, ax: plt.Axes):
+def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes) -> None:
     corr = pg.corr(data[x], data[y])
     ax.text(
         0.95,
@@ -291,12 +289,9 @@ def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs:
     kwargs.setdefault("stat", "percent")
     kwargs.setdefault("kde", True)
     show_legend = kwargs.pop("show_legend", True)
-
     # legend_loc = kwargs.pop("legend_loc", "upper right")
-    if show_legend:
-        rect_default = (0, 0, 0.85, 1)
-    else:
-        rect_default = (0, 0, 1, 1)
+
+    rect_default = (0, 0, 0.85, 1) if show_legend else (0, 0, 1, 1)
 
     rect = kwargs.pop("rect", rect_default)
 
@@ -305,8 +300,7 @@ def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs:
 
     ax.set_xlabel("Heart Rate [bpm]")
 
-    fig.tight_layout()
-    # fig.tight_layout(rect=rect)
+    fig.tight_layout(rect=rect)
     # if show_legend and hue is not None:
     #    fig.legend(title=hue.capitalize(), handles=handles, labels=labels, loc=legend_loc)
 
@@ -315,7 +309,7 @@ def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs:
 
 def regplot_pep_heart_rate(
     data: pd.DataFrame,
-    algorithm: Sequence[str] = None,
+    algorithm: Optional[Sequence[str]] = None,
     use_reference: bool = False,
     add_corr_coeff: bool = False,
     **kwargs: dict,
@@ -339,7 +333,10 @@ def regplot_pep_heart_rate(
     kwargs_regplot = {
         k: v
         for k, v in kwargs.items()
-        if k in sns.regplot.__code__.co_varnames + plt.scatter.__code__.co_varnames + plt.plot.__code__.co_varnames
+        if k
+        in list(inspect.signature(sns.regplot).parameters.keys())
+        + list(inspect.signature(plt.scatter).parameters.keys())
+        + list(inspect.signature(plt.plot).parameters.keys())
     }
 
     sns.regplot(data=data.reset_index(), x="heart_rate_bpm", y="pep_ms", ax=ax, **kwargs_regplot)
@@ -372,7 +369,7 @@ def regplot_error_heart_rate(
 
     if isinstance(algorithm, str):
         algorithm = [algorithm]
-    algo_levels = [s for s in data.index.names if s in _algo_level_mapping.keys()]
+    algo_levels = [s for s in data.index.names if s in _algo_level_mapping]
 
     data = get_data_for_algo(data, algorithm)
 
@@ -416,13 +413,13 @@ def paired_plot_error_outlier_correction(
 
         # rename outlier correction algorithms
         data_plot = data_plot.rename(index=_algorithm_mapping)
-        outlier_combi = [_algorithm_mapping[algo] for algo in outlier_combi]
-        ax = plot_paired(
+        outlier_combi_format = [_algorithm_mapping[algo] for algo in outlier_combi]
+        plot_paired(
             data=data_plot,
             dv=dv,
             within="outlier_correction_algorithm",
             subject="id_concat",
-            order=outlier_combi,
+            order=outlier_combi_format,
             colors=colors,
             pointplot_kwargs=pointplot_kwargs,
             ax=ax,
@@ -432,7 +429,7 @@ def paired_plot_error_outlier_correction(
             ax.set_ylabel(_ylabel_mapping[dv])
         ax.set_xlabel(_algo_level_mapping["outlier_correction_algorithm"])
 
-        xmax = len(outlier_combi) - 1 + 0.15
+        # xmax = len(outlier_combi) - 1 + 0.15
         ax.set_xlim([-0.15, 1.15])
     if "title" in kwargs:
         fig.suptitle(f"B-Point Algorithm: {_algorithm_mapping[kwargs.pop('title')]}", fontweight="bold")
@@ -454,19 +451,19 @@ def paired_plot_error_pep_pipeline(
     pointplot_kwargs = kwargs.pop("pointplot_kwargs", {"scale": 0.6, "marker": ".", "alpha": 0.2})
 
     for i, (ax, pep_pipeline) in enumerate(zip(axs, pep_pipelines)):
-        pep_pipeline = ["_".join(p) for p in pep_pipeline]
-        data_plot = data.reindex(pep_pipeline, level="pipeline")
+        pep_pipeline_format = ["_".join(p) for p in pep_pipeline]
+        data_plot = data.reindex(pep_pipeline_format, level="pipeline")
         data_plot = data_plot.unstack("pipeline")
         eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
         data_plot = data_plot.loc[eq_mask].stack()
 
         # rename outlier correction algorithms
-        ax = plot_paired(
+        plot_paired(
             data=data_plot,
             dv=dv,
             within="pipeline",
             subject="id_concat",
-            order=pep_pipeline,
+            order=pep_pipeline_format,
             colors=colors,
             pointplot_kwargs=pointplot_kwargs,
             ax=ax,
@@ -475,7 +472,7 @@ def paired_plot_error_pep_pipeline(
         if i == 0:
             ax.set_ylabel(_ylabel_mapping[dv])
         # ax.set_xlabel(_algo_level_mapping["outlier_correction_algorithm"])
-        xmax = len(pep_pipeline) - 1 + 0.15
+        xmax = len(pep_pipeline_format) - 1 + 0.15
         ax.set_xlim([-0.15, xmax])
     if "title" in kwargs:
         fig.suptitle(f"B-Point Algorithm: {_algorithm_mapping[kwargs.pop('title')]}", fontweight="bold")
@@ -491,7 +488,7 @@ def _get_meanprops(**kwargs: dict) -> dict:
     return {"marker": "X", "markerfacecolor": "white", "markeredgecolor": "black", "markersize": "6"}
 
 
-def _format_title(algo_levels, algorithm):
+def _format_title(algo_levels: Sequence[str], algorithm: Sequence[str]) -> str:
     if len(algo_levels) == 1:
         title = f"{_algo_level_mapping[algo_levels[0]]}: {_pep_pipeline_to_str(algorithm)}"
     else:
@@ -505,12 +502,8 @@ def _pep_pipeline_to_str(pipeline: Sequence[str]) -> str:
 
 def _format_p_value(p_val: float) -> str:
     # sanitize p-value to ensure it's a float
-    p_val = float(p_val)
-    p_val = f"{p_val:.3f}"
-    if p_val == "0.000":
-        p_val = "< 0.001"
-    else:
-        p_val = "= " + p_val
+    p_val = str(float(p_val))
+    p_val = "< 0.001" if p_val == "0.000" else "= " + p_val
     return p_val
 
 
@@ -523,12 +516,6 @@ def _format_pep_pipeline(algo_levels: Sequence[str]) -> str:
         pipeline_str = " | ".join([_algo_level_mapping[algo_level] for algo_level in algo_levels])
 
     return pipeline_str
-
-
-from typing import Callable, Union
-
-import pandas as pd
-from matplotlib import pyplot as plt
 
 
 def plot_q_wave_detection_waveform_detailed_comparison(

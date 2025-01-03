@@ -163,11 +163,20 @@ def plot_signals_with_reference_pep(
     )
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subset=heartbeat_subset)
+
     reference_labels_ecg = (
-        pd.concat([reference_labels["q_peaks"], reference_labels["q_peak_artefacts"]]).sort_index().reset_index()
+        pd.concat(
+            [reference_labels["q_peaks"], reference_labels["q_peak_artefacts"]], names=["sample_relative", "label"]
+        )
+        .sort_index()
+        .reset_index()
     )
     reference_labels_icg = (
-        pd.concat([reference_labels["b_points"], reference_labels["b_point_artefacts"]]).sort_index().reset_index()
+        pd.concat(
+            [reference_labels["b_points"], reference_labels["b_point_artefacts"]], names=["sample_relative", "label"]
+        )
+        .sort_index()
+        .reset_index()
     )
     reference_labels_combined = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
 
@@ -434,6 +443,7 @@ def _plot_signals_one_axis(
 
         if plot_ecg:
             ecg_data.plot(ax=ax)
+            ax.legend()
         if plot_icg:
             icg_data.plot(ax=ax)
     else:
@@ -461,13 +471,13 @@ def _plot_signals_two_axes(
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    figsize = kwargs.pop("figsize", None)
+    kwargs.setdefault("nrows", 2)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
 
     rect = kwargs.get("rect", _get_rect(kwargs))
 
-    fig, axs = _get_fig_axs(figsize=figsize, nrows=2, sharex=True)
+    fig, axs = _get_fig_axs(kwargs)
 
     colors = iter(cmaps.faculties)
 
@@ -479,9 +489,6 @@ def _plot_signals_two_axes(
 
     _handle_legend_two_axes(fig, axs, **kwargs)
 
-    fig.align_ylabels()
-    fig.tight_layout(rect=rect)
-
     for ax in axs:
         if normalize_time:
             ax.set_xlabel("Time [s]")
@@ -489,10 +496,13 @@ def _plot_signals_two_axes(
             ax.set_xlabel("Time [hh:mm:ss]")
         ax.set_ylabel("Amplitude [a.u.]")
 
+    fig.align_ylabels()
+    fig.tight_layout(rect=rect)
+
     return fig, axs
 
 
-def plot_blandaltman(
+def plot_blandaltman(  # noqa: PLR0915
     x: Union[pd.Series, np.ndarray, list],
     y: Union[pd.Series, np.ndarray, list],
     agreement: float = 1.96,
@@ -585,7 +595,8 @@ def plot_blandaltman(
     yname = y.name if isinstance(y, pd.Series) else "y"
     x = np.asarray(x)
     y = np.asarray(y)
-    assert x.ndim == 1 and y.ndim == 1
+    assert x.ndim == 1
+    assert y.ndim == 1
     assert x.size == y.size
     assert not np.isnan(x).any(), "Missing values in x or y are not supported."
     assert not np.isnan(y).any(), "Missing values in x or y are not supported."
@@ -656,7 +667,7 @@ def plot_blandaltman(
         t = ax.text(
             xloc,
             mean_diff - offset,
-            "%.2f" % mean_diff,
+            f"{mean_diff:.2f}",
             ha="right",
             va="top",
             transform=trans,
@@ -668,7 +679,7 @@ def plot_blandaltman(
         t = ax.text(
             xloc,
             high + offset,
-            "+%.2f SD" % agreement,
+            f"+{agreement:.2f} SD",
             ha="right",
             va="bottom",
             transform=trans,
@@ -680,7 +691,7 @@ def plot_blandaltman(
         t = ax.text(
             xloc,
             high - offset,
-            "%.2f" % high,
+            f"{high:.2f}",
             ha="right",
             va="top",
             transform=trans,
@@ -692,7 +703,7 @@ def plot_blandaltman(
         t = ax.text(
             xloc,
             low + offset,
-            "%.2f" % low,
+            f"{low:.2f}",
             ha="right",
             va="bottom",
             transform=trans,
@@ -704,7 +715,7 @@ def plot_blandaltman(
         t = ax.text(
             xloc,
             low - offset,
-            "-%.2f SD" % agreement,
+            f"-{agreement:.2f} SD",
             ha="right",
             va="top",
             transform=trans,
@@ -718,10 +729,11 @@ def plot_blandaltman(
     # Add 95% confidence intervals for mean bias and limits of agreement
     if confidence is not None:
         assert 0 < confidence < 1
-        ci = dict()
-        ci["mean"] = stats.t.interval(confidence, dof, loc=mean_diff, scale=mean_diff_se)
-        ci["high"] = stats.t.interval(confidence, dof, loc=high, scale=high_low_se)
-        ci["low"] = stats.t.interval(confidence, dof, loc=low, scale=high_low_se)
+        ci = {
+            "mean": stats.t.interval(confidence, dof, loc=mean_diff, scale=mean_diff_se),
+            "high": stats.t.interval(confidence, dof, loc=high, scale=high_low_se),
+            "low": stats.t.interval(confidence, dof, loc=low, scale=high_low_se),
+        }
         ax.axhspan(ci["mean"][0], ci["mean"][1], facecolor="tab:grey", alpha=0.2)
         ax.axhspan(ci["high"][0], ci["high"][1], facecolor=_scatter_kwargs["color"], alpha=0.2)
         ax.axhspan(ci["low"][0], ci["low"][1], facecolor=_scatter_kwargs["color"], alpha=0.2)
@@ -733,7 +745,7 @@ def plot_blandaltman(
     return ax
 
 
-def plot_paired(
+def plot_paired(  # noqa: PLR0915, PLR0912, C901
     data: pd.DataFrame,
     dv: str,
     within: str,
@@ -746,7 +758,7 @@ def plot_paired(
     colors: Optional[Sequence[str]] = None,
     pointplot_kwargs: Optional[dict] = None,
     boxplot_kwargs: Optional[dict] = None,
-):
+) -> tuple[plt.Figure, plt.Axes]:
     """
     Paired plot.
 
@@ -810,7 +822,7 @@ def plot_paired(
         >>> import pingouin as pg
         >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
         >>> df = df.query("Group == 'Meditation' and Subject > 40")
-        >>> ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject")
+        >>> fig, ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject")
 
     Paired plot on an existing axis (no boxplot and uniform color):
 
@@ -839,7 +851,9 @@ def plot_paired(
         >>> import matplotlib.pyplot as plt
         >>> df = pg.read_dataset("mixed_anova").query("Group == 'Meditation'")
         >>> # df = df.query("Group == 'Meditation' and Subject > 40")
-        >>> pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", orient="h")  # doctest: +SKIP
+        >>> fig, ax = pg.plot_paired(
+        >>>     data=df, dv="Scores", within="Time", subject="Subject", orient="h"
+        >>> )  # doctest: +SKIP
 
     With the boxplot on the foreground:
 
@@ -848,7 +862,7 @@ def plot_paired(
         >>> import pingouin as pg
         >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
         >>> df = df.query("Group == 'Control'")
-        >>> ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
+        >>> fig, ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
     """
     from pingouin.utils import _check_dataframe
 
@@ -914,7 +928,9 @@ def plot_paired(
 
     # Start the plot
     if ax is None:
-        ax = plt.gca()
+        fig, ax = _get_fig_ax({})
+    else:
+        fig = ax.get_figure()
 
     # Set x and y depending on orientation using the num. replacement within
     _x = "wthn" if orient == "v" else dv
@@ -930,7 +946,7 @@ def plot_paired(
         # Line and scatter colors depending on subject dv trend
         _colors = np.where(y1 < y2, colors[0], np.where(y1 > y2, colors[2], colors[1]))
         # Line and scatter colors as hue-indexed dictionary
-        _colors = {subj: clr for subj, clr in zip(data_now[subject].unique(), _colors)}
+        _colors = dict(zip(data_now[subject].unique(), _colors))
         # Plot individual lines using Seaborn
         sns.lineplot(
             data=data_now,
@@ -992,4 +1008,4 @@ def plot_paired(
 
     # Despine and trim
     sns.despine(trim=True, ax=ax)
-    return ax
+    return fig, ax
