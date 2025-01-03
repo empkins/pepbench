@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from biopsykit.signals._base_extraction import BaseExtraction
 from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
-from biopsykit.signals.icg.event_extraction import BaseBPointExtraction
+from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
 from matplotlib import transforms
@@ -138,6 +138,7 @@ def plot_signals_with_reference_labels(
 def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
+    collapse: Optional[bool] = False,
     use_clean: Optional[bool] = True,
     normalize_time: Optional[bool] = False,
     heartbeat_subset: Optional[Sequence[int]] = None,
@@ -149,10 +150,10 @@ def plot_signals_with_reference_pep(
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     rect = _get_rect(kwargs)
 
-    fig, ax = plot_signals_with_reference_labels(
+    fig, axs = plot_signals_with_reference_labels(
         datapoint,
         use_clean=use_clean,
-        collapse=True,
+        collapse=collapse,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         **kwargs,
@@ -180,11 +181,16 @@ def plot_signals_with_reference_pep(
     )
     reference_labels_combined = pd.concat({"ecg": reference_labels_ecg, "icg": reference_labels_icg}, axis=1)
 
-    _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, ax, **kwargs)
+    if collapse:
+        _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, axs, **kwargs)
+        _handle_legend_one_axis(fig, axs, **kwargs)
+    else:
+        _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, axs[0], **kwargs)
+        _add_pep_from_reference(ecg_data, icg_data, reference_labels_combined, axs[1], **kwargs)
+        _handle_legend_two_axes(fig, axs, **kwargs)
 
-    _handle_legend_one_axis(fig, ax, **kwargs)
     fig.tight_layout(rect=rect)
-    return fig, ax
+    return fig, axs
 
 
 def plot_signals_with_algorithm_results(
@@ -197,9 +203,9 @@ def plot_signals_with_algorithm_results(
     heartbeat_subset: Optional[Sequence[int]] = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
-    kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
-    rect = _get_rect(**kwargs)
+    rect = _get_rect(kwargs)
 
     fig, axs = plot_signals_with_reference_labels(
         datapoint,
@@ -215,14 +221,20 @@ def plot_signals_with_algorithm_results(
         datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
     )
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    heartbeats = datapoint.heartbeats.loc[heartbeat_subset]["start_sample"]
-
-    algorithm_results = algorithm.points_
+    heartbeats = datapoint.heartbeats.loc[heartbeat_subset]
+    # heartbeat needs to be relative to the start of the signal after subset
+    heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
+    heartbeats -= heartbeats["start_sample"].iloc[0]
 
     if isinstance(algorithm, BaseEcgExtraction):
-        q_peaks = algorithm_results["q_peak_sample"]
-        q_peaks = q_peaks.loc[heartbeat_subset]
-        q_peaks = q_peaks - heartbeats.iloc[0]
+        algorithm.extract(
+            ecg=ecg_data,
+            heartbeats=heartbeats,
+            sampling_rate_hz=datapoint.sampling_rate_ecg,
+        )
+        q_peaks = algorithm.points_["q_peak_sample"]
+        q_peaks = q_peaks.loc[heartbeat_subset].dropna()
+
         if collapse:
             _add_ecg_q_peaks(
                 ecg_data,
@@ -242,9 +254,19 @@ def plot_signals_with_algorithm_results(
                 **kwargs,
             )
     if isinstance(algorithm, BaseBPointExtraction):
-        b_points = algorithm_results["b_point_sample"]
-        b_points = b_points.loc[heartbeat_subset]
-        b_points = b_points - heartbeats.iloc[0]
+        c_point_algo = CPointExtractionScipyFindPeaks()
+        c_points = c_point_algo.extract(
+            icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg
+        ).points_
+        algorithm.extract(
+            icg=icg_data,
+            heartbeats=heartbeats,
+            c_points=c_points,
+            sampling_rate_hz=datapoint.sampling_rate_icg,
+        )
+        b_points = algorithm.points_["b_point_sample"]
+        print(b_points)
+        b_points = b_points.loc[heartbeat_subset].dropna()
         if collapse:
             _add_icg_b_points(
                 icg_data,
