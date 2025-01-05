@@ -55,9 +55,8 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
     export_cols_m_sd = [s for s in export_cols_m_sd if s in data.columns]
 
     for key in export_cols_m_sd:
-        formatted_data[key] = data.apply(
-            lambda row, k=key: rf"{row[(k, 'mean')]:.1f} \pm {row[(k, 'std')]:.1f}", axis=1
-        )
+        # formatted_data[key] = data.apply(lambda row: print(row[(key, "mean")]), axis=1)
+        formatted_data[key] = data.apply(lambda row: rf"{row[(key, 'mean')]:.1f} \pm {row[(key, 'std')]:.1f}", axis=1)
 
     if "Invalid PEPs" in data.columns:
         formatted_data[r"Invalid PEPs"] = data.apply(
@@ -140,9 +139,9 @@ def convert_to_latex(
 
     styler = styler.format_index(lambda x: x.replace("%", r"\%"), axis=1)
     if kwargs.get("column_header_bold", False):
-        styler = styler.applymap_index(lambda _: "font-weight: bold;", axis=1)
+        styler = styler.map_index(lambda _: "font-weight: bold;", axis=1)
     if kwargs.get("row_header_bold", False):
-        styler = styler.applymap_index(lambda _: "font-weight: bold;", axis=0)
+        styler = styler.map_index(lambda _: "font-weight: bold;", axis=0)
 
     if kwargs.get("escape_index", False):
         styler = styler.format_index(escape="latex", axis=0)

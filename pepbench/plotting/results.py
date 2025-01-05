@@ -113,19 +113,23 @@ def _plot_helper_algorithm_performance(
     data = data.assign(algorithm=data[algo_levels].apply(lambda x: "\n".join(x), axis=1))
 
     # filter kwargs for sns.boxplot
-    kwargs_boxplot = {
-        k: v
-        for k, v in kwargs.items()
-        if k
-        in list(inspect.signature(sns.boxplot).parameters.keys())
-        + list(inspect.signature(sns.violinplot).parameters.keys())
-        + list(inspect.signature(plt.boxplot).parameters.keys())
-        + list(inspect.signature(plt.violinplot).parameters.keys())
-    }
+    if "boxplot" in plot_func.__name__:
+        kwargs_plot = {
+            k: v
+            for k, v in kwargs.items()
+            if k
+            in list(inspect.signature(sns.boxplot).parameters.keys())
+            + list(inspect.signature(plt.boxplot).parameters.keys())
+        }
+        kwargs_plot["meanprops"] = _get_meanprops(**kwargs)
+    elif "violin" in plot_func.__name__:
+        kwargs_plot = {
+            k: v for k, v in kwargs.items() if k in list(inspect.signature(sns.violinplot).parameters.keys())
+        }
+    else:
+        raise ValueError(f"Unknown plot function: {plot_func.__name__}")
 
-    meanprops = _get_meanprops(**kwargs)
-
-    plot_func(data, x="algorithm", y=metric, hue="algorithm", ax=ax, meanprops=meanprops, **kwargs_boxplot)
+    plot_func(data, x="algorithm", y=metric, hue="algorithm", ax=ax, **kwargs_plot)
     ax.set_ylabel(_metric_mapping[metric])
 
     xlabel = _format_pep_pipeline(algo_levels)
@@ -277,7 +281,7 @@ def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes) -> None:
     ax.text(
         0.95,
         0.95,
-        f"r = {corr['r'][0]:.2f}, p {_format_p_value(corr['p-val'][0])}",
+        f"r = {corr['r'].iloc[0]:.2f}, p {_format_p_value(corr['p-val'].iloc[0])}",
         transform=ax.transAxes,
         fontsize="medium",
         verticalalignment="top",
@@ -409,7 +413,7 @@ def paired_plot_error_outlier_correction(
         data_plot = data.reindex(outlier_combi, level="outlier_correction_algorithm")
         data_plot = data_plot.unstack("outlier_correction_algorithm")
         eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
-        data_plot = data_plot.loc[eq_mask].stack()
+        data_plot = data_plot.loc[eq_mask].stack(future_stack=True)
 
         # rename outlier correction algorithms
         data_plot = data_plot.rename(index=_algorithm_mapping)
@@ -455,7 +459,7 @@ def paired_plot_error_pep_pipeline(
         data_plot = data.reindex(pep_pipeline_format, level="pipeline")
         data_plot = data_plot.unstack("pipeline")
         eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
-        data_plot = data_plot.loc[eq_mask].stack()
+        data_plot = data_plot.loc[eq_mask].stack(future_stack=True)
 
         # rename outlier correction algorithms
         plot_paired(
@@ -501,8 +505,8 @@ def _pep_pipeline_to_str(pipeline: Sequence[str]) -> str:
 
 
 def _format_p_value(p_val: float) -> str:
-    # sanitize p-value to ensure it's a float
-    p_val = str(float(p_val))
+    # sanitize p-value to ensure it's a float, then format it to 3 decimal places
+    p_val = f"{float(p_val):.3f}"
     p_val = "< 0.001" if p_val == "0.000" else "= " + p_val
     return p_val
 
@@ -551,7 +555,7 @@ def plot_q_wave_detection_waveform_detailed_comparison(
     xmax_01 = ax_inset_01_params.pop("xmax", 1)
 
     ax_inset1 = axs[0].inset_axes(
-        **ax_inset_01_params, yticks=[], yticklabels=[], xlim=(xmax_01, xmax_01), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
+        **ax_inset_01_params, yticks=[], yticklabels=[], xlim=(xmin_01, xmax_01), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
     )
     base_plot_func(datapoint=datapoint_01, ax=ax_inset1, **plot_func_01_params)
 
@@ -564,7 +568,7 @@ def plot_q_wave_detection_waveform_detailed_comparison(
     xmax_02 = ax_inset_02_params.pop("xmax", 1)
 
     ax_inset2 = axs[1].inset_axes(
-        **ax_inset_02_params, yticks=[], yticklabels=[], xlim=(xmax_02, xmax_02), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
+        **ax_inset_02_params, yticks=[], yticklabels=[], xlim=(xmin_02, xmax_02), ylim=(ylim[0] + 0.1, ylim[1] - 0.1)
     )
     base_plot_func(datapoint=datapoint_02, ax=ax_inset2, **plot_func_02_params)
 

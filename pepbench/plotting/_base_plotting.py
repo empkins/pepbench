@@ -943,9 +943,10 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
             x_cat
         ), "Order must have the same number of elements as the number of levels in `within`."
 
-    # Substitue within by integer order of the ordered columns to allow for
+    # Substitute within by integer order of the ordered columns to allow for
     # changing the order of numeric withins.
-    data["wthn"] = data[within].replace({_ordr: i for i, _ordr in enumerate(order)})
+    data["wthn"] = data[within].replace({_ordr: str(i) for i, _ordr in enumerate(order)})
+    data["wthn"] = data["wthn"].astype(int)
     order_num = range(len(order))  # Make numeric order
 
     # Start the plot
