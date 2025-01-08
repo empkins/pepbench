@@ -58,14 +58,14 @@ _metric_mapping = {
 }
 
 _nan_reason_mapping = {
-    "c_point_nan": "No C-Point detected",
-    "r_peak_nan": "No R-Peak detected",
+    "c_point_nan": "No C-point detected",
+    "r_peak_nan": "No R-peak detected",
     "negative_pep": "Negative PEP",
-    "no_iso_crossing_before_c_point": "No Isoelectric Crossing before C-Point detected",
+    "no_iso_crossing_before_c_point": "No Isoelectric Crossing before C-point detected",
     "no_local_minimum": "No Local Minimum detected",
     "no_monotonic_segment": "No Monotonically Increasing Segment detected",
     "no_zero_crossing": "No Zero Crossings detected",
-    "invalid_b_point_search_window": "Invalid B-Point Search Window",
+    "invalid_b_point_search_window": "Invalid B-point Search Window",
 }
 
 _nan_reason_mapping_short = {

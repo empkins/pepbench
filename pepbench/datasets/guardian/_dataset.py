@@ -5,9 +5,9 @@ from typing import ClassVar, Optional, Union
 
 import pandas as pd
 from biopsykit.metadata import bmi
-from biopsykit.signals.ecg.preprocessing._preprocessing import clean_ecg
+from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
-from biopsykit.signals.icg.preprocessing import clean_icg_deriv
+from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
@@ -155,9 +155,9 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def icg_clean(self) -> pd.DataFrame:
-        icg = self.icg
-        fs = self.sampling_rate_icg
-        return pd.DataFrame(clean_icg_deriv(raw_signal=icg["icg_der"], sampling_rate_hz=fs), columns=["icg_der"])
+        algo = IcgPreprocessingBandpass()
+        algo.clean(icg=self.icg, sampling_rate_hz=self.sampling_rate_icg)
+        return algo.icg_clean_
 
     @property
     def ecg(self) -> pd.DataFrame:
@@ -169,9 +169,9 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def ecg_clean(self) -> pd.DataFrame:
-        ecg = self.ecg
-        fs = self.sampling_rate_ecg
-        return pd.DataFrame(clean_ecg(raw_signal=ecg["ecg"], sampling_rate_hz=fs, method="biosppy"), columns=["ecg"])
+        algo = EcgPreprocessingNeurokit()
+        algo.clean(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
+        return algo.ecg_clean_
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
@@ -240,7 +240,6 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     def heartbeats(self) -> pd.DataFrame:
         heartbeat_algo = HeartbeatSegmentationNeurokit()
         ecg_clean = self.ecg_clean
-        ecg_clean.columns = ["ECG_Clean"]
         heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
         return heartbeats

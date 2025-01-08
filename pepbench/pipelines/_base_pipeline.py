@@ -8,6 +8,14 @@ from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointE
 from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection
 from biopsykit.signals.pep import PepExtraction
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
+from biopsykit.utils.dtypes import (
+    BPointDataFrame,
+    CPointDataFrame,
+    HeartbeatSegmentationDataFrame,
+    PepResultDataFrame,
+    QPeakDataFrame,
+    is_pep_result_dataframe,
+)
 from tpcp import Parameter, Pipeline
 
 __all__ = ["BasePepExtractionPipeline"]
@@ -21,12 +29,12 @@ class BasePepExtractionPipeline(Pipeline):
     handle_negative_pep: NEGATIVE_PEP_HANDLING
     handle_missing_events: HANDLE_MISSING_EVENTS
 
-    heartbeat_segmentation_results_: pd.DataFrame
-    q_peak_results_: pd.DataFrame
-    c_point_results_: Optional[pd.DataFrame]
-    b_point_results_: pd.DataFrame
-    b_point_after_outlier_correction_results_: pd.DataFrame
-    pep_results_: pd.DataFrame
+    heartbeat_segmentation_results_: HeartbeatSegmentationDataFrame
+    q_peak_results_: QPeakDataFrame
+    c_point_results_: Optional[CPointDataFrame]
+    b_point_results_: BPointDataFrame
+    b_point_after_outlier_correction_results_: BPointDataFrame
+    pep_results_: PepResultDataFrame
 
     def __init__(
         self,
@@ -53,10 +61,10 @@ class BasePepExtractionPipeline(Pipeline):
     def _compute_pep(
         self,
         *,
-        heartbeats: pd.DataFrame,
-        q_peak_samples: pd.DataFrame,
-        b_point_samples: pd.DataFrame,
-        sampling_rate_hz: int,
+        heartbeats: HeartbeatSegmentationDataFrame,
+        q_peak_samples: QPeakDataFrame,
+        b_point_samples: BPointDataFrame,
+        sampling_rate_hz: float,
     ) -> pd.DataFrame:
         pep_extraction_algo = PepExtraction(handle_negative_pep=self.handle_negative_pep)
         pep_extraction_algo.extract(
@@ -67,6 +75,22 @@ class BasePepExtractionPipeline(Pipeline):
         )
 
         pep_results = pep_extraction_algo.pep_results_.copy()
-        pep_results = pep_results.convert_dtypes(infer_objects=True)
+        pep_results = pep_results.astype(
+            {
+                "heartbeat_start_sample": "Int64",
+                "heartbeat_end_sample": "Int64",
+                "r_peak_sample": "Int64",
+                "rr_interval_sample": "Int64",
+                "rr_interval_ms": "Float64",
+                "heart_rate_bpm": "Float64",
+                "q_peak_sample": "Int64",
+                "b_point_sample": "Int64",
+                "pep_sample": "Int64",
+                "pep_ms": "Float64",
+                "nan_reason": "object",
+            }
+        )
+
+        is_pep_result_dataframe(pep_results)
 
         return pep_results

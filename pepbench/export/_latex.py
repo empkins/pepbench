@@ -56,7 +56,9 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
 
     for key in export_cols_m_sd:
         # formatted_data[key] = data.apply(lambda row: print(row[(key, "mean")]), axis=1)
-        formatted_data[key] = data.apply(lambda row: rf"{row[(key, 'mean')]:.1f} \pm {row[(key, 'std')]:.1f}", axis=1)
+        formatted_data[key] = data.apply(
+            lambda row, k=key: rf"{row[(k, 'mean')]:.1f} \pm {row[(k, 'std')]:.1f}", axis=1
+        )
 
     if "Invalid PEPs" in data.columns:
         formatted_data[r"Invalid PEPs"] = data.apply(
