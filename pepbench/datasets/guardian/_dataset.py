@@ -73,7 +73,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
 
     def create_index(self) -> pd.DataFrame:
-        overview_df = pd.read_csv(self.base_path.joinpath("dataset_overview.csv"), sep=";")
+        overview_df = pd.read_csv(self.base_path.joinpath("metadata/dataset_overview.csv"), sep=";")
         pids = list(overview_df["participant"])
         index = list(product(pids, self.PHASES))
         index = pd.DataFrame(index, columns=["participant", "phase"])

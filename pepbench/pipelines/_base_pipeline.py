@@ -4,8 +4,12 @@ import pandas as pd
 from biopsykit.signals._base_extraction import HANDLE_MISSING_EVENTS
 from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
 from biopsykit.signals.ecg.segmentation import BaseHeartbeatSegmentation
-from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
-from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection
+from biopsykit.signals.icg.event_extraction import (
+    BaseBPointExtraction,
+    BaseCPointExtraction,
+    CPointExtractionScipyFindPeaks,
+)
+from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection, OutlierCorrectionDummy
 from biopsykit.signals.pep import PepExtraction
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from biopsykit.utils.dtypes import (
@@ -25,6 +29,7 @@ class BasePepExtractionPipeline(Pipeline):
     heartbeat_segmentation_algo: Parameter[BaseHeartbeatSegmentation]
     q_peak_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]
+    c_point_algo: Parameter[BaseCPointExtraction]
     outlier_correction_algo: Parameter[BaseOutlierCorrection]
     handle_negative_pep: NEGATIVE_PEP_HANDLING
     handle_missing_events: HANDLE_MISSING_EVENTS
@@ -42,14 +47,17 @@ class BasePepExtractionPipeline(Pipeline):
         heartbeat_segmentation_algo: BaseHeartbeatSegmentation,
         q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
-        outlier_correction_algo: BaseOutlierCorrection,
+        c_point_algo: Optional[BaseCPointExtraction] = CPointExtractionScipyFindPeaks(),
+        outlier_correction_algo: Optional[BaseOutlierCorrection] = None,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Optional[Literal[HANDLE_MISSING_EVENTS]] = None,
     ) -> None:
         self.heartbeat_segmentation_algo = heartbeat_segmentation_algo
         self.q_peak_algo = q_peak_algo
         self.b_point_algo = b_point_algo
-        self.c_point_algo = CPointExtractionScipyFindPeaks()
+        self.c_point_algo = c_point_algo
+        if outlier_correction_algo is None:
+            outlier_correction_algo = OutlierCorrectionDummy()
         self.outlier_correction_algo = outlier_correction_algo
         self.pep_extraction_algo = PepExtraction()
         self.handle_negative_pep = handle_negative_pep
