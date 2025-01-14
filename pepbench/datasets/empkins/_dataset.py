@@ -106,7 +106,8 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
         return data
 
-    def _cut_to_labeling_borders(self, data: pd.DataFrame, labeling_borders: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _cut_to_labeling_borders(data: pd.DataFrame, labeling_borders: pd.DataFrame) -> pd.DataFrame:
         start_index = labeling_borders["sample_relative"].iloc[0]
         end_index = labeling_borders["sample_relative"].iloc[-1]
         return data.iloc[start_index:end_index]
