@@ -180,6 +180,7 @@ def load_best_performing_algos_q_wave(
         dict_agg_mean_std[algo_types] = data
 
     agg_mean_std = pd.concat(dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]).droplevel(["b_point_algorithm", "outlier_correction_algorithm"])
+    agg_mean_std = agg_mean_std.drop(index="scipy-findpeaks")
 
     best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
 
