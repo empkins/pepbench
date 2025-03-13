@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -13,11 +12,11 @@ def match_heartbeat_lists(
     *,
     heartbeats_reference: pd.DataFrame,
     heartbeats_extracted: pd.DataFrame,
-    tolerance_ms: Union[int, float] = 10,
+    tolerance_ms: int | float = 10,
     sampling_rate_hz: float,
     one_to_one: bool = True,
-    heartbeats_reference_suffix: Optional[str] = "_reference",
-    heartbeats_extracted_suffix: Optional[str] = "",
+    heartbeats_reference_suffix: str | None = "_reference",
+    heartbeats_extracted_suffix: str | None = "",
 ) -> pd.DataFrame:
     """Find True Positives, False Positives and True Negatives by comparing extracted heartbeats with ground truth.
 
@@ -122,8 +121,8 @@ def match_heartbeat_lists(
 def _match_heartbeat_lists(
     heartbeat_list_a: pd.DataFrame,
     heartbeat_list_b: pd.DataFrame,
-    match_cols: Union[str, Sequence[str]],
-    tolerance_samples: Union[int, float] = 0,
+    match_cols: str | Sequence[str],
+    tolerance_samples: int | float = 0,
     one_to_one: bool = True,
     suffix_a: str = "_a",
     suffix_b: str = "_b",
@@ -235,7 +234,8 @@ def _match_label_lists(
                 *sorted(
                     tree_a.sparse_distance_matrix(tree_b, tolerance_samples, p=np.inf, output_type="dict").keys(),
                     key=lambda x: x[1],
-                )
+                ),
+                strict=False,
             )
         )
         # All values are returned that have a valid match

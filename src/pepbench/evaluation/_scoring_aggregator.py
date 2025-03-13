@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Callable, Union
+from collections.abc import Callable, Sequence
 
 import numpy as np
 from tpcp.validate import Aggregator
@@ -8,7 +7,7 @@ from tpcp.validate import Aggregator
 class PerSampleAggregator(Aggregator[np.ndarray]):
     def __init__(
         self,
-        func: Callable[[Sequence[np.ndarray]], Union[float, dict[str, float]]],
+        func: Callable[[Sequence[np.ndarray]], float | dict[str, float]],
         *,
         return_raw_scores: bool = True,
     ) -> None:

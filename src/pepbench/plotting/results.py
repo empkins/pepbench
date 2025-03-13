@@ -1,6 +1,8 @@
+"""Module for plotting PEP benchmark results."""
+
 import inspect
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import biopsykit as bp
 import numpy as np
@@ -43,14 +45,56 @@ from pepbench.utils._types import str_t
 
 
 def boxplot_reference_pep(
-    data: pd.DataFrame, x: str, y: Optional[str] = "pep_ms", hue: Optional[str] = None, **kwargs: dict
+    data: pd.DataFrame, x: str, y: str | None = "pep_ms", hue: str | None = None, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a boxplot of reference PEP values.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    x : str
+        Column name of the x-axis data to plot, typically the different phases or conditions of the experiment.
+    y: str, optional
+        Column name of the y-axis data to plot. Default: "pep_ms".
+    hue: str, optional
+        Column name to plot different hues, if desired. Default: None.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot.
+
+    """
     return _plot_helper_reference_pep(data, bp.plotting.feature_boxplot, x, y, hue, **kwargs)
 
 
 def violinplot_reference_pep(
-    data: pd.DataFrame, x: str, y: Optional[str] = "pep_ms", hue: Optional[str] = None, **kwargs: dict
+    data: pd.DataFrame, x: str, y: str | None = "pep_ms", hue: str | None = None, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a violin of reference PEP values.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    x : str
+        Column name of the x-axis data to plot, typically the different phases or conditions of the experiment.
+    y: str, optional
+        Column name of the y-axis data to plot. Default: "pep_ms".
+    hue: str, optional
+        Column name to plot different hues, if desired. Default: None.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot.
+
+    """
     return _plot_helper_reference_pep(data, sns.violinplot, x, y, hue, **kwargs)
 
 
@@ -59,7 +103,7 @@ def _plot_helper_reference_pep(
     plot_func: Callable,
     x: str,
     y: str = "pep_ms",
-    hue: Optional[str] = None,
+    hue: str | None = None,
     **kwargs: dict,
 ) -> tuple[plt.Figure, plt.Axes]:
     fig, ax = _get_fig_ax(kwargs)
@@ -87,12 +131,46 @@ def _plot_helper_reference_pep(
 def boxplot_algorithm_performance(
     data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a boxplot of a performance metric for different algorithms.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    metric : str, optional
+        Algorithm performance metric to plot. Default: "absolute_error_per_sample_ms"
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot.
+
+    """
     return _plot_helper_algorithm_performance(data, sns.boxplot, metric, **kwargs)
 
 
 def violinplot_algorithm_performance(
     data: pd.DataFrame, metric: str = "absolute_error_per_sample_ms", **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a violinplot of a performance metric for different algorithms.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    metric : str, optional
+        Algorithm performance metric to plot. Default: "absolute_error_per_sample_ms"
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot.
+
+    """
     return _plot_helper_algorithm_performance(data, sns.violinplot, metric, **kwargs)
 
 
@@ -148,6 +226,23 @@ def _plot_helper_algorithm_performance(
 
 
 def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("color", cmaps.fau[0])
     kwargs.setdefault("alpha", 0.3)
 
@@ -181,9 +276,28 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> t
     return fig, ax
 
 
-def residual_plot_pep_participant(
-    data: pd.DataFrame, algorithm: Sequence[str], **kwargs: dict
-) -> tuple[plt.Figure, plt.Axes]:
+def residual_plot_pep_participant(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm, grouped by participant.
+
+    Each participant is represented by a different color. The name of the participant column is assumed to be
+    "participant".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("base_color", "Spectral")
     kwargs.setdefault("show_legend", False)
     kwargs.setdefault("rect", (0, 0, 1, 1))
@@ -193,13 +307,61 @@ def residual_plot_pep_participant(
 def residual_plot_pep_phase(
     data: pd.DataFrame, algorithm: Sequence[str], **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm, grouped by experimental phase.
+
+    Each experimental phase is represented by a different color. The name of the phase column is assumed to be "phase".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("base_color", f"blend:{colors_all.fau},{colors_all.tech_light}")
     return _residual_plot_error_detailed_helper(data, algorithm, "phase", **kwargs)
 
 
 def residual_plot_pep_heart_rate(
-    data: pd.DataFrame, algorithm: Sequence[str], bins: Optional[Union[int, str, Sequence[int]]] = 10, **kwargs: dict
+    data: pd.DataFrame, algorithm: Sequence[str], bins: int | str | Sequence[int] | None = 10, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm, grouped by heart rate bins.
+
+    Each heart rate bin is represented by a different color. The name of the heart rate column is assumed to be
+    "heart_rate_bpm".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    bins : int or str
+        Number of bins to use for the heart rate histogram using :func:`~numpy.histogram`. If `bins` is an int,
+        it defines the number of equal-width bins in the given range (10, by default). If `bins` is a sequence, it
+        defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for
+        non-uniform bin widths. If `bins` is a string, it defines the method used to calculate the
+        optimal bin width, as defined by :func:`~numpy.histogram_bin_edges`.
+        See also :func:`~numpy.histogram` for more information.
+        Default: 10.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("rect", (0, 0, 0.85, 1))
     kwargs.setdefault("base_color", "Spectral_r")
 
@@ -218,7 +380,7 @@ def residual_plot_pep_heart_rate(
 
 
 def _residual_plot_error_detailed_helper(
-    data: pd.DataFrame, algorithm: Sequence[str], grouper: str, **kwargs: dict
+    data: pd.DataFrame, algorithm: str_t, grouper: str, **kwargs: dict
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("alpha", 0.8)
     rect = kwargs.pop("rect", (0, 0, 0.90, 1))
@@ -289,7 +451,27 @@ def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes) -> None:
     )
 
 
-def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
+def histplot_heart_rate(data: pd.DataFrame, hue: str | None = None, **kwargs: dict) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a histogram of heart rate values.
+
+    The heart rate is assumed to be in the column "heart_rate_bpm".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    hue : str, optional
+        Column name to plot different hues, if desired. Default: None.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.histplot` for more
+        information.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("stat", "percent")
     kwargs.setdefault("kde", True)
     show_legend = kwargs.pop("show_legend", True)
@@ -313,11 +495,44 @@ def histplot_heart_rate(data: pd.DataFrame, hue: Optional[str] = None, **kwargs:
 
 def regplot_pep_heart_rate(
     data: pd.DataFrame,
-    algorithm: Optional[Sequence[str]] = None,
+    algorithm: str_t | None = None,
     use_reference: bool = False,
     add_corr_coeff: bool = False,
     **kwargs: dict,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a regression plot of PEP values against heart rate.
+
+    The PEP values are assumed to be in the column "pep_ms" and the heart rate values are assumed to be in the column
+    "heart_rate_bpm".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str, optional
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+        If ``use_reference`` is True, this parameter is ignored. If ``use_reference`` is False,
+        this parameter is required.
+    use_reference : bool, optional
+        ``True`` to use the reference data, ``False`` to use the results of the algorithm (pipeline)
+        specified in ``algorithm``. Default: ``False``.
+    add_corr_coeff : bool, optional
+        ``True`` to add the correlation coefficient to the plot, ``False`` otherwise. Default: ``False``.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.regplot` for more
+        information.
+
+    Raises
+    ------
+    ValueError
+        If ``use_reference`` is False and ``algorithm`` is not specified.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("color", cmaps.tech[0])
     kwargs.setdefault("scatter_kws", {"alpha": 0.3})
     kwargs.setdefault("line_kws", {"color": "black", "alpha": 0.8})
@@ -366,6 +581,31 @@ def regplot_error_heart_rate(
     add_corr_coeff: bool = False,
     **kwargs: dict,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a regression plot of a PEP estimation *error* metric against heart rate.
+
+    The error metric is assumed to be in the column specified by the parameter ``error_metric`` and the heart rate
+    values are assumed to be in the column "heart_rate_bpm".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    error_metric : str, optional
+        Error metric to plot. Default: "error_per_sample_ms".
+    add_corr_coeff : bool, optional
+        ``True`` to add the correlation coefficient to the plot, ``False`` otherwise. Default: ``False``.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.regplot` for more
+        information.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("color", cmaps.tech[0])
     kwargs.setdefault("scatter_kws", {"alpha": 0.3})
     kwargs.setdefault("line_kws", {"color": cmaps.fau[0], "alpha": 0.8})
@@ -400,6 +640,31 @@ def regplot_error_heart_rate(
 def paired_plot_error_outlier_correction(
     data: pd.DataFrame, outlier_algo_combis: Sequence[Sequence[str]], dv: str, **kwargs: dict[str, Any]
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot a paired plot of an error metric for different outlier correction algorithms.
+
+    A paired plot is a repeated-measures boxplot that additionally shows the paired data points and highlights the
+    changes between the paired data points. This plot is useful to visualize the effect of different outlier correction
+    algorithms on the error metric.
+
+    See :func:``pingouin.plot_paired`` for more information.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    outlier_algo_combis : list of string tuples
+        List of tuples containing algorithm pipeline steps to compare against
+    dv : str
+        Dependent variable to plot. Can either be an error metric or a performance metric.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, list of :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("ncols", len(outlier_algo_combis))
     fig, axs = _get_fig_axs(kwargs)
 
@@ -409,7 +674,7 @@ def paired_plot_error_outlier_correction(
         colors = kwargs.pop("colors", ["grey", "green", "indianred"])
     pointplot_kwargs = kwargs.pop("pointplot_kwargs", {"scale": 0.6, "marker": ".", "alpha": 0.5})
 
-    for i, (ax, outlier_combi) in enumerate(zip(axs, outlier_algo_combis)):
+    for i, (ax, outlier_combi) in enumerate(zip(axs, outlier_algo_combis, strict=False)):
         data_plot = data.reindex(outlier_combi, level="outlier_correction_algorithm")
         data_plot = data_plot.unstack("outlier_correction_algorithm")
         eq_mask = ~(data_plot.diff(axis=1) == 0).any(axis=1)
@@ -446,6 +711,31 @@ def paired_plot_error_outlier_correction(
 def paired_plot_error_pep_pipeline(
     data: pd.DataFrame, pep_pipelines: Sequence[Sequence[str]], dv: str, **kwargs: dict[str, Any]
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot a paired plot of an error metric for different PEP extraction pipelines.
+
+    A paired plot is a repeated-measures boxplot that additionally shows the paired data points and highlights the
+    changes between the paired data points. This plot is useful to visualize the differences between different PEP
+    extraction pipelines.
+
+    See :func:``pingouin.plot_paired`` for more information.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    pep_pipelines : list of string tuples
+        List of tuples with pipeline configurations to compare against
+    dv : str
+        Dependent variable to plot. Can either be an error metric or a performance metric.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, list of :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     kwargs.setdefault("ncols", len(pep_pipelines))
     fig, axs = _get_fig_axs(kwargs)
     if "error" in dv:
@@ -454,7 +744,7 @@ def paired_plot_error_pep_pipeline(
         colors = kwargs.pop("colors", ["#8C9FB1", "#7BB725", "#C50F3C"])
     pointplot_kwargs = kwargs.pop("pointplot_kwargs", {"scale": 0.6, "marker": ".", "alpha": 0.2})
 
-    for i, (ax, pep_pipeline) in enumerate(zip(axs, pep_pipelines)):
+    for i, (ax, pep_pipeline) in enumerate(zip(axs, pep_pipelines, strict=False)):
         pep_pipeline_format = ["_".join(p) for p in pep_pipeline]
         data_plot = data.reindex(pep_pipeline_format, level="pipeline")
         data_plot = data_plot.unstack("pipeline")
@@ -532,7 +822,46 @@ def plot_q_wave_detection_waveform_detailed_comparison(
     ax_inset_02_params: dict,
     datapoint_01_name: str,
     datapoint_02_name: str,
-) -> Union[plt.Figure, Sequence[plt.Axes]]:
+) -> plt.Figure | Sequence[plt.Axes]:
+    """Plot a detailed comparison of two Q-wave detection waveforms with insets.
+
+    This function creates a figure with two subplots, each containing a waveform plot of a Q-wave detection result.
+    Additionally, each subplot contains an inset with a zoomed-in view of the waveform. This function can be helpful
+    to compare the effect of different ECG waveforms on the Q-wave detection result.
+
+    Parameters
+    ----------
+    datapoint_01 : :class:`~pandas.DataFrame`
+        Dataframe containing the first data point to plot.
+    datapoint_02 : :class:`~pandas.DataFrame`
+        Dataframe containing the second data point to plot.
+    base_plot_func : Callable
+        Base plotting function to use for the waveform plot. Should be one of the Q-wave plotting functions from
+        ``pepbench.plotting.algorithms``.
+    plot_func_01_params : dict
+        Additional keyword arguments to pass to the plotting function for the first datapoint. Can include parameters
+        such as ``normalize_time`` or ``use_tight``.
+    plot_func_02_params : dict
+        Additional keyword arguments to pass to the plotting function for the second datapoint. Can include parameters
+        such as ``normalize_time`` or ``use_tight``.
+    ax_inset_01_params : dict
+        Parameters to pass for configuring the inset for the first datapoint.
+        See :func:`~matplotlib.axes.Axes.inset_axes` for more information.
+    ax_inset_02_params : dict
+        Parameters to pass for configuring the inset for the second datapoint.
+        See :func:`~matplotlib.axes.Axes.inset_axes` for more information.
+    datapoint_01_name : str
+        Name of the first datapoint to display in the plot.
+    datapoint_02_name : str
+        Name of the second datapoint to display in the plot.
+
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, list of :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
     fig, axs = plt.subplots(
         nrows=2,
         gridspec_kw={"left": 0.075, "bottom": 0.1, "top": 0.85, "right": 0.75, "hspace": 0.25},

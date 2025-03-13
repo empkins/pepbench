@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from functools import lru_cache
 from itertools import product
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 import pandas as pd
 from biopsykit.metadata import bmi
@@ -24,7 +24,13 @@ _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
 
 
 class GuardianDataset(BaseUnifiedPepExtractionDataset):
-    """Guardian dataset."""
+    """Dataset class for the Guardian dataset.
+
+    This class is the ``tpcp`` dataset class for the Guardian dataset. It provides access to the raw Task Force Monitor
+    (TFM) data, the preprocessed data, the reference annotations for the ECG and ICG signals, as well as metadata
+    like age, gender, and BMI.
+
+    """
 
     base_path: path_t
     use_cache: bool
@@ -56,14 +62,31 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     def __init__(
         self,
         base_path: path_t,
-        groupby_cols: Optional[Sequence[str]] = None,
-        subset_index: Optional[Sequence[str]] = None,
+        groupby_cols: Sequence[str] | None = None,
+        subset_index: Sequence[str] | None = None,
         *,
         exclude_no_recorded_data: bool = True,
         exclude_noisy_data: bool = True,
         use_cache: bool = True,
         only_labeled: bool = False,
     ) -> None:
+        """Initialize a new ``GuardianDataset`` instance.
+
+        Parameters
+        ----------
+        base_path : :class:`~pathlib.Path` or str
+            Path to the root directory of the Guardian dataset.
+        exclude_no_recorded_data : bool, optional
+            Whether to exclude participants with no recorded data. Default: ``True``.
+        exclude_noisy_data : bool, optional
+            Whether to exclude participants with noisy data. Default: ``True``.
+        use_cache : bool, optional
+            Whether to use caching for loading TFM data. Default: ``True``.
+        only_labeled : bool, optional
+            Whether to only return segments that are labeled (i.e., cut the data to the labeling borders).
+            This is necessary when using the dataset for evaluating the performance of PEP extraction algorithms or for
+            training ML-based PEP extraction algorithms. Default: ``False``.
+        """
         self.base_path = base_path
         self.exclude_no_recorded_data = exclude_no_recorded_data
         self.exclude_noisy_data = exclude_noisy_data
@@ -94,18 +117,52 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def sampling_rates(self) -> dict[str, int]:
+        """Return the sampling rates of the ECG and ICG signals.
+
+        Returns
+        -------
+        dict
+            Dictionary with the sampling rates of the ECG and ICG signals in Hz.
+
+        """
         return self.SAMPLING_RATES
 
     @property
     def sampling_rate_ecg(self) -> int:
+        """Return the sampling rate of the ECG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ECG signal in Hz.
+
+        """
         return self.SAMPLING_RATES["ecg_2"]
 
     @property
     def sampling_rate_icg(self) -> int:
+        """Return the sampling rate of the ICG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ICG signal in Hz.
+
+        """
         return self.SAMPLING_RATES["icg_der"]
 
     @property
-    def date(self) -> Union[pd.Series, pd.Timestamp]:
+    def date(self) -> pd.Series | pd.Timestamp:
+        """Return the recording date of the participant(s).
+
+        Returns
+        -------
+        pd.Series or pd.Timestamp
+            Recording date of the participant(s). If only a single participant is selected, a single timestamp is
+            returned. If multiple participants are selected, a :class:`~pandas.Series` with the recording dates for
+            each participant is returned.
+
+        """
         metadata_path = self.base_path.joinpath("metadata/recording_timestamps.xlsx")
         metadata = pd.read_excel(metadata_path)
         metadata = metadata.set_index("participant")["date"]
@@ -114,7 +171,25 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         return metadata
 
     @property
-    def tfm_data(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def tfm_data(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
+        """Return the Task Force Monitor (TFM) data.
+
+        The data is loaded from the raw TFM data files and returned as :class:`~pandas.DataFrame`. The data can only be
+        accessed for a single participant and a single phase or for a single participant and all phases.
+
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame` or dict
+            TFM data as :class:`~pandas.DataFrame` or dictionary of :class:`~pandas.DataFrame` if multiple phases are
+            selected.
+
+        Raises
+        ------
+        ValueError
+            If the data is accessed for multiple participants or multiple phases (that are not all phases).
+
+        """
         participant = self.index["participant"][0]
         phases = self.index["phase"]
 
@@ -149,18 +224,45 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def icg(self) -> pd.DataFrame:
+        """Return the ICG signal.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            ICG signal as :class:`~pandas.DataFrame`.
+
+        """
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
         return self.tfm_data[["icg_der"]]
 
     @property
     def icg_clean(self) -> pd.DataFrame:
+        """Return the preprocessed ICG signal.
+
+        The ICG signal is preprocessed using a bandpass filter implemented in the
+        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` class.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Preprocessed ICG signal as :class:`~pandas.DataFrame`.
+
+        """
         algo = IcgPreprocessingBandpass()
         algo.clean(icg=self.icg, sampling_rate_hz=self.sampling_rate_icg)
         return algo.icg_clean_
 
     @property
     def ecg(self) -> pd.DataFrame:
+        """Return the ECG signal.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            ECG signal as :class:`~pandas.DataFrame`.
+
+        """
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
         data = self.tfm_data[["ecg_2"]]
@@ -169,12 +271,31 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def ecg_clean(self) -> pd.DataFrame:
+        """Return the preprocessed ECG signal.
+
+        The ECG signal is preprocessed using the NeuroKit2 package implemented in the
+        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` class.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Preprocessed ECG signal as :class:`~pandas.DataFrame`.
+
+        """
         algo = EcgPreprocessingNeurokit()
         algo.clean(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
         return algo.ecg_clean_
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
+        """Return the labeling borders for a selected participant and phase(s).
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Labeling borders as :class:`~pandas.DataFrame`.
+
+        """
         participant = self.index["participant"][0]
 
         if not self.is_single("participant"):
@@ -193,14 +314,38 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
+        """Return the reference heartbeats.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference heartbeats as a pandas DataFrame
+
+        """
         return self._load_reference_heartbeats()
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
+        """Return the reference labels for the ECG signal.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference labels for the ECG signal as a pandas DataFrame
+
+        """
         return self._load_reference_labels("ECG")
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
+        """Return the reference labels for the ICG signal.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference labels for the ICG signal as a pandas DataFrame
+
+        """
         return self._load_reference_labels("ICG")
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
@@ -234,10 +379,26 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def reference_pep(self) -> pd.DataFrame:
+        """Return the reference PEP values.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference PEP values as a pandas DataFrame
+
+        """
         return compute_reference_pep(self)
 
     @property
     def heartbeats(self) -> pd.DataFrame:
+        """Segment heartbeats from the ECG data and return the heartbeat borders.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Heartbeats as a pandas DataFrame.
+
+        """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
         ecg_clean = self.ecg_clean
         heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
@@ -253,6 +414,14 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def metadata(self) -> pd.DataFrame:
+        """Return metadata for the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Metadata as a pandas DataFrame.
+
+        """
         data = pd.read_csv(self.base_path.joinpath("metadata/demographics.csv"))
         data = data.set_index("participant")
 
@@ -260,12 +429,36 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def age(self) -> pd.DataFrame:
+        """Return the age of the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Age as a pandas DataFrame.
+
+        """
         return self.metadata[["Age"]]
 
     @property
     def gender(self) -> pd.DataFrame:
+        """Return the gender of the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Gender as a pandas DataFrame, recoded as {"M": "Male", "F": "Female"}
+
+        """
         return self.metadata[["Gender"]].replace(self.GENDER_MAPPING)
 
     @property
     def bmi(self) -> pd.DataFrame:
+        """Compute the BMI of the selected participants and return it.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            BMI as a pandas DataFrame.
+
+        """
         return bmi(self.metadata[["Weight", "Height"]])

@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import pandas as pd
 from pandas.io.formats.style import Styler
@@ -78,7 +78,7 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
     return formatted_data
 
 
-def create_outlier_correction_table(data: pd.DataFrame, outlier_algos: Optional[Sequence[str]] = None) -> pd.DataFrame:
+def create_outlier_correction_table(data: pd.DataFrame, outlier_algos: Sequence[str] | None = None) -> pd.DataFrame:
     data_index = data.index.get_level_values("b_point_algorithm").unique()
     data = data.groupby("b_point_algorithm", group_keys=False).apply(
         lambda df: df.reindex(outlier_algos, level="outlier_correction_algorithm")
@@ -91,7 +91,7 @@ def create_outlier_correction_table(data: pd.DataFrame, outlier_algos: Optional[
 
 
 def create_nan_reason_table(
-    data: pd.DataFrame, outlier_algos: Optional[Sequence[str]] = None, use_short_names: bool = True
+    data: pd.DataFrame, outlier_algos: Sequence[str] | None = None, use_short_names: bool = True
 ) -> pd.DataFrame:
     data = data[[("nan_reason", "estimated")]].dropna().droplevel(level=-1, axis=1)
     data = data.groupby(["b_point_algorithm", "outlier_correction_algorithm"]).value_counts()
@@ -110,7 +110,7 @@ def create_nan_reason_table(
 
 
 def convert_to_latex(
-    data: Union[pd.DataFrame, Styler], collapse_index_columns: bool = False, **kwargs: dict[str, Any]
+    data: pd.DataFrame | Styler, collapse_index_columns: bool = False, **kwargs: dict[str, Any]
 ) -> str:
     kwargs.setdefault("hrules", True)
     kwargs.setdefault("position", "ht")

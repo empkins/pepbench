@@ -9,6 +9,19 @@ __all__ = ["load_labeling_borders", "compute_reference_heartbeats", "compute_ref
 
 
 def load_labeling_borders(file_path: path_t) -> pd.DataFrame:
+    """Load the labeling borders from a csv file.
+
+    Parameters
+    ----------
+    file_path : :class:`pathlib.Path` or str
+        The path to the csv file.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        The labeling borders.
+
+    """
     data = pd.read_csv(file_path)
     data = data.assign(description=data["description"].apply(lambda s: ast.literal_eval(s)))
 
@@ -17,6 +30,19 @@ def load_labeling_borders(file_path: path_t) -> pd.DataFrame:
 
 
 def compute_reference_heartbeats(heartbeats: pd.DataFrame) -> pd.DataFrame:
+    """Reformat the heartbeats DataFrame.
+
+    Parameters
+    ----------
+    heartbeats : :class:`pandas.DataFrame`
+        DataFrame containing the heartbeats.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        DataFrame containing the reformatted heartbeats.
+
+    """
     heartbeats = heartbeats.droplevel("channel")["sample_relative"].unstack("label")
     heartbeats.columns = [f"{col}_sample" for col in heartbeats.columns]
     return heartbeats
@@ -42,6 +68,19 @@ def _fill_unlabeled_artefacts(
 
 
 def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFrame:
+    """Compute the reference PEP values between the reference Q-peak and B-point labels.
+
+    Parameters
+    ----------
+    subset : :class:`pepbench.datasets.BaseUnifiedPepExtractionDataset`
+        Subset of a dataset containing the reference labels.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        DataFrame containing the computed PEP values.
+
+    """
     heartbeats = subset.reference_heartbeats
     reference_icg = subset.reference_labels_icg
     reference_ecg = subset.reference_labels_ecg

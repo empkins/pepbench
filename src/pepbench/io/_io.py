@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Optional
 
 import pandas as pd
 
@@ -11,9 +10,9 @@ __all__ = ["load_challenge_results_from_folder", "convert_hz_to_ms"]
 
 def load_challenge_results_from_folder(
     folder_path: path_t,
-    index_cols_single: Optional[Sequence[str]] = None,
-    index_cols_per_sample: Optional[Sequence[str]] = None,
-    return_as_df: Optional[bool] = True,
+    index_cols_single: Sequence[str] | None = None,
+    index_cols_per_sample: Sequence[str] | None = None,
+    return_as_df: bool | None = True,
 ) -> ChallengeResults:
     """Load challenge results from a folder.
 

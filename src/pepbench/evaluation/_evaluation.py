@@ -1,13 +1,13 @@
 import json
 import warnings
 from collections import namedtuple
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Self
 
 import numpy as np
 import pandas as pd
 from tpcp import Algorithm
 from tpcp.validate import FloatAggregator, Scorer, validate
-from typing_extensions import Self
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._scoring import mean_and_std, score_pep_evaluation
@@ -22,10 +22,17 @@ ChallengeResults = namedtuple("ChallengeResults", ["agg_mean_std", "agg_total", 
 
 # TODO add CrossValidateChallenge
 class PepEvaluationChallenge(Algorithm):
+    """Evaluation challenge for PEP extraction pipelines.
+
+    This is the ``tpcp`` implementation of the evaluation challenge for PEP extraction pipelines.
+    It is used to evaluate the performance of a PEP extraction pipeline on a given dataset.
+
+    """
+
     _action_methods = "run"
 
     dataset: BaseUnifiedPepExtractionDataset
-    scoring: Optional[Callable]
+    scoring: Callable | None
 
     results_: dict
     results_agg_mean_std_: pd.DataFrame
@@ -45,14 +52,45 @@ class PepEvaluationChallenge(Algorithm):
         self,
         *,
         dataset: BaseUnifiedPepExtractionDataset,
-        scoring: Optional[Callable] = score_pep_evaluation,
-        validate_kwargs: Optional[dict] = None,
+        scoring: Callable = score_pep_evaluation,
+        validate_kwargs: dict | None = None,
     ) -> None:
+        """Initialize a new evaluation challenge.
+
+        To initialize a new evaluation challenge, you need to provide a dataset and a scoring function. Afterwards,
+        you can challenge a specific PEP extraction pipeline by passing it to the ``run`` method.
+
+        Parameters
+        ----------
+        dataset : BaseUnifiedPepExtractionDataset
+            The dataset to evaluate the pipeline on. The dataset needs to be a subclass of
+            ``BaseUnifiedPepExtractionDataset``, which provides the necessary unified interface to access the data.
+        scoring : Callable, optional
+            The scoring function to use for the evaluation. The scoring function should take the pipeline and a
+            datapoint from the dataset as input and return a dictionary with the evaluation results. The default
+            scoring function is :func:``pepbench.evaluation.score_pep_evaluation``.
+        validate_kwargs : dict, optional
+            Additional keyword arguments to pass to the :class:``tpcp.validate.Scorer`` class.
+
+        """
         self.dataset = dataset
         self.scoring = scoring
         self.validate_kwargs = validate_kwargs or {}
 
     def run(self, pipeline: BasePepExtractionPipeline) -> Self:
+        """Run the evaluation challenge for a given pipeline.
+
+        Parameters
+        ----------
+        pipeline : BasePepExtractionPipeline
+            The PEP extraction pipeline to evaluate. The pipeline needs to be a subclass of
+            :class:``pepbench.pipelines.BasePepExtractionPipeline`` and should be able to process the dataset.
+
+        Returns
+        -------
+        Self
+
+        """
         with measure_time() as timing_results, warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)  # better specify the RuntimeWarning using regex
             mean_std_agg = FloatAggregator(mean_and_std)
@@ -69,9 +107,9 @@ class PepEvaluationChallenge(Algorithm):
 
         Parameters
         ----------
-        folder_path
+        folder_path : :class:``pathlib.Path`` or str
             The folder path to save the results to.
-        filename_stub
+        filename_stub : str
             The filename stub to use for the results file.
 
         """
@@ -109,6 +147,19 @@ class PepEvaluationChallenge(Algorithm):
             setattr(self, f"{key}_", value)
 
     def results_as_df(self) -> Self:
+        """Convert the results to pandas DataFrames.
+
+        The results are stored as attributes on the object. The following results are created:
+            * ``results_agg_mean_std_``: The mean and standard deviation of the aggregated results.
+            * ``results_agg_total_``: The total number of valid and invalid PEPs.
+            * ``results_single_``: The single (non-aggregated) results for each datapoint.
+            * ``results_per_sample_``: The per-sample results for each datapoint.
+
+        Returns
+        -------
+        Self
+
+        """
         results = self.results_.copy()
 
         data_labels = results["data_labels"]
@@ -152,7 +203,9 @@ class PepEvaluationChallenge(Algorithm):
         }
         # concatenate the per_sample results
         pep_estimation = results_subset_per_sample.pop("pep_estimation_per_sample")
-        pep_estimation = {tuple(key): test_idx for key, test_idx in zip(subset.index.to_numpy(), pep_estimation)}
+        pep_estimation = {
+            tuple(key): test_idx for key, test_idx in zip(subset.index.to_numpy(), pep_estimation, strict=False)
+        }
         pep_estimation = pd.concat(pep_estimation)
         pep_estimation.index.names = [*list(subset.index.columns), ""]
         results_subset_per_sample = {key: np.concatenate(val, axis=0) for key, val in results_subset_per_sample.items()}

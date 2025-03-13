@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from functools import cached_property, lru_cache
 from itertools import product
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 import pandas as pd
 from biopsykit.metadata import bmi
@@ -22,6 +22,14 @@ _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 
 
 class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
+    """Dataset class for the EmpkinS Dataset.
+
+    This class is the ``tpcp`` dataset class for the EmpkinS dataset. It provides access to the biopac data (for ECG and
+    ICG), the timelogs for the different experimental phases, the reference annotations for the ECG and ICG
+    annotations, as well as metadata like age, gender, and BMI.
+
+    """
+
     base_path: path_t
     use_cache: bool
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg": 1000, "icg": 1000}
@@ -35,13 +43,29 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
     def __init__(
         self,
         base_path: path_t,
-        groupby_cols: Optional[Sequence[str]] = None,
-        subset_index: Optional[Sequence[str]] = None,
+        groupby_cols: Sequence[str] | None = None,
+        subset_index: Sequence[str] | None = None,
         *,
-        exclude_missing_data: Optional[bool] = False,
-        use_cache: Optional[bool] = True,
+        exclude_missing_data: bool | None = False,
+        use_cache: bool | None = True,
         only_labeled: bool = False,
     ) -> None:
+        """Initialize a new ``EmpkinsDataset`` instance.
+
+        Parameters
+        ----------
+        base_path : :class:`~pathlib.Path` or str
+            Path to the root directory of the EmpkinS dataset.
+        exclude_missing_data : bool
+            Whether to exclude participants where parts of the data are missing. Default: ``False``.
+        use_cache : bool
+            Whether to use caching for loading biopac data. Default: ``True``.
+        only_labeled : bool
+            Whether to only return sections of the biopac data that are labeled (i.e., cut to labeling borders).
+            This is necessary when using the dataset for evaluating the performance of PEP extraction algorithms or for
+            training ML-based PEP extraction algorithms. Default: ``False``.
+
+        """
         # ensure pathlib
         self.base_path = base_path
         self.exclude_missing_data = exclude_missing_data
@@ -68,18 +92,61 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def sampling_rate(self) -> dict[str, float]:
+        """Return the sampling rates of the ECG and ICG signals.
+
+        Returns
+        -------
+        dict
+            Dictionary with the sampling rates of the ECG and ICG signals in Hz.
+
+        """
         return self.SAMPLING_RATES
 
     @property
     def sampling_rate_ecg(self) -> int:
+        """Return the sampling rate of the ECG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ECG data in Hz.
+
+        """
         return self.SAMPLING_RATES["ecg"]
 
     @property
     def sampling_rate_icg(self) -> int:
+        """Return the sampling rate of the ICG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ICG data in Hz.
+
+        """
         return self.SAMPLING_RATES["icg"]
 
     @cached_property
     def biopac(self) -> pd.DataFrame:
+        """Return the biopac data.
+
+        This method returns the biopac data for the selected participant, condition, and phase. If only one participant
+        and condition is selected, the entire dataset is returned. If only one participant, condition, and phase is
+        selected, only the data for this phase is returned. In all other cases (i.e., data from multiple participants
+        or from multiple conditions), a ``ValueError`` is raised.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Biopac data as a pandas DataFrame.
+
+        Raises
+        ------
+        ValueError
+            If the current subset is not a single participant and condition or
+            a single participant, condition, and phase.
+
+        """
         participant = self.index["participant"][0]
         condition = self.index["condition"][0]
 
@@ -114,6 +181,20 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def icg(self) -> pd.DataFrame:
+        """Return the ICG channel from the biopac data.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            ICG data as a pandas DataFrame.
+
+        Raises
+        ------
+        ValueError
+            If the current subset is not a single participant, condition, and phase or
+
+
+        """
         if not self.is_single(None):
             raise ValueError(
                 "ICG data can only be accessed for a single participant, a single condition, and a single phase!"
@@ -122,12 +203,31 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def icg_clean(self) -> pd.DataFrame:
+        """Return cleaned ICG data.
+
+        The ICG data is cleaned using a bandpass filter implemented in the
+        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` class.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Cleaned ICG data as a pandas DataFrame.
+
+        """
         algo = IcgPreprocessingBandpass()
         algo.clean(icg=self.icg, sampling_rate_hz=self.sampling_rate_icg)
         return algo.icg_clean_
 
     @property
     def ecg(self) -> pd.DataFrame:
+        """Return the ECG channel from the biopac data.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            ECG data as a pandas DataFrame.
+
+        """
         if not self.is_single(None):
             raise ValueError(
                 "ECG data can only be accessed for a single participant, a single condition, and a single phase!"
@@ -136,12 +236,33 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def ecg_clean(self) -> pd.DataFrame:
+        """Return cleaned ECG data.
+
+        The ECG data is cleaned using the preprocessing pipeline implemented in the
+        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` class.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Cleaned ECG data as a pandas DataFrame.
+
+        """
         algo = EcgPreprocessingNeurokit()
         algo.clean(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
         return algo.ecg_clean_
 
     @property
     def timelog(self) -> pd.DataFrame:
+        """Return the timelog data.
+
+        The timelog data contains information about the start and end of each experimental phase.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Timelog data as a pandas DataFrame.
+
+        """
         if self.is_single(None):
             participant = self.index["participant"][0]
             condition = self.index["condition"][0]
@@ -182,6 +303,14 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
+        """Return the labeling borders for the selected participant, condition, and phase(s).
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Labeling borders as a pandas DataFrame.
+
+        """
         participant = self.index["participant"][0]
         condition = self.index["condition"][0]
 
@@ -201,14 +330,38 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
+        """Return the reference heartbeats.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference heartbeats as a pandas DataFrame
+
+        """
         return self._load_reference_heartbeats()
 
     @property
-    def reference_labels_ecg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def reference_labels_ecg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
+        """Return the reference labels for the ECG channel.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference labels for the ECG channel as a pandas DataFrame.
+
+        """
         return self._load_reference_labels("ECG")
 
     @property
-    def reference_labels_icg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def reference_labels_icg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
+        """Return the reference labels for the ICG channel.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference labels for the ICG channel as a pandas DataFrame.
+
+        """
         return self._load_reference_labels("ICG")
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
@@ -250,10 +403,26 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def reference_pep(self) -> pd.DataFrame:
+        """Return the reference PEP data.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference PEP data as a pandas DataFrame.
+
+        """
         return compute_reference_pep(self)
 
     @property
     def heartbeats(self) -> pd.DataFrame:
+        """Segment heartbeats from the ECG data and return the heartbeat borders.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Heartbeats as a pandas DataFrame.
+
+        """
         heartbeat_algo = HeartbeatSegmentationNeurokit(variable_length=True)
         ecg_clean = self.ecg_clean
         heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
@@ -262,6 +431,14 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def metadata(self) -> pd.DataFrame:
+        """Return metadata for the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Metadata as a pandas DataFrame.
+
+        """
         data = pd.read_csv(self.base_path.joinpath("metadata/demographics.csv"))
         data = data.set_index("participant")
 
@@ -269,12 +446,36 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
 
     @property
     def age(self) -> pd.DataFrame:
+        """Return the age of the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Age as a pandas DataFrame.
+
+        """
         return self.metadata[["Age"]]
 
     @property
     def gender(self) -> pd.DataFrame:
+        """Return the gender of the selected participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Gender as a pandas DataFrame, recoded as {1: "Female", 2: "Male"}
+
+        """
         return self.metadata[["Gender"]].replace(self.GENDER_MAPPING)
 
     @property
     def bmi(self) -> pd.DataFrame:
+        """Compute the BMI of the selected participants and return it.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            BMI as a pandas DataFrame
+
+        """
         return bmi(self.metadata[["Weight", "Height"]])

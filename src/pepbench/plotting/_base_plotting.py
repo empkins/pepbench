@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -49,12 +49,12 @@ __all__ = [
 def plot_signals(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    collapse: Optional[bool] = False,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    collapse: bool | None = False,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
-) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
+) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     """Plot ECG and ICG signals."""
     if collapse:
         return _plot_signals_one_axis(
@@ -76,12 +76,12 @@ def plot_signals(
 def plot_signals_with_reference_labels(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    collapse: Optional[bool] = False,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
+    heartbeat_subset: Sequence[int] | None = None,
+    collapse: bool | None = False,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
     **kwargs: Any,
-) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
+) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     plot_artefacts = kwargs.get("plot_artefacts", False)
@@ -138,10 +138,10 @@ def plot_signals_with_reference_labels(
 def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    collapse: Optional[bool] = False,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    collapse: bool | None = False,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("legend_orientation", "vertical")
@@ -196,13 +196,13 @@ def plot_signals_with_reference_pep(
 def plot_signals_with_algorithm_results(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    collapse: Optional[bool] = False,
+    collapse: bool | None = False,
     algorithm: BaseExtraction,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
-) -> tuple[plt.Figure, Union[plt.Axes, Sequence[plt.Axes]]]:
+) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     rect = _get_rect(kwargs)
@@ -301,11 +301,11 @@ def plot_signals_from_challenge_results(
     datapoint: BaseUnifiedPepExtractionDataset,
     pep_results_per_sample: pd.DataFrame,
     *,
-    collapse: Optional[bool] = False,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    add_pep: Optional[bool] = False,
+    collapse: bool | None = False,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
+    add_pep: bool | None = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -435,11 +435,11 @@ def plot_signals_from_challenge_results(
 
 def _plot_signals_one_axis(
     *,
-    datapoint: Optional[BaseUnifiedPepExtractionDataset] = None,
-    df: Optional[pd.DataFrame] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    datapoint: BaseUnifiedPepExtractionDataset | None = None,
+    df: pd.DataFrame | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -488,9 +488,9 @@ def _plot_signals_one_axis(
 def _plot_signals_two_axes(
     *,
     datapoint: BaseUnifiedPepExtractionDataset,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     kwargs.setdefault("nrows", 2)
@@ -525,13 +525,13 @@ def _plot_signals_two_axes(
 
 
 def plot_blandaltman(  # noqa: PLR0915
-    x: Union[pd.Series, np.ndarray, list],
-    y: Union[pd.Series, np.ndarray, list],
+    x: pd.Series | np.ndarray | list,
+    y: pd.Series | np.ndarray | list,
     agreement: float = 1.96,
     xaxis: str = "mean",
     confidence: float = 0.95,
     annotate: bool = True,
-    ax: Optional[plt.Axes] = None,
+    ax: plt.Axes | None = None,
     **kwargs: Any,
 ) -> plt.Axes:
     """
@@ -772,14 +772,14 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
     dv: str,
     within: str,
     subject: str,
-    order: Optional[Sequence[str]] = None,
+    order: Sequence[str] | None = None,
     boxplot: bool = True,
     boxplot_in_front: bool = False,
     orient: str = "v",
-    ax: Optional[plt.Axes] = None,
-    colors: Optional[Sequence[str]] = None,
-    pointplot_kwargs: Optional[dict] = None,
-    boxplot_kwargs: Optional[dict] = None,
+    ax: plt.Axes | None = None,
+    colors: Sequence[str] | None = None,
+    pointplot_kwargs: dict | None = None,
+    boxplot_kwargs: dict | None = None,
 ) -> tuple[plt.Figure, plt.Axes]:
     """
     Paired plot.
@@ -969,7 +969,7 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
         # Line and scatter colors depending on subject dv trend
         _colors = np.where(y1 < y2, colors[0], np.where(y1 > y2, colors[2], colors[1]))
         # Line and scatter colors as hue-indexed dictionary
-        _colors = dict(zip(data_now[subject].unique(), _colors))
+        _colors = dict(zip(data_now[subject].unique(), _colors, strict=False))
         # Plot individual lines using Seaborn
         sns.lineplot(
             data=data_now,

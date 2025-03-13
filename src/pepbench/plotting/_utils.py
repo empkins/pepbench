@@ -1,6 +1,6 @@
 import inspect
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -36,7 +36,7 @@ def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
 
 
 def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]]:
-    axs: Union[plt.Axes, None] = kwargs.pop("axs", None)
+    axs: plt.Axes | None = kwargs.pop("axs", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs_subplot = {
         key: value
@@ -428,14 +428,14 @@ def _handle_legend_two_axes(
 def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:
     unique_labels = []
     unique_handles = []
-    for handle, label in zip(handles, labels):
+    for handle, label in zip(handles, labels, strict=False):
         if label not in unique_labels:
             unique_labels.append(label)
             unique_handles.append(handle)
     return unique_handles, unique_labels
 
 
-def _sanitize_heartbeat_subset(heartbeat_subsample: Optional[Sequence[int]] = None) -> Optional[Sequence[int]]:
+def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None) -> Sequence[int] | None:
     if heartbeat_subsample is None:
         return None
     if len(heartbeat_subsample) == 1:
@@ -454,7 +454,7 @@ def _get_data(
     *,
     use_clean: bool,
     normalize_time: bool,
-    heartbeat_subset: Union[Sequence[int], None],
+    heartbeat_subset: Sequence[int] | None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     ecg_data = datapoint.ecg_clean if use_clean else datapoint.ecg
     icg_data = datapoint.icg_clean if use_clean else datapoint.icg
@@ -481,7 +481,7 @@ def _get_data(
 
 def _get_reference_labels(
     datapoint: BaseUnifiedPepExtractionDataset,
-    heartbeat_subset: Optional[Sequence[int]] = None,
+    heartbeat_subset: Sequence[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
     heartbeats = datapoint.heartbeats
     heartbeats = heartbeats[["start_sample", "end_sample"]]

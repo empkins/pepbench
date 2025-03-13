@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,55 @@ __all__ = ["score_pep_evaluation", "mean_and_std"]
 
 
 def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtractionDataset) -> dict:
+    """Run a PEP extraction pipeline on a single datapoint and compute evaluation metrics.
+
+    # *first* averaged over single datapoint and *then* aggregated (mean, std) on total dataset
+
+    The following evaluation metrics are *first* averaged over a single datapoint and *then* aggregated (mean, std)
+    on the total dataset:
+        * ``pep_reference_ms``: The mean reference PEP in milliseconds.
+        * ``pep_estimated_ms``: The mean estimated PEP in milliseconds.
+        * ``error_ms``: The mean error between reference and estimated PEP in milliseconds.
+        * ``absolute_error_ms``: The mean absolute error between reference and estimated PEP in milliseconds.
+        * ``absolute_relative_error_percent``: The mean absolute relative error (relative to the reference PEP)
+          between reference and estimated PEP in percent.
+
+
+    The following evaluation metrics are passed on (since they are single values per datapoint) and then aggregated
+    by summing them up (using the `sum_aggregator`):
+        * ``num_pep_total``: The total number of PEPs in this datapoint.
+        * ``num_pep_valid``: The number of valid PEPs in this datapoint.
+        * ``num_pep_invalid``: The number of invalid PEPs in this datapoint.
+
+    The following evaluation metrics are not aggregated but passed on as they are:
+        * ``pearson_r``: The Pearson correlation coefficient between the reference and estimated PEP values of all
+            matched heartbeats for a single datapoint (excluding NaN values).
+
+    The following evaluation metrics are not aggregated but passed as per-sample values:
+        * ``pep_estimation_per_sample``: The estimated and reference PEPs per sample.
+
+    The following evaluation metrics are directly aggregated (mean, std) over *all* samples *without* intermediate
+    aggregation on single datapoint:
+        * ``error_per_sample_ms``: The mean error between reference and estimated PEP per sample in milliseconds.
+        * ``absolute_error_per_sample_ms``: The mean absolute error between reference and estimated PEP per sample
+          in milliseconds.
+        * ``absolute_relative_error_per_sample_percent``: The mean absolute relative error (relative to the reference
+          PEP) between reference and estimated PEP per sample in percent.
+
+
+    Parameters
+    ----------
+    pipeline : BasePepExtractionPipeline
+        A PEP extraction pipeline. The pipeline must be a subclass of `BasePepExtractionPipeline`.
+    datapoint : BaseUnifiedPepExtractionDataset
+        A single datapoint from the dataset. The datapoint must be a subclass of `BaseUnifiedPepExtractionDataset`.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the evaluation metrics.
+
+    """
     # not necessary anymore
     # pipeline = pipeline.clone()
     pipeline = pipeline.safe_run(datapoint)
@@ -96,7 +144,7 @@ def mean_and_std(vals: Sequence[float]) -> dict:
 
 
 def _merge_extracted_and_reference_pep(
-    extracted: pd.DataFrame, reference: pd.DataFrame, tp_matches: Union[pd.DataFrame, None] = None
+    extracted: pd.DataFrame, reference: pd.DataFrame, tp_matches: pd.DataFrame | None = None
 ) -> pd.DataFrame:
     extracted_original = extracted.copy()
     # if heartbeat_id in index, add it as a column to preserve it in the combined DataFrame

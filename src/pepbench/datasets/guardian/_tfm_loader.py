@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional, Union
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ class TFMLoader:
         data_dict: dict[str, pd.DataFrame],
         sampling_rate_dict: dict[str, float],
         start_time_dict: dict[str, pd.Timestamp],
-        tz: Optional[str] = None,
+        tz: str | None = None,
     ) -> None:
         """Initialize a TFM dataset.
 
@@ -66,8 +66,8 @@ class TFMLoader:
     def from_mat_file(  # noqa: C901, PLR0912
         cls,
         file_path: path_t,
-        date: Union[str, pd.Timestamp],
-        tz: Optional[str] = "Europe/Berlin",
+        date: str | pd.Timestamp,
+        tz: str | None = "Europe/Berlin",
     ) -> "TFMLoader":
         data = loadmat(file_path, struct_as_record=False, squeeze_me=True)
 
@@ -139,7 +139,7 @@ class TFMLoader:
         )
 
     @property
-    def start_time_unix(self) -> Optional[pd.Timestamp]:
+    def start_time_unix(self) -> pd.Timestamp | None:
         """Start time of the recording in UTC time."""
         return self._start_time_unix
 
@@ -148,13 +148,13 @@ class TFMLoader:
         """Timezone the dataset was recorded in."""
         return self._tz
 
-    def data_as_dict(self, index: Optional[str] = None) -> dict[str, pd.DataFrame]:
+    def data_as_dict(self, index: str | None = None) -> dict[str, pd.DataFrame]:
         return {
             key: self._add_index(val, index=index, start_time=start_time)
-            for (key, val), start_time in zip(self._data.items(), self._start_time_dict.values())
+            for (key, val), start_time in zip(self._data.items(), self._start_time_dict.values(), strict=False)
         }
 
-    def _add_index(self, data: pd.DataFrame, index: str, start_time: Optional[pd.Timestamp] = None) -> pd.DataFrame:
+    def _add_index(self, data: pd.DataFrame, index: str, start_time: pd.Timestamp | None = None) -> pd.DataFrame:
         index_names = {
             None: "n_samples",
             "time": "t",

@@ -1,10 +1,10 @@
-from typing import Optional, Union
-
 import pandas as pd
 from tpcp import Dataset
 
 
 class BaseUnifiedPepExtractionDataset(Dataset):
+    """Base class for all datasets that contain PEP and ICG data and are used for PEP extraction evaluation."""
+
     _sampling_rate_ecg: float
     _sampling_rate_icg: float
     _icg: pd.DataFrame
@@ -12,9 +12,7 @@ class BaseUnifiedPepExtractionDataset(Dataset):
     _clean_icg: pd.DataFrame
     _clean_ecg: pd.DataFrame
 
-    def __init__(
-        self, groupby_cols: Optional[Union[list[str], str]] = None, subset_index: Optional[pd.DataFrame] = None
-    ) -> None:
+    def __init__(self, groupby_cols: list[str] | str | None = None, subset_index: pd.DataFrame | None = None) -> None:
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
 
     @property
@@ -42,11 +40,11 @@ class BaseUnifiedPepExtractionDataset(Dataset):
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def reference_labels_ecg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def reference_labels_ecg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
-    def reference_labels_icg(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame]]:
+    def reference_labels_icg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property

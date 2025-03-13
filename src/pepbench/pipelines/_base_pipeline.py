@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 import pandas as pd
 from biopsykit.signals._base_extraction import HANDLE_MISSING_EVENTS
@@ -36,7 +36,7 @@ class BasePepExtractionPipeline(Pipeline):
 
     heartbeat_segmentation_results_: HeartbeatSegmentationDataFrame
     q_peak_results_: QPeakDataFrame
-    c_point_results_: Optional[CPointDataFrame]
+    c_point_results_: CPointDataFrame | None
     b_point_results_: BPointDataFrame
     b_point_after_outlier_correction_results_: BPointDataFrame
     pep_results_: PepResultDataFrame
@@ -47,10 +47,10 @@ class BasePepExtractionPipeline(Pipeline):
         heartbeat_segmentation_algo: BaseHeartbeatSegmentation,
         q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
-        c_point_algo: Optional[BaseCPointExtraction] = CPointExtractionScipyFindPeaks(),
-        outlier_correction_algo: Optional[BaseOutlierCorrection] = None,
+        c_point_algo: BaseCPointExtraction | None = CPointExtractionScipyFindPeaks(),
+        outlier_correction_algo: BaseOutlierCorrection | None = None,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
-        handle_missing_events: Optional[Literal[HANDLE_MISSING_EVENTS]] = None,
+        handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:
         self.heartbeat_segmentation_algo = heartbeat_segmentation_algo
         self.q_peak_algo = q_peak_algo

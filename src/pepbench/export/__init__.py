@@ -1,3 +1,5 @@
+"""Module to export results to LaTeX tables."""
+
 from pepbench.export._latex import (
     convert_to_latex,
     create_algorithm_result_table,

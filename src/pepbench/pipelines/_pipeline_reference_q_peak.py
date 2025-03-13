@@ -1,8 +1,9 @@
+from typing import Self, get_args
+
 import pandas as pd
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from tpcp._dataset import DatasetT
-from typing_extensions import Self, get_args
 
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline

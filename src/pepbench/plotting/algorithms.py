@@ -1,7 +1,7 @@
 """Module for visualizing Q-peak detection and B-point detection algorithms."""
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -64,11 +64,85 @@ __all__ = [
 def plot_q_peak_extraction_martinez2004_neurokit(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of Q-peak extraction using the Martinez et al. (2004) algorithm [1].
+
+    The algorithm is implemented as :class:``QPeakExtractionMartinez2004Neurokit``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- Q-Peaks ---
+        * ``q_peak_marker``: str
+            Marker style for Q-peaks.
+        * ``q_peak_linestyle``: str
+            Line style for Q-peaks.
+        * ``q_peak_linewidth``: float
+            Line width for Q-peaks.
+        * ``q_peak_alpha``: float
+            Alpha value for Q-peak vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    Raises
+    ------
+    ValueError
+        If the ECG data is too short for Q-peak detection (i.e., less than 4 seconds).
+
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.ecg.QPeakExtractionMartinez2004Neurokit``
+        Algorithm implementation.
+
+
+    References
+    ----------
+    .. [1] Martinez, J. P., Almeida, R., Olmos, S., Rocha, A. P., & Laguna, P. (2004). A wavelet-based ECG delineator:
+        evaluation on standard databases. IEEE Transactions on Biomedical Engineering, 51(4), 570-581.
+        https://doi.org/10.1109/TBME.2003.821031
+
+    """
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -135,11 +209,77 @@ def plot_q_peak_extraction_martinez2004_neurokit(
 def plot_q_peak_extraction_scipy_findpeaks_neurokit(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of Q-peak extraction using the SciPy FindPeaks algorithm provided by NeuroKit.
+
+    The algorithm is implemented as :class:``QPeakExtractionSciPyFindPeaksNeurokit``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- Q-Peaks ---
+        * ``q_peak_marker``: str
+            Marker style for Q-peaks.
+        * ``q_peak_linestyle``: str
+            Line style for Q-peaks.
+        * ``q_peak_linewidth``: float
+            Line width for Q-peaks.
+        * ``q_peak_alpha``: float
+            Alpha value for Q-peak vertical lines.
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.ecg.QPeakExtractionSciPyFindPeaksNeurokit``
+        Algorithm implementation.
+
+
+    Raises
+    ------
+    ValueError
+        If the ECG data is too short for Q-peak detection (i.e., less than 4 seconds).
+
+    """
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(**kwargs))
@@ -200,13 +340,103 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
 def plot_q_peak_extraction_vanlien2013(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Plot example of Q-peak extraction using the Van Lien (2013) algorithm."""
+    """Plot example of Q-peak extraction using the van Lien et al. (2013) algorithm [1].
+
+    The algorithm is implemented as :class:``QPeakExtractionVanLien2013``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance.
+        See :class:``pepbench.algorithms.ecg.QPeakExtractionVanLien2013`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithm are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- Q-Peaks ---
+        * ``q_peak_marker``: str
+            Marker style for Q-peaks.
+        * ``q_peak_linestyle``: str
+            Line style for Q-peaks.
+        * ``q_peak_linewidth``: float
+            Line width for Q-peaks.
+        * ``q_peak_alpha``: float
+            Alpha value for Q-peak vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    Raises
+    ------
+    ValueError
+        If the ECG data is too short for Q-peak detection (i.e., less than 4 heartbeats).
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.ecg.QPeakExtractionVanLien2013``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Van Lien, R., Schutte, N. M., Meijer, J. H., & De Geus, E. J. C. (2013). Estimated preejection period (PEP)
+        based on the detection of the R-peak and dZ/dt-min peaks does not adequately reflect the actual PEP across a
+        wide range of laboratory and ambulatory conditions. International Journal of Psychophysiology, 87(1), 60-69.
+        https://doi.org/10.1016/j.ijpsycho.2012.11.001
+
+
+    """
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -267,7 +497,7 @@ def plot_q_peak_extraction_vanlien2013(
     r_peak_amplitude = ecg_data.iloc[r_peak_samples].max()
 
     # draw arrow from R-peak to Q-peaks
-    for r_peak, q_peak in zip(r_peak_samples, q_peak_samples):
+    for r_peak, q_peak in zip(r_peak_samples, q_peak_samples, strict=False):
         x_q_peak = ecg_data.index[q_peak]
         x_r_peak = ecg_data.index[r_peak]
         y = r_peak_amplitude.iloc[0]
@@ -304,12 +534,97 @@ def plot_q_peak_extraction_vanlien2013(
 def plot_q_peak_extraction_forounzafar2018(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of Q-peak extraction using the Forouzanfar et al. (2018) algorithm [1].
+
+    The algorithm is implemented as :class:``QPeakExtractionForouzanfar2018``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance.
+        See :class:``pepbench.algorithms.ecg.QPeakExtractionForouzanfar2018`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithm are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- Q-Peaks ---
+        * ``q_peak_marker``: str
+            Marker style for Q-peaks.
+        * ``q_peak_linestyle``: str
+            Line style for Q-peaks.
+        * ``q_peak_linewidth``: float
+            Line width for Q-peaks.
+        * ``q_peak_alpha``: float
+            Alpha value for Q-peak vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.ecg.QPeakExtractionVanLien2013``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Forouzanfar, M., Baker, F. C., De Zambotti, M., McCall, C., Giovangrandi, L., & Kovacs, G. T. A. (2018).
+        Toward a better noninvasive assessment of preejection period: A novel automatic algorithm for B-point detection
+        and correction on thoracic impedance cardiogram. Psychophysiology, 55(8), e13072.
+        https://doi.org/10.1111/psyp.13072
+
+    """
     fig, ax = plt.subplots(**kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -394,12 +709,94 @@ def plot_q_peak_extraction_forounzafar2018(
 def plot_b_point_extraction_stern1985(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the Stern et al. (1985) algorithm [1].
+
+    The algorithm is implemented as :class:``BPointExtractionStern1985``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionStern1985`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionStern1985``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Stern, H. C., Wolf, G. K., & Belz, G. G. (1985). Comparative measurements of left ventricular ejection time
+        by mechano-, echo- and electrical impedance cardiography. Arzneimittel-Forschung, 35(10), 1582-1586.
+
+    """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -425,9 +822,7 @@ def plot_b_point_extraction_stern1985(
     # compute zero crossings of the second derivative
     icg_2nd_der_zero_crossings = np.where(np.diff(np.signbit(icg_2nd_der.squeeze())))[0]
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -518,12 +913,97 @@ def plot_b_point_extraction_stern1985(
 def plot_b_point_extraction_sherwood1990(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of B-point extraction using the Sherwood et al. (1990) algorithm [1].
+
+    The algorithm is implemented as :class:``BPointExtractionSherwood1990``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionSherwood1990`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionSherwood1990``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Sherwood, A., Allen, M. T., Fahrenberg, J., Kelsey, R. M., Lovallo, W. R., & Doornen, L. J. P. (1990).
+        Methodological Guidelines for Impedance Cardiography. Psychophysiology, 27(1), 1-23.
+        https://doi.org/10.1111/j.1469-8986.1990.tb02171.x
+
+    """
     fig, ax = plt.subplots(**kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -543,9 +1023,7 @@ def plot_b_point_extraction_sherwood1990(
 
     icg_data = icg_data.squeeze()
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -627,12 +1105,95 @@ def plot_b_point_extraction_sherwood1990(
 def plot_b_point_extraction_debski1993_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the second derivative method by Debski et al. (1993) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionDebski1993SecondDerivative``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionDebski1993SecondDerivative`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionDebski1993SecondDerivative``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Debski, T. T., Zhang, Y., Jennings, J. R., & Kamarck, T. W. (1993). Stability of cardiac impedance
+        measures: Aortic opening (B-point) detection and scoring. Biological Psychology, 36(1-2), 63-74.
+        https://doi.org/10.1016/0301-0511(93)90081-I
+
+    """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -654,9 +1215,7 @@ def plot_b_point_extraction_debski1993_second_derivative(
     icg_2nd_der = np.gradient(icg_data)
     icg_2nd_der = pd.DataFrame(icg_2nd_der, index=icg_data.index, columns=["ICG Deriv. $(d^2Z/dt^2)$"])
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -748,12 +1307,97 @@ def plot_b_point_extraction_debski1993_second_derivative(
 def plot_b_point_extraction_arbol2017_isoelectric_crossings(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of B-point extraction using the isoelectric crossings method by Arbol et al. (2017) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionArbol2017IsoelectricCrossings``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionArbol2017IsoelectricCrossings`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Existing Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionArbol2017IsoelectricCrossings``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Árbol, J. R., Perakakis, P., Garrido, A., Mata, J. L., Fernández-Santaella, M. C., & Vila, J. (2017).
+        Mathematical detection of aortic valve opening (B point) in impedance cardiography: A comparison of three
+        popular algorithms. Psychophysiology, 54(3), 350-357. https://doi.org/10.1111/psyp.12799
+
+    """
     fig, ax = plt.subplots(**kwargs)
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
@@ -773,9 +1417,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
 
     icg_data = icg_data.squeeze()
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -869,12 +1511,95 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
 def plot_b_point_extraction_arbol2017_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the second derivative method by Arbol et al. (2017) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionArbol2017SecondDerivative``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionArbol2017SecondDerivative`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionArbol2017SecondDerivative``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Árbol, J. R., Perakakis, P., Garrido, A., Mata, J. L., Fernández-Santaella, M. C., & Vila, J. (2017).
+        Mathematical detection of aortic valve opening (B point) in impedance cardiography: A comparison of three
+        popular algorithms. Psychophysiology, 54(3), 350-357. https://doi.org/10.1111/psyp.12799
+
+    """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
@@ -897,9 +1622,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
     icg_2nd_der = np.gradient(icg_data)
     icg_2nd_der = pd.DataFrame(icg_2nd_der, index=icg_data.index, columns=["ICG 2nd Deriv. $(d^2Z/dt^2)$"])
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -1008,12 +1731,95 @@ def plot_b_point_extraction_arbol2017_second_derivative(
 def plot_b_point_extraction_arbol2017_third_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the third derivative method by Arbol et al. (2017) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionArbol2017ThirdDerivative``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionArbol2017ThirdDerivative`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionArbol2017ThirdDerivative``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Árbol, J. R., Perakakis, P., Garrido, A., Mata, J. L., Fernández-Santaella, M. C., & Vila, J. (2017).
+        Mathematical detection of aortic valve opening (B point) in impedance cardiography: A comparison of three
+        popular algorithms. Psychophysiology, 54(3), 350-357. https://doi.org/10.1111/psyp.12799
+
+    """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
@@ -1036,9 +1842,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     icg_3rd_der = np.gradient(np.gradient(icg_data))
     icg_3rd_der = pd.DataFrame(icg_3rd_der, index=icg_data.index, columns=["ICG 3rd Deriv. $(d^3Z/dt^3)$"])
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -1141,12 +1945,96 @@ def plot_b_point_extraction_arbol2017_third_derivative(
 def plot_b_point_extraction_lozano2007_linear_regression(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the linear regression method by Lozano et al. (2007) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionLozano2007LinearRegression``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionLozano2007LinearRegression`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionLozano2007LinearRegression``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Lozano, D. L., Norman, G., Knox, D., Wood, B. L., Miller, B. D., Emery, C. F., & Berntson, G. G. (2007).
+        Where to B in dZ/dt. Psychophysiology, 44(1), 113-119. https://doi.org/10.1111/j.1469-8986.2006.00468.x
+
+    """
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -1195,7 +2083,7 @@ def plot_b_point_extraction_lozano2007_linear_regression(
     y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
 
     # draw arrow from R-peak to Q-peak
-    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
+    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples, strict=False):
         x_r_peak = ecg_data.index[r_peak]
         x_c_point = icg_data.index[c_point]
         x_b_point = icg_data.index[b_point]
@@ -1258,12 +2146,96 @@ def plot_b_point_extraction_lozano2007_linear_regression(
 def plot_b_point_extraction_lozano2007_quadratic_regression(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Plot example of B-point extraction using the quadratic regression method by Lozano et al. (2007) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionLozano2007QuadraticRegression``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionLozano2007QuadraticRegression`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    ax : :class:`matplotlib.axes.Axes`
+        Axes object.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionLozano2007QuadraticRegression``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Lozano, D. L., Norman, G., Knox, D., Wood, B. L., Miller, B. D., Emery, C. F., & Berntson, G. G. (2007).
+        Where to B in dZ/dt. Psychophysiology, 44(1), 113-119. https://doi.org/10.1111/j.1469-8986.2006.00468.x
+
+    """
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -1279,9 +2251,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -1312,7 +2282,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
     y_r_peak_max = np.max(ecg_data.iloc[r_peak_samples], axis=0).squeeze()
 
     # draw arrow from R-peak to Q-peak
-    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples):
+    for r_peak, c_point, b_point in zip(r_peak_samples, c_point_samples, b_point_samples, strict=False):
         x_r_peak = ecg_data.index[r_peak]
         x_c_point = icg_data.index[c_point]
         x_b_point = icg_data.index[b_point]
@@ -1372,15 +2342,99 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
     return fig, ax
 
 
-def plot_b_point_extraction_drost2022(
+def plot_b_point_extraction_drost2022(  # noqa: PLR0915
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of B-point extraction using the method by Drost et al. (2022) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionDrost2022``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionDrost2022`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionDrost2022``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Drost, L., Finke, J. B., Port, J., & Schächinger, H. (2022). Comparison of TWA and PEP as indices of a2- and
+        ß-adrenergic activation. Psychopharmacology. https://doi.org/10.1007/s00213-022-06114-8
+
+    """
     kwargs.setdefault("legend_max_cols", 4)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -1398,9 +2452,7 @@ def plot_b_point_extraction_drost2022(
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
     icg_data = icg_data.squeeze()
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -1497,12 +2549,96 @@ def plot_b_point_extraction_drost2022(
 def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    heartbeat_subset: Optional[Sequence[int]] = None,
-    use_clean: Optional[bool] = True,
-    normalize_time: Optional[bool] = False,
-    algo_params: Optional[dict] = None,
+    heartbeat_subset: Sequence[int] | None = None,
+    use_clean: bool | None = True,
+    normalize_time: bool | None = False,
+    algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of B-point extraction using the method by Forouzanfar et al. (2018) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionForouzanfar2018``.
+
+    Parameters
+    ----------
+    datapoint : BaseUnifiedPepExtractionDataset
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    use_clean : bool, optional
+        Whether to clean the ECG signal before plotting or not. Default: True
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionDrost2022`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionForouzanfar2018``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Forouzanfar, M., Baker, F. C., De Zambotti, M., McCall, C., Giovangrandi, L., & Kovacs, G. T. A. (2018).
+        Toward a better noninvasive assessment of preejection period: A novel automatic algorithm for B-point detection
+        and correction on thoracic impedance cardiogram. Psychophysiology, 55(8), e13072.
+        https://doi.org/10.1111/psyp.13072
+
+    """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
     kwargs.setdefault("legend_outside", True)
     kwargs.setdefault("legend_orientation", "horizontal")
@@ -1527,9 +2663,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     icg_2nd_der = pd.DataFrame(icg_2nd_der, index=icg_data.index, columns=["ICG 2nd Deriv. $(d^2Z/dt^2)$"])
     icg_3rd_der = pd.DataFrame(icg_3rd_der, index=icg_data.index, columns=["ICG 3rd Deriv. $(d^3Z/dt^3)$"])
 
-    algo_params_c_point = {
-        key: val for key, val in algo_params.items() if key in ["window_c_correction", "save_candidates"]
-    }
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
     c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
@@ -1745,7 +2879,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
 
 
 def _get_heartbeats(
-    datapoint: BaseUnifiedPepExtractionDataset, heartbeat_subset: Optional[Sequence[int]] = None
+    datapoint: BaseUnifiedPepExtractionDataset, heartbeat_subset: Sequence[int] | None = None
 ) -> pd.DataFrame:
     heartbeats = datapoint.heartbeats.drop(columns="start_time")
     if heartbeat_subset is not None:
