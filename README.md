@@ -59,20 +59,22 @@ nearly any way you want, as long as you include the original license in you modi
 ## For Developers
 
 
-Install Python >=3.10 and [poetry](https://python-poetry.org).
-Then run the commands below to get the latest source and install the dependencies:
+Install Python >=3.10 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+Then run the commands below to install [poethepoet](`https://poethepoet.natn.io`), get the latest source,
+and install the dependencies:
 
 ```bash
 git clone https://github.com/empkins/pepbench.git
-poetry install -E .
+uv tool install poethepoet
+uv sync --all-extras --dev
 ```
 
-All dependencies are specified in the main `pyproject.toml` when running `poetry install`.
+All dependencies are specified in the main `pyproject.toml` when running `uv sync`.
 
 To run any of the tools required for the development workflow, use the poe commands:
 
 ```bash
-poetry run poe
+uv run poe
 ...
 CONFIGURED TASKS
   format            Format all files with black.
