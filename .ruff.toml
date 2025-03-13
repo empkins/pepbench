@@ -79,12 +79,6 @@ select = [
 ]
 
 ignore = [
-    # missing docstrings (TODO: remove later)
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
     # controversial
     "B006",
     # controversial
