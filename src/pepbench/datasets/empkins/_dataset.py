@@ -46,8 +46,8 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,
-        exclude_missing_data: bool | None = False,
-        use_cache: bool | None = True,
+        exclude_missing_data: bool = False,
+        use_cache: bool = True,
         only_labeled: bool = False,
     ) -> None:
         """Initialize a new ``EmpkinsDataset`` instance.
