@@ -6,7 +6,7 @@ Example Gallery
 
 
 Algorithms
-=====================
+==========
 These examples demonstrate how to use the algorithms provided by pepbench.
 
 .. nbgallery::
@@ -28,7 +28,7 @@ These examples demonstrate how to use the algorithms provided by pepbench.
 
 
 Pipeline
-==========
+========
 These examples demonstrate how to combine Q-Peak and B-Point detection algorithms to create a PEP extraction pipeline.
 
 .. nbgallery::
@@ -40,7 +40,7 @@ These examples demonstrate how to combine Q-Peak and B-Point detection algorithm
 
 
 Evaluation Challenges
-==================
+=====================
 These examples demonstrate how to evaluate the performance of PEP extraction pipelines.
 
 .. nbgallery::

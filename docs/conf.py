@@ -3,6 +3,7 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
+import inspect
 
 # -- Path setup --------------------------------------------------------------
 
@@ -20,10 +21,13 @@ from pathlib import Path
 
 import toml
 
+__location__ = os.path.join(os.getcwd(), os.path.dirname(inspect.getfile(inspect.currentframe())))
 HERE = Path(__file__)
 
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent))
+sys.path.insert(0, os.path.abspath("."))
+sys.path.insert(0, os.path.join(__location__, "../src/pepbench"))
 
 
 URL = "https://github.com/empkins/pepbench"
@@ -123,6 +127,18 @@ templates_path = ["templates"]
 autosummary_generate = True
 autosummary_generate_overwrite = True
 
+napoleon_numpy_docstring = True
+
+# This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
+# by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
+autodoc_member_order = "bysource"
+
+# This value controls how to represent typehints
+autodoc_typehints = "description"
+
+# This value selects what content will be inserted into the main body of an autoclass directive.
+autoclass_content = "init"
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -137,6 +153,16 @@ add_function_parentheses = False
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+
+# Enable markdown
+extensions.append("recommonmark")
+
+# The suffix of source filenames.
+source_suffix = [".rst", ".md"]
+
+# The master toctree document.
+master_doc = "index"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -225,8 +251,8 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/docs/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "pyscaffold": ("https://pyscaffold.org/en/stable", None),
-    "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
+    # "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
     "scikit-learn": ("https://scikit-learn.org/stable/", None),
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
-    "pingouin": ("https://pingouin-stats.org/", None),
+    # "pingouin": ("https://pingouin-stats.org/", None),
 }

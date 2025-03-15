@@ -49,7 +49,7 @@ Note: We don't guarantee that the latest version on GitHub is stable.
     configuration of the pipeline (i.e., which algorithm combinations are used) depend on the dataset and 
     can be adjusted to the specific use case. A systematic evaluation of different algorithm combinations
     is subject to the paper "PEPbench – Open, Reproducible, and Systematic Benchmarking of Automated 
-    Pre-Ejection Period Extraction Algorithms" (see [Citation](#citation)).
+    Pre-Ejection Period Extraction Algorithms".
 
     In this case, we recommend to cite the paper and the package as follows:
 
@@ -108,7 +108,7 @@ nearly any way you want, as long as you include the original license in you modi
 ## For Developers
 
 Install Python >=3.10 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
-Then run the commands below to install [poethepoet](`https://poethepoet.natn.io`), get the latest source,
+Then run the commands below to install [poethepoet](https://poethepoet.natn.io), get the latest source,
 and install the dependencies:
 
 ```bash
