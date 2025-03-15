@@ -1,4 +1,4 @@
-# This workflows will upload a Python Package using poetry when a release is created
+# This workflows will upload a Python Package using Twine when a release is created
 # For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
 
 name: Upload Python Package
@@ -9,9 +9,12 @@ on:
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
-
+    environment:
+      name: pypi
+      url: https://pypi.org/p/${{ github.repository }}
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     - uses: actions/checkout@v4
     - name: Install uv and Python
@@ -23,6 +26,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install the project
       run: uv sync --all-extras --dev
-    - name: Build and publish
+    - name: Build package
       run: |
-        uv publish -u "${{ secrets.PYPI_USERNAME }}" -p "${{ secrets.PYPI_PASSWORD }}" --build
+        uv build
+    - name: Publish package distributions to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
