@@ -58,7 +58,6 @@ nearly any way you want, as long as you include the original license in you modi
 
 ## For Developers
 
-
 Install Python >=3.10 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 Then run the commands below to install [poethepoet](`https://poethepoet.natn.io`), get the latest source,
 and install the dependencies:
@@ -86,3 +85,20 @@ CONFIGURED TASKS
   version           Bump version in all relevant places.
 
 ```
+
+### Format and Linting
+
+To ensure consistent code structure this project uses black and ruff to automatically check (and fix) the code format.
+
+```
+poe format  # runs ruff format and ruff lint with the autofix flag
+poe lint # runs ruff without autofix (will show issues that can not automatically be fixed)
+```
+
+If you want to check if all code follows the code guidelines, run `poe ci_check`.
+This can be useful in the CI context.
+
+
+### Tests
+
+All tests are located in the `tests` folder and can be executed by using `poe test`.
