@@ -13,6 +13,7 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import re
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -30,16 +31,21 @@ URL = "https://github.com/empkins/pepbench"
 # -- Project information -----------------------------------------------------
 
 # Info from poetry config:
-info = toml.load("../pyproject.toml")["tool"]["poetry"]
+info = toml.load("../pyproject.toml")["project"]
 
 project = info["name"]
-author = ", ".join(info["authors"])
+author = ", ".join([k["name"] for k in info["authors"]])
 release = info["version"]
 
-copyright = f"2021 - {datetime.now().year}, MaD Lab, FAU"
+copyright = (
+    f"2024 - {datetime.now().year}, Machine Learning and Data Analytics (MaD) Lab, Friedrich-Alexander-Universität "
+    "Erlangen-Nürnberg (FAU)"
+)
 
 # -- Copy the README and Changelog and fix image path --------------------------------------
 HERE = Path(__file__).parent
+EXAMPLE_NOTEBOOKS_DIR = HERE.joinpath("examples/_notebooks")
+
 with (HERE.parent / "README.md").open() as f:
     out = f.read()
 with (HERE / "README.md").open("w+") as f:
@@ -50,21 +56,46 @@ with (HERE.parent / "CHANGELOG.md").open() as f:
 with (HERE / "CHANGELOG.md").open("w+") as f:
     f.write(out)
 
+
+def all_but_ipynb(dir, contents):
+    result = []
+    for c in contents:
+        if os.path.isfile(os.path.join(dir, c)) and (not c.endswith(".ipynb")):
+            result += [c]
+    return result
+
+
+shutil.rmtree(EXAMPLE_NOTEBOOKS_DIR, ignore_errors=True)
+shutil.copytree(HERE.parent.joinpath("examples"), EXAMPLE_NOTEBOOKS_DIR, ignore=all_but_ipynb)
+for file in EXAMPLE_NOTEBOOKS_DIR.glob("*.ipynb"):
+    with file.open() as f:
+        out = f.read()
+    out = out.replace("%matplotlib widget", "%matplotlib inline")
+    with file.open("w+") as f:
+        f.write(out)
+
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "numpydoc",
-    "sphinx.ext.linkcode",
-    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    # "sphinx.ext.imgconverter",
-    "sphinx_gallery.gen_gallery",
-    "recommonmark",
+    "sphinx.ext.todo",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.mathjax",
+    "sphinx_copybutton",
+    "sphinx_gallery.load_style",
+    "button",
+    "nbsphinx",
+    # "sphinx_rtd_theme",
 ]
 
 # this is needed for some reason...
@@ -104,6 +135,9 @@ default_role = "literal"
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = False
 
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -117,13 +151,17 @@ html_theme_options = {
     "show_prev_next": False,
 }
 
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = ["button.css"]
 
 # -- Options for extensions --------------------------------------------------
-# Intersphinx
 
 # intersphinx configuration
 intersphinx_module_mapping = {
@@ -132,14 +170,17 @@ intersphinx_module_mapping = {
     "matplotlib": ("https://matplotlib.org/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "sklearn": ("https://scikit-learn.org/stable/", None),
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "seaborn": ("https://seaborn.pydata.org/", None),
+    "pyscaffold": ("https://pyscaffold.org/en/stable", None),
+    # "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
+    # "scikit-learn": ("https://scikit-learn.org/stable/", None),
+    "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
+    "pingouin": ("https://pingouin-stats.org/", None),
 }
 
 user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0"
-
-intersphinx_mapping = {
-    "python": (f"https://docs.python.org/{sys.version_info.major}", None),
-    **intersphinx_module_mapping,
-}
 
 # Sphinx Gallary
 sphinx_gallery_conf = {
@@ -161,3 +202,31 @@ linkcode_resolve = make_linkcode_resolve(
     "pepbench",
     "https://github.com/empkins/pepbench/blob/{revision}/{package}/{path}#L{lineno}",
 )
+
+nbsphinx_epilog = r"""
+
+{% set docname = env.doc2path(env.docname) %}
+
+
+.. button::
+   :text: Download Notebook</br>(Right-Click -> Save Link As...)
+   :link: https://raw.githubusercontent.com/mad-lab-fau/BioPsyKit/main/examples/{{ docname.split('/')[-1] }}
+
+"""
+
+# -- External mapping --------------------------------------------------------
+python_version = ".".join(map(str, sys.version_info[0:2]))
+intersphinx_mapping = {
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "seaborn": ("https://seaborn.pydata.org/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
+    "pyscaffold": ("https://pyscaffold.org/en/stable", None),
+    "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
+    "scikit-learn": ("https://scikit-learn.org/stable/", None),
+    "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
+    "pingouin": ("https://pingouin-stats.org/", None),
+}
