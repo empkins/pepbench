@@ -24,8 +24,70 @@ from tpcp import Parameter, Pipeline
 
 __all__ = ["BasePepExtractionPipeline"]
 
+from pepbench._docutils import make_filldoc
 
+base_pep_pipeline_docfiller = make_filldoc(
+    {
+        "base_parameters": """
+        Parameters
+        ----------
+        heartbeat_segmentation_algo : :class:`~biopsykit.signals.ecg.segmentation.BaseHeartbeatSegmentation`
+            Algorithm for heartbeat segmentation.
+        q_peak_algo : :class:`~biopsykit.signals.ecg.event_extraction.BaseEcgExtraction`
+            Algorithm for Q-peak extraction.
+        b_point_algo : :class:`~biopsykit.signals.icg.event_extraction.BaseBPointExtraction`
+            Algorithm for B-point extraction.
+        c_point_algo : :class:`~biopsykit.signals.icg.event_extraction.BaseCPointExtraction`
+            Algorithm for C-point extraction, necessary for most subsequent B-point extraction algorithms.
+        outlier_correction_algo : :class:`~biopsykit.signals.icg.outlier_correction.BaseOutlierCorrection`
+            Algorithm for outlier correction of B-point data (optional).
+        handle_negative_pep : one of {`"nan"`, `"zero"`, `"keep"`}
+            How to handle negative PEP values. Possible values are:
+                - `"nan"`: Set negative PEP values to NaN
+                - `"zero"`: Set negative PEP values to 0
+                - `"keep"`: Keep negative PEP values as is
+        handle_missing_events : one of {`"warn"`, `"ignore"`, `"raise"`}
+            How to handle missing events. Possible values are:
+                - `"warn"`: Issue a warning if missing events are detected
+                - `"ignore"`: Ignore missing events
+                - `"raise"`: Raise an error if missing events are detected
+        """,
+        "attributes": """
+        Attributes
+        ----------
+        heartbeat_segmentation_results_ : :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationDataFrame`
+            Results from the heartbeat segmentation step.
+        q_peak_results_ : :class:`~biopsykit.signals.ecg.event_extraction.QPeakDataFrame`
+            Results from the Q-peak extraction step.
+        c_point_results_ : :class:`~biopsykit.signals.icg.event_extraction.CPointDataFrame`
+            Results from the C-point extraction step.
+        b_point_results_ : :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
+            Results from the B-point extraction step.
+        b_point_after_outlier_correction_results_ : :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
+            Results from the B-point extraction step after outlier correction.
+        pep_results_ : :class:`~biopsykit.signals.pep.PepResultDataFrame`
+            Results from the PEP extraction step.
+            
+        """,
+    },
+    doc_summary="Decorator to fill common parts of the docstring for subclasses of :class:`BasePepExtractionPipeline`.",
+)
+
+
+@base_pep_pipeline_docfiller
 class BasePepExtractionPipeline(Pipeline):
+    """Base class for PEP extraction pipelines.
+
+    This class provides all the necessary methods to extract PEP from ECG and ICG data using the specified algorithms.
+    For usage, it is recommended to use the derived pipelines
+    (e.g., :class:`~pepbench.pipelines.PepExtractionPipeline`).
+
+    %(base_parameters)s
+
+    %(attributes)s
+
+    """
+
     heartbeat_segmentation_algo: Parameter[BaseHeartbeatSegmentation]
     q_peak_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]

@@ -1,8 +1,9 @@
-from typing import Self, get_args
+from typing import get_args
 
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from tpcp._dataset import DatasetT
+from typing_extensions import Self
 
 __all__ = ["PepExtractionPipeline"]
 
@@ -10,7 +11,7 @@ from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 
 
 class PepExtractionPipeline(BasePepExtractionPipeline):
-    """tpcp Pipeline for PEP extraction."""
+    """Standard `tpcp` Pipeline for PEP extraction from ECG and ICG data."""
 
     def run(self, datapoint: DatasetT) -> Self:
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):

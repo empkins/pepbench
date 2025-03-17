@@ -6,7 +6,6 @@
 import inspect
 
 # -- Path setup --------------------------------------------------------------
-
 import os
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -85,20 +84,22 @@ for file in EXAMPLE_NOTEBOOKS_DIR.glob("*.ipynb"):
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.napoleon",
+    # "sphinx.ext.napoleon",
+    # "numpydoc",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
-    "sphinx.ext.todo",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.coverage",
+    "sphinx.ext.linkcode",
+    # "sphinx.ext.todo",
+    # "sphinx.ext.autosummary",
+    # "sphinx.ext.viewcode",
+    # "sphinx.ext.coverage",
     "sphinx.ext.doctest",
-    "sphinx.ext.ifconfig",
+    # "sphinx.ext.ifconfig",
     "sphinx.ext.mathjax",
     "sphinx_copybutton",
     "sphinx_gallery.load_style",
     "button",
-    "nbsphinx",
+    # "nbsphinx",
     # "sphinx_rtd_theme",
 ]
 
@@ -117,8 +118,20 @@ else:
     extensions.append("sphinx.ext.mathjax")
     mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/" "tex-chtml.js"
 
-autodoc_default_options = {"members": True, "inherited-members": True, "special_members": True}
+# this is needed for some reason...
+# see https://github.com/numpy/numpydoc/issues/69
+numpydoc_class_members_toctree = False
+
+# autodoc_class_signature = "separated"
+autodoc_default_options = {
+    "members": True,
+    "inherited-members": True,
+    "special_members": True,
+}
 # autodoc_typehints = 'description'  # Does not work as expected. Maybe try at future date again
+autodoc_typehints = "signature"
+
+# autodoc_inherit_docstrings = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
@@ -127,7 +140,7 @@ templates_path = ["templates"]
 autosummary_generate = True
 autosummary_generate_overwrite = True
 
-napoleon_numpy_docstring = True
+# napoleon_numpy_docstring = True
 
 # This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
 # by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
@@ -137,7 +150,7 @@ autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 
 # This value selects what content will be inserted into the main body of an autoclass directive.
-autoclass_content = "init"
+autoclass_content = "class"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -200,6 +213,7 @@ intersphinx_module_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "seaborn": ("https://seaborn.pydata.org/", None),
     "pyscaffold": ("https://pyscaffold.org/en/stable", None),
+    "biopsykit": ("https://biopsykit.readthedocs.io/en/latest/", None),
     # "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
     # "scikit-learn": ("https://scikit-learn.org/stable/", None),
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
@@ -251,8 +265,7 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/docs/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/reference/", None),
     "pyscaffold": ("https://pyscaffold.org/en/stable", None),
-    # "neurokit2": ("https://neurokit2.readthedocs.io/en/latest", None),
+    "biopsykit": ("https://biopsykit.readthedocs.io/en/latest/", None),
     "scikit-learn": ("https://scikit-learn.org/stable/", None),
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
-    # "pingouin": ("https://pingouin-stats.org/", None),
 }

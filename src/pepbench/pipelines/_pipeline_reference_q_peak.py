@@ -1,18 +1,27 @@
-from typing import Self, get_args
+from typing import get_args
 
 import pandas as pd
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from tpcp._dataset import DatasetT
+from typing_extensions import Self
 
 from pepbench.heartbeat_matching import match_heartbeat_lists
-from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
+from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline, base_pep_pipeline_docfiller
 
 __all__ = ["PepExtractionPipelineReferenceQPeak"]
 
 
+@base_pep_pipeline_docfiller
 class PepExtractionPipelineReferenceQPeak(BasePepExtractionPipeline):
-    """tpcp Pipeline for PEP extraction that uses reference Q-peaks for Q-peak detection."""
+    """`tpcp` Pipeline for PEP extraction that uses reference Q-peaks for Q-peak detection.
+
+    This pipeline is used to validate different B-point extraction algorithms and computing the PEP using
+    reference Q-peaks.
+
+    %(base_parameters)s
+
+    """
 
     def run(self, datapoint: DatasetT) -> Self:
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):

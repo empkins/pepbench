@@ -2,12 +2,13 @@ import json
 import warnings
 from collections import namedtuple
 from collections.abc import Callable
-from typing import Any, Self
+from typing import Any
 
 import numpy as np
 import pandas as pd
 from tpcp import Algorithm
 from tpcp.validate import FloatAggregator, Scorer, validate
+from typing_extensions import Self
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.evaluation._scoring import mean_and_std, score_pep_evaluation
