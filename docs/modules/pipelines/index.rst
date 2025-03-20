@@ -11,10 +11,10 @@ Pipelines
 .. currentmodule:: pepbench.pipelines
 
 .. autosummary::
-   :toctree: generated/pipelines
+   :toctree: generated
    :template: class.rst
 
     BasePepExtractionPipeline
     PepExtractionPipeline
-    PepExtractionPipelineReferenceQPeak
+    PepExtractionPipelineReferenceQPeaks
     PepExtractionPipelineReferenceBPoints

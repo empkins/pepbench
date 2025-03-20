@@ -5,7 +5,7 @@ from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from typing_extensions import Self
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline, base_pep_pipeline_docfiller
 
@@ -30,7 +30,7 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
     """
 
     @base_pep_pipeline_docfiller
-    def run(self, datapoint: BaseUnifiedPepExtractionDataset) -> Self:
+    def run(self, datapoint: BasePepDatasetWithAnnotations) -> Self:
         """Run the pipeline on the given datapoint.
 
         The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be

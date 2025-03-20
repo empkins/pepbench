@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib import transforms
 from scipy import stats
 
-from pepbench.datasets import BasePepExtractionMixin, BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDataset, BasePepDatasetWithAnnotations
 from pepbench.plotting._utils import (
     _add_ecg_q_peak_artefacts,
     _add_ecg_q_peaks,
@@ -47,7 +47,7 @@ __all__ = [
 
 
 def plot_signals(
-    datapoint: BasePepExtractionMixin,
+    datapoint: BasePepDataset,
     *,
     collapse: bool = False,
     normalize_time: bool = False,
@@ -71,7 +71,7 @@ def plot_signals(
 
 
 def plot_signals_with_reference_labels(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepDatasetWithAnnotations,
     *,
     heartbeat_subset: Sequence[int] | None = None,
     collapse: bool = False,
@@ -129,7 +129,7 @@ def plot_signals_with_reference_labels(
 
 
 def plot_signals_with_reference_pep(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepDatasetWithAnnotations,
     *,
     collapse: bool = False,
     normalize_time: bool = False,
@@ -183,7 +183,7 @@ def plot_signals_with_reference_pep(
 
 
 def plot_signals_with_algorithm_results(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepDatasetWithAnnotations,
     *,
     collapse: bool = False,
     algorithm: BaseExtraction,
@@ -283,7 +283,7 @@ def plot_signals_with_algorithm_results(
 
 
 def plot_signals_from_challenge_results(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepDatasetWithAnnotations,
     pep_results_per_sample: pd.DataFrame,
     *,
     collapse: bool = False,
@@ -412,7 +412,7 @@ def plot_signals_from_challenge_results(
 
 def _plot_signals_one_axis(
     *,
-    datapoint: BasePepExtractionMixin | None = None,
+    datapoint: BasePepDataset | None = None,
     df: pd.DataFrame | None = None,
     normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
@@ -461,7 +461,7 @@ def _plot_signals_one_axis(
 
 def _plot_signals_two_axes(
     *,
-    datapoint: BasePepExtractionMixin,
+    datapoint: BasePepDataset,
     normalize_time: bool | None = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,

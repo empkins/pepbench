@@ -11,7 +11,8 @@ from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
 from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
+from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import path_t
@@ -22,12 +23,23 @@ _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 # _cached_get_biopac_data = memory.cache(_load_biopac_data)
 
 
-class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
+@base_pep_extraction_docfiller
+class EmpkinsDataset(BasePepDatasetWithAnnotations):
     """Dataset class for the EmpkinS Dataset.
 
-    This class is the ``tpcp`` dataset class for the EmpkinS dataset. It provides access to the biopac data (for ECG and
-    ICG), the timelogs for the different experimental phases, the reference annotations for the ECG and ICG
+    This class is the ``tpcp`` dataset class for the EmpkinS dataset. It provides access to the Biopac data (for ECG
+    and ICG), the timelogs for the different experimental phases, the reference annotations for the ECG and ICG
     annotations, as well as metadata like age, gender, and BMI.
+
+    Attributes
+    ----------
+    %(base_attributes_pep)s
+    %(base_attributes_pep_label)s
+    %(base_attributes_metadata)s
+    timelog : :class:`~pandas.DataFrame`
+        Timelog data, indicating the start and end of each experimental phase, as a pandas DataFrame.
+    labeling_borders : :class:`~pandas.DataFrame`
+        Labeling borders for the selected recording as a pandas DataFrame.
 
     """
 

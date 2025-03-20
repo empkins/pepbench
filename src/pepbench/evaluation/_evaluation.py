@@ -10,7 +10,7 @@ from tpcp import Algorithm
 from tpcp.validate import FloatAggregator, Scorer, validate
 from typing_extensions import Self
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.evaluation._scoring import mean_and_std, score_pep_evaluation
 from pepbench.pipelines import BasePepExtractionPipeline
 from pepbench.utils._timing import measure_time
@@ -32,7 +32,7 @@ class PepEvaluationChallenge(Algorithm):
 
     _action_methods = "run"
 
-    dataset: BaseUnifiedPepExtractionDataset
+    dataset: BasePepDatasetWithAnnotations
     scoring: Callable | None
 
     results_: dict
@@ -52,7 +52,7 @@ class PepEvaluationChallenge(Algorithm):
     def __init__(
         self,
         *,
-        dataset: BaseUnifiedPepExtractionDataset,
+        dataset: BasePepDatasetWithAnnotations,
         scoring: Callable = score_pep_evaluation,
         validate_kwargs: dict | None = None,
     ) -> None:
@@ -63,7 +63,7 @@ class PepEvaluationChallenge(Algorithm):
 
         Parameters
         ----------
-        dataset : BaseUnifiedPepExtractionDataset
+        dataset : BasePepDatasetWithAnnotations
             The dataset to evaluate the pipeline on. The dataset needs to be a subclass of
             ``BaseUnifiedPepExtractionDataset``, which provides the necessary unified interface to access the data.
         scoring : Callable, optional

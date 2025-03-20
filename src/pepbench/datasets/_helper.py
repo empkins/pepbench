@@ -2,7 +2,7 @@ import ast
 
 import pandas as pd
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.utils._types import path_t
 
 __all__ = ["load_labeling_borders", "compute_reference_heartbeats", "compute_reference_pep"]
@@ -67,12 +67,12 @@ def _fill_unlabeled_artefacts(
     return points
 
 
-def compute_reference_pep(subset: BaseUnifiedPepExtractionDataset) -> pd.DataFrame:
+def compute_reference_pep(subset: BasePepDatasetWithAnnotations) -> pd.DataFrame:
     """Compute the reference PEP values between the reference Q-peak and B-point labels.
 
     Parameters
     ----------
-    subset : :class:`pepbench.datasets.BaseUnifiedPepExtractionDataset`
+    subset : :class:`pepbench.datasets.BasePepDatasetWithAnnotations`
         Subset of a dataset containing the reference labels.
 
     Returns

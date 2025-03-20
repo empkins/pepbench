@@ -9,7 +9,8 @@ from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
+from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
 from pepbench.utils._types import path_t
@@ -23,12 +24,21 @@ _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
 # _cached_get_tfm_data = memory.cache(_load_tfm_data)
 
 
-class GuardianDataset(BaseUnifiedPepExtractionDataset):
-    """Dataset class for the Guardian dataset.
+@base_pep_extraction_docfiller
+class GuardianDataset(BasePepDatasetWithAnnotations):
+    """Dataset class for the Guardian Dataset.
 
-    This class is the ``tpcp`` dataset class for the Guardian dataset. It provides access to the raw Task Force Monitor
-    (TFM) data, the preprocessed data, the reference annotations for the ECG and ICG signals, as well as metadata
+    This class is the ``tpcp`` dataset class for the Guardian dataset. It provides access to the Task Force Monitor
+    (TFM) data (for ECG and ICG), the reference annotations for the ECG and ICG annotations, as well as metadata
     like age, gender, and BMI.
+
+    Attributes
+    ----------
+    %(base_attributes_pep)s
+    %(base_attributes_pep_label)s
+    %(base_attributes_metadata)s
+    timelog : :class:`~pandas.DataFrame`
+        Timelog data, indicating the start and end of each experimental phase, as a pandas DataFrame.
 
     """
 

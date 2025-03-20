@@ -85,12 +85,11 @@ for file in EXAMPLE_NOTEBOOKS_DIR.glob("*.ipynb"):
 # ones.
 extensions = [
     # "sphinx.ext.napoleon",
-    # "numpydoc",
+    "numpydoc",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx.ext.linkcode",
-    # "sphinx.ext.todo",
-    # "sphinx.ext.autosummary",
+    "sphinx.ext.autosummary",
     # "sphinx.ext.viewcode",
     # "sphinx.ext.coverage",
     "sphinx.ext.doctest",
@@ -99,7 +98,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_gallery.load_style",
     "button",
-    # "nbsphinx",
+    "nbsphinx",
     # "sphinx_rtd_theme",
 ]
 
@@ -122,7 +121,6 @@ else:
 # see https://github.com/numpy/numpydoc/issues/69
 numpydoc_class_members_toctree = False
 
-# autodoc_class_signature = "separated"
 autodoc_default_options = {
     "members": True,
     "inherited-members": True,
@@ -140,14 +138,9 @@ templates_path = ["templates"]
 autosummary_generate = True
 autosummary_generate_overwrite = True
 
-# napoleon_numpy_docstring = True
-
 # This value selects if automatically documented members are sorted alphabetical (value 'alphabetical'),
 # by member type (value 'groupwise') or by source order (value 'bysource'). The default is alphabetical.
 autodoc_member_order = "bysource"
-
-# This value controls how to represent typehints
-autodoc_typehints = "description"
 
 # This value selects what content will be inserted into the main body of an autoclass directive.
 autoclass_content = "class"

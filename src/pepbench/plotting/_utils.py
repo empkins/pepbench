@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.transforms import Bbox
 
-from pepbench.datasets import BasePepExtractionMixin, BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDataset, BasePepDatasetWithAnnotations
 from pepbench.heartbeat_matching import match_heartbeat_lists
 
 
@@ -450,7 +450,7 @@ def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None)
 
 
 def _get_data(
-    datapoint: BasePepExtractionMixin, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
+    datapoint: BasePepDataset, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     ecg_data = datapoint.ecg
     icg_data = datapoint.icg
@@ -476,7 +476,7 @@ def _get_data(
 
 
 def _get_reference_labels(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepDatasetWithAnnotations,
     heartbeat_subset: Sequence[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
     heartbeats = datapoint.heartbeats

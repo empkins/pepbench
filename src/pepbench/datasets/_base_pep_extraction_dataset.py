@@ -25,6 +25,8 @@ base_pep_extraction_docfiller = make_filldoc(
             The gender of the participants
         bmi : :class:`~pandas.DataFrame`
             The BMI of the participants
+        metadata : :class:`~pandas.DataFrame`
+            The metadata of the participants, consisting of a combination of age, gender, and BMI.
         """,
         "base_attributes_pep_label": """
         reference_pep : :class:`~pandas.DataFrame`
@@ -41,7 +43,7 @@ base_pep_extraction_docfiller = make_filldoc(
 
 
 @base_pep_extraction_docfiller
-class BasePepExtractionMixin(Dataset):
+class BasePepDataset(Dataset):
     """Interface for all datasets for PEP extraction from ICG and ECG data.
 
     This class defines the interface for datasets that are used for PEP extraction using the
@@ -227,10 +229,11 @@ class PepLabelMixin(Dataset):
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
 
-class BaseUnifiedPepExtractionDataset(BasePepExtractionMixin, PepLabelMixin, MetadataMixin):
+@base_pep_extraction_docfiller
+class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin, MetadataMixin):
     """Unified interface for datasets used for evaluating PEP extraction algorithms.
 
-    This interface extends the :class:`~pepbench.datasets.BasePepExtractionMixin` by adding support for metadata and
+    This interface extends the :class:`~pepbench.datasets.BasePepDataset` by adding support for metadata and
     reference PEP data.
 
     Attributes

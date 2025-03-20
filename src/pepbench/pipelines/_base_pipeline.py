@@ -25,13 +25,13 @@ from tpcp import Parameter, Pipeline
 from pepbench._docutils import make_filldoc
 
 if TYPE_CHECKING:
-    from pepbench.datasets import BasePepExtractionMixin, BaseUnifiedPepExtractionDataset
+    from pepbench.datasets import BasePepDataset, BasePepDatasetWithAnnotations
 
 __all__ = ["BasePepExtractionPipeline"]
 
 
-BasePepDatasetT = TypeVar("BasePepDatasetT", bound="BasePepExtractionMixin")
-BaseUnifiedPepExtractionDatasetT = TypeVar("BaseUnifiedPepExtractionDatasetT", bound="BaseUnifiedPepExtractionDataset")
+BasePepDatasetT = TypeVar("BasePepDatasetT", bound="BasePepDataset")
+BasePepDatasetWithAnnotationsT = TypeVar("BasePepDatasetWithAnnotationsT", bound="BasePepDatasetWithAnnotations")
 
 base_pep_pipeline_docfiller = make_filldoc(
     {
@@ -60,10 +60,10 @@ base_pep_pipeline_docfiller = make_filldoc(
                 - `"raise"`: Raise an error if missing events are detected
         """,
         "datapoint_pipeline": """
-        datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepExtractionMixin`
+        datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset`
             The data to run the pipeline on. This needs to be a valid datapoint (i.e. a dataset with just a single row).
             The Dataset should be a child class of
-            :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepExtractionMixin` or implement all the same
+            :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset` or implement all the same
             parameters and methods.
         """,
         "datapoint_pipeline_labeled": """

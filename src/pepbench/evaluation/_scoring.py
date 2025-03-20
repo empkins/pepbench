@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from tpcp.validate import FloatAggregator, no_agg
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.evaluation._error_metrics import abs_error, abs_rel_error, error
 from pepbench.evaluation._scoring_aggregator import PerSampleAggregator
 from pepbench.heartbeat_matching import match_heartbeat_lists
@@ -13,7 +13,7 @@ from pepbench.pipelines import BasePepExtractionPipeline
 __all__ = ["score_pep_evaluation", "mean_and_std"]
 
 
-def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUnifiedPepExtractionDataset) -> dict:
+def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePepDatasetWithAnnotations) -> dict:
     """Run a PEP extraction pipeline on a single datapoint and compute evaluation metrics.
 
     # *first* averaged over single datapoint and *then* aggregated (mean, std) on total dataset
@@ -54,7 +54,7 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BaseUni
     ----------
     pipeline : BasePepExtractionPipeline
         A PEP extraction pipeline. The pipeline must be a subclass of `BasePepExtractionPipeline`.
-    datapoint : BaseUnifiedPepExtractionDataset
+    datapoint : BasePepDatasetWithAnnotations
         A single datapoint from the dataset. The datapoint must be a subclass of `BaseUnifiedPepExtractionDataset`.
 
     Returns
