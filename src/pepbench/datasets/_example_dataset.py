@@ -1,20 +1,20 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import pandas as pd
 from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
+from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
-from pepbench.datasets._helper import load_labeling_borders, compute_reference_heartbeats, compute_reference_pep
+from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep
 
 HERE = Path(__file__).parent
 EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
 
 
 class ExampleDataset(BasePepDatasetWithAnnotations):
-
     def __init__(
         self,
         groupby_cols: Sequence[str] | None = None,
@@ -41,7 +41,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return 500
 
     @property
-    def ecg(self):
+    def ecg(self) -> EcgRawDataFrame:
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("ecg")
@@ -52,7 +52,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return data
 
     @property
-    def icg(self):
+    def icg(self) -> IcgRawDataFrame:
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("icg")
@@ -62,7 +62,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
             return algo.icg_clean_
         return data
 
-    def _load_data(self, data_type: str):
+    def _load_data(self, data_type: str) -> pd.DataFrame:
         p_id = self.index["participant"][0]
         data = pd.read_csv(
             EXAMPLE_DATA_PATH.joinpath(f"{p_id}/{p_id.lower()}_{data_type}_data.csv.gz"),
