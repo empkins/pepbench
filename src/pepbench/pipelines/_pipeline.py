@@ -2,18 +2,54 @@ from typing import get_args
 
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
-from tpcp._dataset import DatasetT
 from typing_extensions import Self
 
 __all__ = ["PepExtractionPipeline"]
 
-from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
+from pepbench.pipelines._base_pipeline import BasePepDatasetT, BasePepExtractionPipeline, base_pep_pipeline_docfiller
 
 
+@base_pep_pipeline_docfiller
 class PepExtractionPipeline(BasePepExtractionPipeline):
-    """Standard `tpcp` Pipeline for PEP extraction from ECG and ICG data."""
+    """Standard `tpcp` Pipeline for PEP extraction from ECG and ICG data.
 
-    def run(self, datapoint: DatasetT) -> Self:
+    This pipeline can be used to run the PEP extraction algorithms on a given dataset. It will use the algorithms
+    passed to the ``__init__`` method to extract PEP from the data. The results will be stored in the attributes of
+    the class.
+
+
+    %(base_parameters)s
+
+    Other Parameters
+    ----------------
+    %(datapoint_pipeline)s
+
+    %(attributes)s
+
+    """
+
+    @base_pep_pipeline_docfiller
+    def run(self, datapoint: BasePepDatasetT) -> Self:
+        """Run the pipeline on the given datapoint.
+
+        The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be
+        stored in the attributes of the class.
+
+        Parameters
+        ----------
+        %(datapoint_pipeline)s
+
+        Returns
+        -------
+        Self
+            The instance of the class with the results set.
+
+        Raises
+        ------
+        ValueError
+            If the `handle_negative_pep` parameter is not one of the allowed values.
+
+        """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(
                 f"Invalid value for 'handle_negative_pep': {self.handle_negative_pep}. "
@@ -29,8 +65,8 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
         fs_ecg = datapoint.sampling_rate_ecg
         fs_icg = datapoint.sampling_rate_icg
 
-        ecg_data = datapoint.ecg_clean
-        icg_data = datapoint.icg_clean
+        ecg_data = datapoint.ecg
+        icg_data = datapoint.icg
 
         # set handle_missing parameter for all algorithms
         if self.handle_missing_events is not None:

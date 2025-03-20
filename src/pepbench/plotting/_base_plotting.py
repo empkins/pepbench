@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib import transforms
 from scipy import stats
 
-from pepbench.datasets import BaseUnifiedPepExtractionDataset
+from pepbench.datasets import BasePepExtractionMixin, BaseUnifiedPepExtractionDataset
 from pepbench.plotting._utils import (
     _add_ecg_q_peak_artefacts,
     _add_ecg_q_peaks,
@@ -47,11 +47,10 @@ __all__ = [
 
 
 def plot_signals(
-    datapoint: BaseUnifiedPepExtractionDataset,
+    datapoint: BasePepExtractionMixin,
     *,
-    collapse: bool | None = False,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    collapse: bool = False,
+    normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
@@ -59,14 +58,12 @@ def plot_signals(
     if collapse:
         return _plot_signals_one_axis(
             datapoint=datapoint,
-            use_clean=use_clean,
             normalize_time=normalize_time,
             heartbeat_subset=heartbeat_subset,
             **kwargs,
         )
     return _plot_signals_two_axes(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         **kwargs,
@@ -77,9 +74,8 @@ def plot_signals_with_reference_labels(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    collapse: bool | None = False,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    collapse: bool = False,
+    normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     kwargs.setdefault("legend_max_cols", 6)
@@ -90,14 +86,11 @@ def plot_signals_with_reference_labels(
     fig, ax = plot_signals(
         datapoint,
         collapse=collapse,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         **kwargs,
     )
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subset=heartbeat_subset)
     heartbeats = reference_labels["heartbeats"]
@@ -138,9 +131,8 @@ def plot_signals_with_reference_labels(
 def plot_signals_with_reference_pep(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    collapse: bool | None = False,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    collapse: bool = False,
+    normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -152,16 +144,13 @@ def plot_signals_with_reference_pep(
 
     fig, axs = plot_signals_with_reference_labels(
         datapoint,
-        use_clean=use_clean,
         collapse=collapse,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         **kwargs,
     )
 
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     reference_labels = _get_reference_labels(datapoint, heartbeat_subset=heartbeat_subset)
 
@@ -196,10 +185,9 @@ def plot_signals_with_reference_pep(
 def plot_signals_with_algorithm_results(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
-    collapse: bool | None = False,
+    collapse: bool = False,
     algorithm: BaseExtraction,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
@@ -210,16 +198,13 @@ def plot_signals_with_algorithm_results(
     fig, axs = plot_signals_with_reference_labels(
         datapoint,
         collapse=collapse,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         b_point_label="Reference B-Points",
         **kwargs,
     )
 
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
     heartbeats = datapoint.heartbeats.loc[heartbeat_subset]
     # heartbeat needs to be relative to the start of the signal after subset
@@ -301,11 +286,10 @@ def plot_signals_from_challenge_results(
     datapoint: BaseUnifiedPepExtractionDataset,
     pep_results_per_sample: pd.DataFrame,
     *,
-    collapse: bool | None = False,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    collapse: bool = False,
+    normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
-    add_pep: bool | None = False,
+    add_pep: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -313,17 +297,10 @@ def plot_signals_from_challenge_results(
     rect = _get_rect(kwargs)
 
     fig, axs = plot_signals(
-        datapoint,
-        use_clean=use_clean,
-        normalize_time=normalize_time,
-        heartbeat_subset=heartbeat_subset,
-        collapse=collapse,
-        **kwargs,
+        datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset, collapse=collapse, **kwargs
     )
 
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     labels_from_challenge = _get_labels_from_challenge_results(pep_results_per_sample, heartbeat_subset)
 
@@ -435,10 +412,9 @@ def plot_signals_from_challenge_results(
 
 def _plot_signals_one_axis(
     *,
-    datapoint: BaseUnifiedPepExtractionDataset | None = None,
+    datapoint: BasePepExtractionMixin | None = None,
     df: pd.DataFrame | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -459,9 +435,7 @@ def _plot_signals_one_axis(
     kwargs.pop("ax", None)
 
     if datapoint is not None:
-        ecg_data, icg_data = _get_data(
-            datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-        )
+        ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
         if plot_ecg:
             ecg_data.plot(ax=ax)
@@ -487,8 +461,7 @@ def _plot_signals_one_axis(
 
 def _plot_signals_two_axes(
     *,
-    datapoint: BaseUnifiedPepExtractionDataset,
-    use_clean: bool | None = True,
+    datapoint: BasePepExtractionMixin,
     normalize_time: bool | None = False,
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
@@ -503,9 +476,7 @@ def _plot_signals_two_axes(
 
     colors = iter(cmaps.faculties)
 
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 

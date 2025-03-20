@@ -1,4 +1,4 @@
-"""Different pipelines to extract PEPs from a given dataset.
+"""Pipelines to extract PEPs from a given dataset.
 
 This module contains different pipelines to extract PEPs from a given dataset. The pipelines are based on the
 `tpcp` library and provide a standardized interface for PEP extraction.
@@ -8,7 +8,7 @@ uses a combination of Q-peak and B-point detection algorithms (with an optional 
 PEPs from ECG and ICG data.
 
 The other pipelines (:class:`~pepbench.pipelines.PepExtractionPipelineReferenceBPoints` and
-:class:`~pepbench.pipelines.PepExtractionPipelineReferenceQPeak`) are specialized pipelines that use reference
+:class:`~pepbench.pipelines.PepExtractionPipelineReferenceQPeaks`) are specialized pipelines that use reference
 B-points or Q-peaks, respectively, to extract PEPs. These pipelines are primarily useful for benchmarking and
 validation purposes.
 
@@ -17,11 +17,11 @@ validation purposes.
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline
 from pepbench.pipelines._pipeline import PepExtractionPipeline
 from pepbench.pipelines._pipeline_reference_b_point import PepExtractionPipelineReferenceBPoints
-from pepbench.pipelines._pipeline_reference_q_peak import PepExtractionPipelineReferenceQPeak
+from pepbench.pipelines._pipeline_reference_q_peak import PepExtractionPipelineReferenceQPeaks
 
 __all__ = [
     "BasePepExtractionPipeline",
     "PepExtractionPipeline",
-    "PepExtractionPipelineReferenceQPeak",
+    "PepExtractionPipelineReferenceQPeaks",
     "PepExtractionPipelineReferenceBPoints",
 ]

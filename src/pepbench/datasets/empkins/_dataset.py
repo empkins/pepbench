@@ -8,6 +8,7 @@ from biopsykit.metadata import bmi
 from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
+from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BaseUnifiedPepExtractionDataset
@@ -46,6 +47,7 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,
+        return_clean: bool = True,
         exclude_missing_data: bool = False,
         use_cache: bool = True,
         only_labeled: bool = False,
@@ -56,6 +58,9 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         ----------
         base_path : :class:`~pathlib.Path` or str
             Path to the root directory of the EmpkinS dataset.
+        return_clean : bool
+            Whether to return the preprocessed/cleaned ECG and ICG data when accessing the respective properties.
+            Default: ``True``.
         exclude_missing_data : bool
             Whether to exclude participants where parts of the data are missing. Default: ``False``.
         use_cache : bool
@@ -71,7 +76,7 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         self.exclude_missing_data = exclude_missing_data
         self.use_cache = use_cache
         self.only_labeled = only_labeled
-        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
+        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
     def create_index(self) -> pd.DataFrame:
         # data is located in a folder named "Data" and data per participant is located in folders named "VP_xx"
@@ -180,8 +185,12 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         return data.iloc[start_index:end_index]
 
     @property
-    def icg(self) -> pd.DataFrame:
+    def icg(self) -> IcgRawDataFrame:
         """Return the ICG channel from the biopac data.
+
+        If ``return_clean`` is set to ``True`` in the ``__init__``, the ICG signal is preprocessed and cleaned using
+        the :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` algorithm before returning it.
+
 
         Returns
         -------
@@ -191,40 +200,31 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         Raises
         ------
         ValueError
-            If the current subset is not a single participant, condition, and phase or
-
+            If the current subset is not a single participant, condition, and phase or a single participant and
+            condition.
 
         """
         if not self.is_single(None):
             raise ValueError(
                 "ICG data can only be accessed for a single participant, a single condition, and a single phase!"
             )
-        return self.biopac[["icg_der"]]
+        icg = self.biopac[["icg_der"]]
+        if self.return_clean:
+            algo = IcgPreprocessingBandpass()
+            algo.clean(icg=icg, sampling_rate_hz=self.sampling_rate_icg)
+            return algo.icg_clean_
+        return icg
 
     @property
-    def icg_clean(self) -> pd.DataFrame:
-        """Return cleaned ICG data.
-
-        The ICG data is cleaned using a bandpass filter implemented in the
-        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` class.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Cleaned ICG data as a pandas DataFrame.
-
-        """
-        algo = IcgPreprocessingBandpass()
-        algo.clean(icg=self.icg, sampling_rate_hz=self.sampling_rate_icg)
-        return algo.icg_clean_
-
-    @property
-    def ecg(self) -> pd.DataFrame:
+    def ecg(self) -> EcgRawDataFrame:
         """Return the ECG channel from the biopac data.
 
+        If ``return_clean`` is set to ``True`` in the ``__init__``, the ECG signal is preprocessed and cleaned using the
+        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` algorithm before returning it.
+
         Returns
         -------
-        :class:`~pandas.DataFrame`
+        :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
             ECG data as a pandas DataFrame.
 
         """
@@ -232,24 +232,12 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
             raise ValueError(
                 "ECG data can only be accessed for a single participant, a single condition, and a single phase!"
             )
-        return self.biopac[["ecg"]]
-
-    @property
-    def ecg_clean(self) -> pd.DataFrame:
-        """Return cleaned ECG data.
-
-        The ECG data is cleaned using the preprocessing pipeline implemented in the
-        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` class.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Cleaned ECG data as a pandas DataFrame.
-
-        """
-        algo = EcgPreprocessingNeurokit()
-        algo.clean(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
-        return algo.ecg_clean_
+        ecg = self.biopac[["ecg"]]
+        if self.return_clean:
+            algo = EcgPreprocessingNeurokit()
+            algo.clean(ecg=ecg, sampling_rate_hz=self.sampling_rate_ecg)
+            return algo.ecg_clean_
+        return ecg
 
     @property
     def timelog(self) -> pd.DataFrame:
@@ -414,18 +402,17 @@ class EmpkinsDataset(BaseUnifiedPepExtractionDataset):
         return compute_reference_pep(self)
 
     @property
-    def heartbeats(self) -> pd.DataFrame:
+    def heartbeats(self) -> HeartbeatSegmentationDataFrame:
         """Segment heartbeats from the ECG data and return the heartbeat borders.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
+        :class:`~biopsykit.utils.dtypes.HeartbeatSegmentationDataFrame`
             Heartbeats as a pandas DataFrame.
 
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit(variable_length=True)
-        ecg_clean = self.ecg_clean
-        heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
+        heartbeat_algo.extract(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
         return heartbeats
 

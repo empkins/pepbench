@@ -4,7 +4,7 @@ For now, this just exports some functions from scipy._lib.doccer, to have only o
 While, the ``doccer`` submodule of scip[y is not part of the public API, it seems to be stable enough to use it here.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from scipy._lib.doccer import filldoc, inherit_docstring_from
 
@@ -25,7 +25,7 @@ def filldoc_with_better_error(docdict: dict[str, str]) -> filldoc:
     return inner
 
 
-def make_filldoc(docdict: dict[str, str], *, doc_summary: Optional[str] = None) -> filldoc:
+def make_filldoc(docdict: dict[str, str], *, doc_summary: str | None = None) -> filldoc:
     """Create a new doc-filler from a dictionary.
 
     This can be applied to a function, method, or class to substitute ``%(key)s`` occurrences in its docstring.

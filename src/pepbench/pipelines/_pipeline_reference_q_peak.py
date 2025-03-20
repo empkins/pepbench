@@ -9,21 +9,37 @@ from typing_extensions import Self
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline, base_pep_pipeline_docfiller
 
-__all__ = ["PepExtractionPipelineReferenceQPeak"]
+__all__ = ["PepExtractionPipelineReferenceQPeaks"]
 
 
 @base_pep_pipeline_docfiller
-class PepExtractionPipelineReferenceQPeak(BasePepExtractionPipeline):
+class PepExtractionPipelineReferenceQPeaks(BasePepExtractionPipeline):
     """`tpcp` Pipeline for PEP extraction that uses reference Q-peaks for Q-peak detection.
 
-    This pipeline is used to validate different B-point extraction algorithms and computing the PEP using
-    reference Q-peaks.
+    This pipeline is used to validate different B-point extraction algorithms and computing the PEP using reference
+    Q-peaks.
 
     %(base_parameters)s
+
+    Other Parameters
+    ----------------
+    %(datapoint_pipeline_labeled)s
+
+    %(attributes)s
 
     """
 
     def run(self, datapoint: DatasetT) -> Self:
+        """Run the pipeline on the given datapoint.
+
+        The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be
+        stored in the attributes of the class.
+
+        Parameters
+        ----------
+        %(datapoint_pipeline_labeled)s
+
+        """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(
                 f"Invalid value for 'handle_negative_pep': {self.handle_negative_pep}. "
@@ -39,8 +55,8 @@ class PepExtractionPipelineReferenceQPeak(BasePepExtractionPipeline):
         fs_ecg = datapoint.sampling_rate_ecg
         fs_icg = datapoint.sampling_rate_icg
 
-        ecg_data = datapoint.ecg_clean
-        icg_data = datapoint.icg_clean
+        ecg_data = datapoint.ecg
+        icg_data = datapoint.icg
 
         # set handle_missing parameter for all algorithms
         if self.handle_missing_events is not None:

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import TYPE_CHECKING, Literal, TypeVar
 
 import pandas as pd
 from biopsykit.signals._base_extraction import HANDLE_MISSING_EVENTS
@@ -22,9 +22,16 @@ from biopsykit.utils.dtypes import (
 )
 from tpcp import Parameter, Pipeline
 
+from pepbench._docutils import make_filldoc
+
+if TYPE_CHECKING:
+    from pepbench.datasets import BasePepExtractionMixin, BaseUnifiedPepExtractionDataset
+
 __all__ = ["BasePepExtractionPipeline"]
 
-from pepbench._docutils import make_filldoc
+
+BasePepDatasetT = TypeVar("BasePepDatasetT", bound="BasePepExtractionMixin")
+BaseUnifiedPepExtractionDatasetT = TypeVar("BaseUnifiedPepExtractionDatasetT", bound="BaseUnifiedPepExtractionDataset")
 
 base_pep_pipeline_docfiller = make_filldoc(
     {
@@ -52,6 +59,21 @@ base_pep_pipeline_docfiller = make_filldoc(
                 - `"ignore"`: Ignore missing events
                 - `"raise"`: Raise an error if missing events are detected
         """,
+        "datapoint_pipeline": """
+        datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepExtractionMixin`
+            The data to run the pipeline on. This needs to be a valid datapoint (i.e. a dataset with just a single row).
+            The Dataset should be a child class of
+            :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepExtractionMixin` or implement all the same
+            parameters and methods.
+        """,
+        "datapoint_pipeline_labeled": """
+        datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BaseUnifiedPepExtractionDataset`
+            The data to run the pipeline on. This needs to be a valid datapoint (i.e. a dataset with just a single row).
+            The Dataset should be a child class of
+            :class:`~pepbench.datasets._base_pep_extraction_dataset.BaseUnifiedPepExtractionDataset` or implement all
+            the same parameters and methods. This means that it must *also* implement methods to get the reference
+            heartbeats and reference PEP.
+            """,
         "attributes": """
         Attributes
         ----------
@@ -67,7 +89,6 @@ base_pep_pipeline_docfiller = make_filldoc(
             Results from the B-point extraction step after outlier correction.
         pep_results_ : :class:`~biopsykit.signals.pep.PepResultDataFrame`
             Results from the PEP extraction step.
-            
         """,
     },
     doc_summary="Decorator to fill common parts of the docstring for subclasses of :class:`BasePepExtractionPipeline`.",

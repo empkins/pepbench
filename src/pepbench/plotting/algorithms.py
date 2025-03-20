@@ -65,8 +65,7 @@ def plot_q_peak_extraction_martinez2004_neurokit(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot example of Q-peak extraction using the Martinez et al. (2004) algorithm [1].
@@ -79,8 +78,6 @@ def plot_q_peak_extraction_martinez2004_neurokit(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     kwargs : dict
@@ -152,9 +149,7 @@ def plot_q_peak_extraction_martinez2004_neurokit(
     rect = _get_rect(kwargs)
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, _ = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, _ = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     if len(ecg_data) < 4 * datapoint.sampling_rate_ecg:
         raise ValueError("ECG data is too short for Q-peak detection. Please provide more heartbeats.")
@@ -170,7 +165,6 @@ def plot_q_peak_extraction_martinez2004_neurokit(
 
     _plot_signals_one_axis(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_icg=False,
@@ -210,8 +204,7 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot example of Q-peak extraction using the SciPy FindPeaks algorithm provided by NeuroKit.
@@ -224,8 +217,6 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     kwargs : dict
@@ -287,9 +278,7 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
     rect = _get_rect(**kwargs)
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, _ = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, _ = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     if len(ecg_data) < 4 * datapoint.sampling_rate_ecg:
         raise ValueError("ECG data is too short for Q-peak detection. Please provide more heartbeats.")
@@ -305,7 +294,6 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
 
     fig, ax = _plot_signals_one_axis(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_icg=False,
@@ -341,8 +329,7 @@ def plot_q_peak_extraction_vanlien2013(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -356,8 +343,6 @@ def plot_q_peak_extraction_vanlien2013(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -446,9 +431,7 @@ def plot_q_peak_extraction_vanlien2013(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, _ = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, _ = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(ecg_data, heartbeats)
@@ -469,7 +452,6 @@ def plot_q_peak_extraction_vanlien2013(
 
     fig, ax = _plot_signals_one_axis(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_icg=False,
@@ -535,8 +517,7 @@ def plot_q_peak_extraction_forounzafar2018(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -550,8 +531,6 @@ def plot_q_peak_extraction_forounzafar2018(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -636,9 +615,7 @@ def plot_q_peak_extraction_forounzafar2018(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -653,7 +630,6 @@ def plot_q_peak_extraction_forounzafar2018(
     _plot_signals_one_axis(
         df=ecg_data,
         ax=ax,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.fau[0],
@@ -710,8 +686,7 @@ def plot_b_point_extraction_stern1985(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -725,8 +700,6 @@ def plot_b_point_extraction_stern1985(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -808,9 +781,7 @@ def plot_b_point_extraction_stern1985(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -850,7 +821,6 @@ def plot_b_point_extraction_stern1985(
     _plot_signals_one_axis(
         df=icg_data,
         ax=axs[0],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -859,7 +829,6 @@ def plot_b_point_extraction_stern1985(
     _plot_signals_one_axis(
         df=icg_2nd_der,
         ax=axs[1],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech_dark[0],
@@ -914,8 +883,7 @@ def plot_b_point_extraction_sherwood1990(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -929,8 +897,6 @@ def plot_b_point_extraction_sherwood1990(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -1015,9 +981,7 @@ def plot_b_point_extraction_sherwood1990(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1051,7 +1015,6 @@ def plot_b_point_extraction_sherwood1990(
     _plot_signals_one_axis(
         df=icg_data,
         ax=ax,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -1106,8 +1069,7 @@ def plot_b_point_extraction_debski1993_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -1121,8 +1083,6 @@ def plot_b_point_extraction_debski1993_second_derivative(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -1204,9 +1164,7 @@ def plot_b_point_extraction_debski1993_second_derivative(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1234,7 +1192,6 @@ def plot_b_point_extraction_debski1993_second_derivative(
 
     _plot_signals_one_axis(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_ecg=True,
@@ -1243,7 +1200,6 @@ def plot_b_point_extraction_debski1993_second_derivative(
     )
     _plot_signals_one_axis(
         df=icg_2nd_der,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         plot_ecg=False,
@@ -1308,8 +1264,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -1323,8 +1278,6 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -1409,9 +1362,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1434,7 +1385,6 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
     _plot_signals_one_axis(
         df=icg_data,
         ax=ax,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -1512,8 +1462,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -1527,8 +1476,6 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -1612,9 +1559,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1645,7 +1590,6 @@ def plot_b_point_extraction_arbol2017_second_derivative(
     _plot_signals_one_axis(
         df=icg_data,
         ax=axs[0],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -1654,7 +1598,6 @@ def plot_b_point_extraction_arbol2017_second_derivative(
     _plot_signals_one_axis(
         df=icg_2nd_der,
         ax=axs[1],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech_dark[0],
@@ -1732,8 +1675,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
@@ -1747,8 +1689,6 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -1832,9 +1772,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1863,7 +1801,6 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     _plot_signals_one_axis(
         df=icg_data,
         ax=axs[0],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -1872,7 +1809,6 @@ def plot_b_point_extraction_arbol2017_third_derivative(
     _plot_signals_one_axis(
         df=icg_3rd_der,
         ax=axs[1],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech_dark[0],
@@ -1946,7 +1882,6 @@ def plot_b_point_extraction_lozano2007_linear_regression(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
     normalize_time: bool | None = False,
     algo_params: dict | None = None,
     **kwargs: Any,
@@ -1961,8 +1896,6 @@ def plot_b_point_extraction_lozano2007_linear_regression(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -2044,9 +1977,7 @@ def plot_b_point_extraction_lozano2007_linear_regression(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -2068,7 +1999,6 @@ def plot_b_point_extraction_lozano2007_linear_regression(
 
     fig, ax = plot_signals(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         collapse=True,
@@ -2147,7 +2077,6 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
     normalize_time: bool | None = False,
     algo_params: dict | None = None,
     **kwargs: Any,
@@ -2162,8 +2091,6 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -2245,9 +2172,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -2267,7 +2192,6 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
 
     fig, ax = plot_signals(
         datapoint=datapoint,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         collapse=True,
@@ -2346,8 +2270,7 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -2361,8 +2284,6 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -2445,9 +2366,7 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -2472,7 +2391,6 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
 
     fig, ax = _plot_signals_one_axis(
         df=icg_data,
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -2550,8 +2468,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     datapoint: BaseUnifiedPepExtractionDataset,
     *,
     heartbeat_subset: Sequence[int] | None = None,
-    use_clean: bool | None = True,
-    normalize_time: bool | None = False,
+    normalize_time: bool = False,
     algo_params: dict | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
@@ -2565,8 +2482,6 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
-    use_clean : bool, optional
-        Whether to clean the ECG signal before plotting or not. Default: True
     normalize_time : bool, optional
         Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
     algo_params : dict, optional
@@ -2651,9 +2566,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(
-        datapoint, use_clean=use_clean, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset
-    )
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -2679,7 +2592,6 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     _plot_signals_one_axis(
         df=icg_data,
         ax=axs[0],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech[0],
@@ -2692,7 +2604,6 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     _plot_signals_one_axis(
         df=icg_3rd_der,
         ax=axs[1],
-        use_clean=use_clean,
         normalize_time=normalize_time,
         heartbeat_subset=heartbeat_subset,
         color=cmaps.tech_dark[0],
@@ -2701,7 +2612,6 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     # _plot_signals_one_axis(
     #     df=icg_2nd_der,
     #     ax=axs[1],
-    #     use_clean=use_clean,
     #     normalize_time=normalize_time,
     #     heartbeat_subset=heartbeat_subset,
     #     color=cmaps.tech_dark[0],

@@ -65,6 +65,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,
+        return_clean: bool = True,
         exclude_no_recorded_data: bool = True,
         exclude_noisy_data: bool = True,
         use_cache: bool = True,
@@ -76,6 +77,9 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         ----------
         base_path : :class:`~pathlib.Path` or str
             Path to the root directory of the Guardian dataset.
+        return_clean : bool
+            Whether to return the preprocessed/cleaned ECG and ICG data when accessing the respective properties.
+            Default: ``True``.
         exclude_no_recorded_data : bool, optional
             Whether to exclude participants with no recorded data. Default: ``True``.
         exclude_noisy_data : bool, optional
@@ -93,7 +97,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         self.data_to_exclude = self._find_data_to_exclude()
         self.use_cache = use_cache
         self.only_labeled = only_labeled
-        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
+        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
     def create_index(self) -> pd.DataFrame:
         overview_df = pd.read_csv(self.base_path.joinpath("metadata/dataset_overview.csv"), sep=";")
@@ -226,6 +230,9 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
     def icg(self) -> pd.DataFrame:
         """Return the ICG signal.
 
+        If ``return_clean`` is set to ``True`` in the ``__init__``, the ICG signal is preprocessed and cleaned using
+        the :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` algorithm before returning it.
+
         Returns
         -------
         :class:`~pandas.DataFrame`
@@ -234,28 +241,19 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         """
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
-        return self.tfm_data[["icg_der"]]
-
-    @property
-    def icg_clean(self) -> pd.DataFrame:
-        """Return the preprocessed ICG signal.
-
-        The ICG signal is preprocessed using a bandpass filter implemented in the
-        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` class.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Preprocessed ICG signal as :class:`~pandas.DataFrame`.
-
-        """
-        algo = IcgPreprocessingBandpass()
-        algo.clean(icg=self.icg, sampling_rate_hz=self.sampling_rate_icg)
-        return algo.icg_clean_
+        icg = self.tfm_data[["icg_der"]]
+        if self.return_clean:
+            algo = IcgPreprocessingBandpass()
+            algo.clean(icg=icg, sampling_rate_hz=self.sampling_rate_icg)
+            return algo.icg_clean_
+        return icg
 
     @property
     def ecg(self) -> pd.DataFrame:
         """Return the ECG signal.
+
+        If ``return_clean`` is set to ``True`` in the ``__init__``, the ECG signal is preprocessed and cleaned using the
+        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` algorithm before returning it.
 
         Returns
         -------
@@ -265,26 +263,14 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
         """
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
-        data = self.tfm_data[["ecg_2"]]
-        data.columns = ["ecg"]
-        return data
+        ecg = self.tfm_data[["ecg_2"]]
+        ecg.columns = ["ecg"]
 
-    @property
-    def ecg_clean(self) -> pd.DataFrame:
-        """Return the preprocessed ECG signal.
-
-        The ECG signal is preprocessed using the NeuroKit2 package implemented in the
-        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` class.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Preprocessed ECG signal as :class:`~pandas.DataFrame`.
-
-        """
-        algo = EcgPreprocessingNeurokit()
-        algo.clean(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
-        return algo.ecg_clean_
+        if self.return_clean:
+            algo = EcgPreprocessingNeurokit()
+            algo.clean(ecg=ecg, sampling_rate_hz=self.sampling_rate_ecg)
+            return algo.ecg_clean_
+        return ecg
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
@@ -400,8 +386,7 @@ class GuardianDataset(BaseUnifiedPepExtractionDataset):
 
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
-        ecg_clean = self.ecg_clean
-        heartbeat_algo.extract(ecg=ecg_clean, sampling_rate_hz=self.sampling_rate_ecg)
+        heartbeat_algo.extract(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
         heartbeats = heartbeat_algo.heartbeat_list_
         return heartbeats
 

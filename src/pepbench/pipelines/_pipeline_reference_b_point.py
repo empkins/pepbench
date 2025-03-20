@@ -3,9 +3,9 @@ from typing import get_args
 import pandas as pd
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
-from tpcp._dataset import DatasetT
 from typing_extensions import Self
 
+from pepbench.datasets import BaseUnifiedPepExtractionDataset
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines._base_pipeline import BasePepExtractionPipeline, base_pep_pipeline_docfiller
 
@@ -16,14 +16,31 @@ __all__ = ["PepExtractionPipelineReferenceBPoints"]
 class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
     """`tpcp` Pipeline for PEP extraction that uses reference B-points for B-point detection.
 
-    This pipeline is used to validate different Q-peak extraction algorithms and computing the PEP using
-    reference B-points.
+    This pipeline is used to validate different Q-peak extraction algorithms and computing the PEP using reference
+    B-points.
 
     %(base_parameters)s
 
+    Other Parameters
+    ----------------
+    %(datapoint_pipeline_labeled)s
+
+    %(attributes)s
+
     """
 
-    def run(self, datapoint: DatasetT) -> Self:
+    @base_pep_pipeline_docfiller
+    def run(self, datapoint: BaseUnifiedPepExtractionDataset) -> Self:
+        """Run the pipeline on the given datapoint.
+
+        The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be
+        stored in the attributes of the class.
+
+        Parameters
+        ----------
+        %(datapoint_pipeline_labeled)s
+
+        """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(
                 f"Invalid value for 'handle_negative_pep': {self.handle_negative_pep}. "
@@ -37,7 +54,7 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
         reference_pep = datapoint.reference_pep
         fs_ecg = datapoint.sampling_rate_ecg
 
-        ecg_data = datapoint.ecg_clean
+        ecg_data = datapoint.ecg
 
         # set handle_missing parameter for all algorithms
         if self.handle_missing_events is not None:
