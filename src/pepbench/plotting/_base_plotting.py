@@ -41,8 +41,8 @@ __all__ = [
     "plot_signals_from_challenge_results",
     "plot_signals_with_reference_pep",
     "plot_signals_with_algorithm_results",
-    "plot_paired",
-    "plot_blandaltman",
+    "_plot_paired",
+    "_plot_blandaltman",
 ]
 
 
@@ -54,7 +54,25 @@ def plot_signals(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
-    """Plot ECG and ICG signals."""
+    """Plot ECG and ICG signals.
+
+    Parameters
+    ----------
+    datapoint : :class:`~pepbench.datasets.BasePepDataset`
+        Dataset to plot.
+    collapse : bool, optional
+        If ``True``, plot ECG and ICG signals in one axis. If ``False``, plot ECG and ICG signals in two axes.
+        Default: ``False``.
+    normalize_time : bool, optional
+        If ``True``, normalize time to seconds. If ``False``, use the original time format.
+        Default: ``False``.
+    heartbeat_subset : list of int, optional
+        List of heartbeats (as indices) to plot. If ``None``, plot all heartbeats.
+        Default: ``None``.
+    kwargs : dict, optional
+        Additional keyword arguments.
+
+    """
     if collapse:
         return _plot_signals_one_axis(
             datapoint=datapoint,
@@ -495,7 +513,7 @@ def _plot_signals_two_axes(
     return fig, axs
 
 
-def plot_blandaltman(  # noqa: PLR0915
+def _plot_blandaltman(  # noqa: PLR0915
     x: pd.Series | np.ndarray | list,
     y: pd.Series | np.ndarray | list,
     agreement: float = 1.96,
@@ -738,7 +756,7 @@ def plot_blandaltman(  # noqa: PLR0915
     return ax
 
 
-def plot_paired(  # noqa: PLR0915, PLR0912, C901
+def _plot_paired(  # noqa: PLR0915, PLR0912, C901
     data: pd.DataFrame,
     dv: str,
     within: str,
@@ -815,7 +833,7 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
         >>> import pingouin as pg
         >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
         >>> df = df.query("Group == 'Meditation' and Subject > 40")
-        >>> fig, ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject")
+        >>> fig, ax = pg._plot_paired(data=df, dv="Scores", within="Time", subject="Subject")
 
     Paired plot on an existing axis (no boxplot and uniform color):
 
@@ -826,7 +844,7 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
         >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
         >>> df = df.query("Group == 'Meditation' and Subject > 40")
         >>> fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
-        >>> pg.plot_paired(
+        >>> pg._plot_paired(
         ...     data=df,
         ...     dv="Scores",
         ...     within="Time",
@@ -844,7 +862,7 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
         >>> import matplotlib.pyplot as plt
         >>> df = pg.read_dataset("mixed_anova").query("Group == 'Meditation'")
         >>> # df = df.query("Group == 'Meditation' and Subject > 40")
-        >>> fig, ax = pg.plot_paired(
+        >>> fig, ax = pg._plot_paired(
         >>>     data=df, dv="Scores", within="Time", subject="Subject", orient="h"
         >>> )  # doctest: +SKIP
 
@@ -855,7 +873,7 @@ def plot_paired(  # noqa: PLR0915, PLR0912, C901
         >>> import pingouin as pg
         >>> df = pg.read_dataset("mixed_anova").query("Time != 'January'")
         >>> df = df.query("Group == 'Control'")
-        >>> fig, ax = pg.plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
+        >>> fig, ax = pg._plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
     """
     from pingouin.utils import _check_dataframe
 

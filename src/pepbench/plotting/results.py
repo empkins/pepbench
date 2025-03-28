@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 
 from pepbench.data_handling import get_data_for_algo
 from pepbench.data_handling._data_handling import get_performance_metric, get_reference_data
-from pepbench.plotting._base_plotting import plot_blandaltman, plot_paired
+from pepbench.plotting._base_plotting import _plot_blandaltman, _plot_paired
 from pepbench.plotting._utils import _get_fig_ax, _get_fig_axs, _remove_duplicate_legend_entries
 from pepbench.utils._rename_maps import (
     _algo_level_mapping,
@@ -260,7 +260,7 @@ def residual_plot_pep(data: pd.DataFrame, algorithm: str_t, **kwargs: dict) -> t
     data = data["pep_ms"]
     data = data.dropna()
 
-    plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs)
+    _plot_blandaltman(x=data["reference"], y=data["estimated"], xaxis="x", ax=ax, **kwargs)
 
     title = _format_title(algo_levels, algorithm)
 
@@ -683,7 +683,7 @@ def paired_plot_error_outlier_correction(
         # rename outlier correction algorithms
         data_plot = data_plot.rename(index=_algorithm_mapping)
         outlier_combi_format = [_algorithm_mapping[algo] for algo in outlier_combi]
-        plot_paired(
+        _plot_paired(
             data=data_plot,
             dv=dv,
             within="outlier_correction_algorithm",
@@ -752,7 +752,7 @@ def paired_plot_error_pep_pipeline(
         data_plot = data_plot.loc[eq_mask].stack(future_stack=True)
 
         # rename outlier correction algorithms
-        plot_paired(
+        _plot_paired(
             data=data_plot,
             dv=dv,
             within="pipeline",

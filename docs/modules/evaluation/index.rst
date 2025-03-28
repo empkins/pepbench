@@ -1,12 +1,15 @@
 .. _api_ref_evaluation:
 
+Evaluation and Validation
+=========================
 
 .. automodule:: pepbench.evaluation
     :no-members:
     :no-inherited-members:
 
+
 Evaluation Challenges
-=====================
++++++++++++++++++++++
 .. currentmodule:: pepbench.evaluation
 
 .. autosummary::
@@ -17,7 +20,7 @@ Evaluation Challenges
     ChallengeResults
 
 Evaluation Scoring Functions
-============================
+++++++++++++++++++++++++++++
 .. currentmodule:: pepbench.evaluation
 
 .. autosummary::
