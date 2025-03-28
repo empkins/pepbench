@@ -1,3 +1,0 @@
-timestamp,description,sample_absolute,sample_relative
-2018-02-16 10:45:04.940000+01:00,{'TiltUp': 'start'},79516,79516
-2018-02-16 10:46:04.940000+01:00,{'TiltUp': 'end'},109516,109516

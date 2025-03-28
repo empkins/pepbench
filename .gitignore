@@ -1,4 +1,5 @@
 # ignore local config file that specifies local paths
+example_data/VP_*
 config.json
 paper_path.json
 *_timing_information.json
