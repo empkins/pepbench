@@ -1,3 +1,4 @@
+import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -9,19 +10,27 @@ from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep
+from pepbench.utils._types import path_t
 
 HERE = Path(__file__).parent
 EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
 
 
 class ExampleDataset(BasePepDatasetWithAnnotations):
+    example_file_path: path_t
+
     def __init__(
         self,
+        example_file_path: path_t,
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,
         return_clean: bool = True,
     ) -> None:
+        self.example_file_path = example_file_path
+        # unzip the example dataset
+        with zipfile.ZipFile(str(self.example_file_path)) as zf:
+            zf.extractall(EXAMPLE_DATA_PATH)
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
     def create_index(self) -> pd.DataFrame:

@@ -2,9 +2,9 @@
 
 __all__ = ["get_example_dataset"]
 
-from pepbench import __version__
 from pathlib import Path
 
+from pepbench import __version__
 from pepbench.datasets._example_dataset import ExampleDataset
 
 LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent.parent.joinpath("example_data")
@@ -50,5 +50,5 @@ def get_example_dataset(return_clean: bool = True) -> ExampleDataset:
         An example dataset for testing and demonstration purposes.
 
     """
-    fname = PEPPI.fetch("example_dataset.zip")
-    return ExampleDataset(return_clean=return_clean)
+    fname = Path(PEPPI.fetch("example_dataset.zip"))
+    return ExampleDataset(example_file_path=fname, return_clean=return_clean)
