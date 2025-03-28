@@ -1,5 +1,6 @@
 modules/generated
 auto_examples
+examples/_notebooks
 /README.md
 /CHANGELOG.md
 
