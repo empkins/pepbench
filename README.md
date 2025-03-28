@@ -1,5 +1,14 @@
 # PEPbench - The python package for automated pre-ejection period (PEP) extraction algorithms.
 
+[![PyPI](https://img.shields.io/pypi/v/pepbench)](https://pypi.org/project/pepbench/)
+![GitHub](https://img.shields.io/github/license/empkins/pepbench)
+[![Documentation Status](https://readthedocs.org/projects/pepbench/badge/?version=latest)](https://pepbench.readthedocs.io/en/latest/?badge=latest)
+[![Test and Lint](https://github.com/empkins/pepbench/actions/workflows/test-and-lint.yml/badge.svg)](https://github.com/empkins/pepbench/actions/workflows/test-and-lint.yml)
+[![codecov](https://codecov.io/gh/empkins/pepbench/branch/main/graph/badge.svg?token=IK0QBHQKCO)](https://codecov.io/gh/empkins/pepbench)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/pepbench)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/empkins/pepbench)
+
 _pepbench_ presents a framework for the automated extraction of the pre-ejection period (PEP) from
 electrocardiogram (ECG) and impedance cardiography (ICG) signals. The package includes a variety of 
 algorithms for PEP extraction, as well as tools for the evaluation of these algorithms.
