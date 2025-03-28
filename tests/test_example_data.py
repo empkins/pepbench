@@ -2,7 +2,7 @@ from contextlib import contextmanager
 
 from tpcp import Dataset
 
-from pepbench.examples import get_example_dataset
+from pepbench.example_data import get_example_dataset
 
 
 @contextmanager

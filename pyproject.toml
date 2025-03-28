@@ -11,6 +11,7 @@ dependencies = [
     "tpcp>=2",
     "jinja2>=3.1.4,<4",
     "pytest-cov>=6.0.0",
+    "pooch>=1.8.2",
 ]
 
 [dependency-groups]
@@ -39,6 +40,15 @@ biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "ma
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/pepbench"]
+
+[tool.hatch.build.targets.wheel]
+include = ["src/pepbench"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/pepbench" = "pepbench"
 
 [tool.black]
 line-length = 120
@@ -84,3 +94,4 @@ docs_preview = { cmd = "python -m http.server --directory docs/_build/html", hel
 version = { cmd = "uvx bump-my-version" }
 conf_jupyter = { cmd = "python -m ipykernel install --user --name pepbench --display-name pepbench", help = "Add a new jupyter kernel for the project."}
 remove_jupyter = { cmd = "jupyter kernelspec uninstall pepbench", help = "Remove the project specific jupyter kernel."}
+update_example_data = { script="_tasks:task_update_example_data", help = "Update the example data registry."}
