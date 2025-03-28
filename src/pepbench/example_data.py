@@ -11,7 +11,8 @@ LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent.parent.joinpath("example_data"
 
 PEPPI = None
 
-if not (LOCAL_EXAMPLE_PATH / "README.md").is_file():
+if not LOCAL_EXAMPLE_PATH.exists():
+    # if not (LOCAL_EXAMPLE_PATH / "README.md").is_file():
     import pooch
 
     GITHUB_FOLDER_PATH = "https://raw.githubusercontent.com/empkins/pepbench/{version}/example_data/"
@@ -35,6 +36,43 @@ if not (LOCAL_EXAMPLE_PATH / "README.md").is_file():
     PEPPI.load_registry(registry_file)
 
 
+def _pooch_get_folder(folder_path: Path) -> Path:
+    """Get the path to the example data folder.
+
+    If the data is not available locally, it will be downloaded from the remote repository.
+    For this we use pooch to download all files that start with the folder name.
+    """
+    if PEPPI is None:
+        return folder_path
+
+    rel_folder_path = folder_path.relative_to(LOCAL_EXAMPLE_PATH)
+
+    matching_files = []
+    for f in PEPPI.registry:
+        try:
+            Path(f).relative_to(rel_folder_path)
+        except ValueError:
+            continue
+        matching_files.append(Path(PEPPI.fetch(f, progressbar=True)))
+
+    return PEPPI.abspath / rel_folder_path
+
+
+def _pooch_get_file(file_path: Path) -> Path:
+    """Get the path to the example data file.
+
+    If the data is not available locally, it will be downloaded from the remote repository.
+    For this we use pooch to download all files that start with the folder name.
+
+    """
+    if PEPPI is None:
+        return file_path
+
+    rel_folder_path = file_path.relative_to(LOCAL_EXAMPLE_PATH)
+
+    return Path(PEPPI.fetch(str(rel_folder_path), progressbar=True))
+
+
 def get_example_dataset(return_clean: bool = True) -> ExampleDataset:
     """Get an example dataset.
 
@@ -50,5 +88,5 @@ def get_example_dataset(return_clean: bool = True) -> ExampleDataset:
         An example dataset for testing and demonstration purposes.
 
     """
-    fname = Path(PEPPI.fetch("example_dataset.zip"))
+    fname = _pooch_get_file(LOCAL_EXAMPLE_PATH.joinpath("example_dataset.zip"))
     return ExampleDataset(example_file_path=fname, return_clean=return_clean)

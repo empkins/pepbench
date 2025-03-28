@@ -74,7 +74,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
     def _load_data(self, data_type: str) -> pd.DataFrame:
         p_id = self.index["participant"][0]
         data = pd.read_csv(
-            EXAMPLE_DATA_PATH.joinpath(f"{p_id}/{p_id.lower()}_{data_type}_data.csv.gz"),
+            EXAMPLE_DATA_PATH.joinpath(f"{p_id}/{p_id.lower()}_{data_type}_data.csv"),
             index_col=0,
         )
         data.index = pd.DatetimeIndex(data.index)
