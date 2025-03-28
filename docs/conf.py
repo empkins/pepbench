@@ -14,6 +14,7 @@ import os
 #
 import re
 import shutil
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -67,6 +68,8 @@ def all_but_ipynb(dir, contents):
             result += [c]
     return result
 
+
+subprocess.run(["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"], check=True)
 
 shutil.rmtree(EXAMPLE_NOTEBOOKS_DIR, ignore_errors=True)
 shutil.copytree(HERE.parent.joinpath("examples"), EXAMPLE_NOTEBOOKS_DIR, ignore=all_but_ipynb)
