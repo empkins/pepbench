@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from functools import cached_property, lru_cache
 from itertools import product
+from pathlib import Path
 from typing import ClassVar
 
 import pandas as pd
@@ -43,7 +44,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
 
     """
 
-    base_path: path_t
+    base_path: Path
     use_cache: bool
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg": 1000, "icg": 1000}
 
@@ -63,6 +64,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
         exclude_missing_data: bool = False,
         use_cache: bool = True,
         only_labeled: bool = False,
+        label_type: str = "rater_01",
     ) -> None:
         """Initialize a new ``EmpkinsDataset`` instance.
 
@@ -81,6 +83,8 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
             Whether to only return sections of the biopac data that are labeled (i.e., cut to labeling borders).
             This is necessary when using the dataset for evaluating the performance of PEP extraction algorithms or for
             training ML-based PEP extraction algorithms. Default: ``False``.
+        label_type: str, optional
+            Which annotations to use. Can be either "rater_01", "rater_02", or "average". Default: "rater_01".
 
         """
         # ensure pathlib
@@ -88,9 +92,15 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
         self.exclude_missing_data = exclude_missing_data
         self.use_cache = use_cache
         self.only_labeled = only_labeled
+        self.label_type = label_type
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
+    def _sanitize_params(self) -> None:
+        # ensure pathlib
+        self.base_path = Path(self.base_path)
+
     def create_index(self) -> pd.DataFrame:
+        self._sanitize_params()
         # data is located in a folder named "Data" and data per participant is located in folders named "VP_xx"
         participant_ids = [
             participant_dir.name
@@ -318,7 +328,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
             raise ValueError("Labeling borders can only be accessed for a single participant.")
 
         file_path = self.base_path.joinpath(
-            f"data_per_subject/{participant}/{condition}/biopac/reference_labels/{participant}_{condition}_labeling_borders.csv"
+            f"data_per_subject/{participant}/{condition}/biopac/reference_labels/labeling_borders_{participant}_{condition}.csv"
         )
         data = load_labeling_borders(file_path)
 
@@ -382,10 +392,15 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
             )
 
         reference_data_dict = {}
+        rater_type = self.label_type
+        if self.label_type == "average":
+            # TODO implement
+            raise NotImplementedError("Average reference labels are not implemented yet.")
+
         for phase in phases:
             file_path = self.base_path.joinpath(
-                f"data_per_subject/{participant}/{condition}/biopac/reference_labels/"
-                f"{participant}_{condition}_reference_labels_{phase.lower()}_{channel.lower()}.csv"
+                f"data_per_subject/{participant}/{condition}/biopac/reference_labels/{rater_type}/"
+                f"reference_labels_{participant}_{condition}_{phase.lower()}_{channel.lower()}.csv"
             )
             reference_data = pd.read_csv(file_path)
             reference_data = reference_data.set_index(["heartbeat_id", "channel", "label"])

@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from functools import lru_cache
 from itertools import product
+from pathlib import Path
 from typing import ClassVar
 
 import pandas as pd
@@ -80,6 +81,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
         exclude_noisy_data: bool = True,
         use_cache: bool = True,
         only_labeled: bool = False,
+        label_type: str = "rater_01",
     ) -> None:
         """Initialize a new ``GuardianDataset`` instance.
 
@@ -100,6 +102,8 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
             Whether to only return segments that are labeled (i.e., cut the data to the labeling borders).
             This is necessary when using the dataset for evaluating the performance of PEP extraction algorithms or for
             training ML-based PEP extraction algorithms. Default: ``False``.
+        label_type: str, optional
+            Which annotations to use. Can be either "rater_01", "rater_02", or "average". Default: "rater_01".
         """
         self.base_path = base_path
         self.exclude_no_recorded_data = exclude_no_recorded_data
@@ -107,9 +111,15 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
         self.data_to_exclude = self._find_data_to_exclude()
         self.use_cache = use_cache
         self.only_labeled = only_labeled
+        self.label_type = label_type
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
+    def _sanitize_params(self) -> None:
+        # ensure pathlib
+        self.base_path = Path(self.base_path)
+
     def create_index(self) -> pd.DataFrame:
+        self._sanitize_params()
         overview_df = pd.read_csv(self.base_path.joinpath("metadata/dataset_overview.csv"), sep=";")
         pids = list(overview_df["participant"])
         index = list(product(pids, self.PHASES))
@@ -298,7 +308,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
             raise ValueError("Labeling borders can only be accessed for a single participant.")
 
         file_path = self.base_path.joinpath(
-            f"data_raw/{participant}/tfm_data/reference_labels/{participant}_labeling_borders.csv"
+            f"data_raw/{participant}/tfm_data/reference_labels/labeling_borders_{participant}.csv"
         )
         data = load_labeling_borders(file_path)
 
@@ -360,9 +370,14 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
                 "for a single participant and a SINGLE phase."
             )
         reference_data_dict = {}
+        rater_type = self.label_type
+        if self.label_type == "average":
+            # TODO implement
+            raise NotImplementedError("Average reference labels are not implemented yet.")
         for phase in phases:
             file_path = self.base_path.joinpath(
-                f"data_raw/{participant}/tfm_data/reference_labels/{participant}_reference_labels_{phase}_{channel}.csv"
+                f"data_raw/{participant}/tfm_data/reference_labels/{rater_type}/"
+                f"reference_labels_{participant}_{phase}_{channel}.csv"
             )
             reference_data = pd.read_csv(file_path)
             reference_data = reference_data.set_index(["heartbeat_id", "channel", "label"])
