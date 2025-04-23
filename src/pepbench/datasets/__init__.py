@@ -38,6 +38,8 @@ from pepbench.datasets._base_pep_extraction_dataset import (
 )
 from pepbench.datasets.empkins import EmpkinsDataset
 from pepbench.datasets.guardian import GuardianDataset
+from pepbench.datasets.rebeat_icg import ReBeatIcgDataset
+from pepbench.datasets.time_window_icg import TimeWindowIcgDataset
 
 __all__ = [
     "BasePepDataset",
@@ -46,4 +48,6 @@ __all__ = [
     "BasePepDatasetWithAnnotations",
     "GuardianDataset",
     "EmpkinsDataset",
+    "ReBeatIcgDataset",
+    "TimeWindowIcgDataset",
 ]

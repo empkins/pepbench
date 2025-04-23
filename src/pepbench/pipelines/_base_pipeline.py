@@ -20,7 +20,7 @@ from biopsykit.utils.dtypes import (
     QPeakDataFrame,
     is_pep_result_dataframe,
 )
-from tpcp import Parameter, Pipeline
+from tpcp import CloneFactory, Parameter, Pipeline
 
 from pepbench._docutils import make_filldoc
 
@@ -130,7 +130,7 @@ class BasePepExtractionPipeline(Pipeline):
         heartbeat_segmentation_algo: BaseHeartbeatSegmentation,
         q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
-        c_point_algo: BaseCPointExtraction | None = CPointExtractionScipyFindPeaks(),
+        c_point_algo: BaseCPointExtraction = CloneFactory(CPointExtractionScipyFindPeaks()),
         outlier_correction_algo: BaseOutlierCorrection | None = None,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,

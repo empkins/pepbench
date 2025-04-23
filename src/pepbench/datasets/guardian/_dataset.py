@@ -11,8 +11,8 @@ from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
-from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
-from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
+from pepbench.datasets._base_pep_extraction_dataset import MetadataMixin, base_pep_extraction_docfiller
+from pepbench.datasets._helper import compute_reference_heartbeats, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
 from pepbench.utils._types import path_t
 
@@ -26,7 +26,7 @@ _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
 
 
 @base_pep_extraction_docfiller
-class GuardianDataset(BasePepDatasetWithAnnotations):
+class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     """Dataset class for the Guardian Dataset.
 
     This class is the ``tpcp`` dataset class for the Guardian dataset. It provides access to the Task Force Monitor
@@ -43,7 +43,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
 
     """
 
-    base_path: path_t
+    base_path: Path
     use_cache: bool
 
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg_1": 500, "ecg_2": 500, "icg_der": 500}
@@ -110,9 +110,10 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
         self.exclude_noisy_data = exclude_noisy_data
         self.data_to_exclude = self._find_data_to_exclude()
         self.use_cache = use_cache
-        self.only_labeled = only_labeled
         self.label_type = label_type
-        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
+        super().__init__(
+            groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean, only_labeled=only_labeled
+        )
 
     def _sanitize_params(self) -> None:
         # ensure pathlib
@@ -387,18 +388,6 @@ class GuardianDataset(BasePepDatasetWithAnnotations):
         if self.is_single(None):
             return reference_data_dict[phases[0]]
         return pd.concat(reference_data_dict, names=["phase"])
-
-    @property
-    def reference_pep(self) -> pd.DataFrame:
-        """Return the reference PEP values.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Reference PEP values as a pandas DataFrame
-
-        """
-        return compute_reference_pep(self)
 
     @property
     def heartbeats(self) -> pd.DataFrame:

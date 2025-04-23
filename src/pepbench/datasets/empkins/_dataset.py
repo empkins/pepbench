@@ -13,8 +13,8 @@ from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFra
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
-from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
-from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep, load_labeling_borders
+from pepbench.datasets._base_pep_extraction_dataset import MetadataMixin, base_pep_extraction_docfiller
+from pepbench.datasets._helper import compute_reference_heartbeats, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import path_t
 
@@ -25,7 +25,7 @@ _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 
 
 @base_pep_extraction_docfiller
-class EmpkinsDataset(BasePepDatasetWithAnnotations):
+class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     """Dataset class for the EmpkinS Dataset.
 
     This class is the ``tpcp`` dataset class for the EmpkinS dataset. It provides access to the Biopac data (for ECG
@@ -46,6 +46,8 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
 
     base_path: Path
     use_cache: bool
+    exclude_missing_data: bool
+
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg": 1000, "icg": 1000}
 
     PHASES: ClassVar[Sequence[str]] = ["Prep", "Pause_1", "Talk", "Math", "Pause_5"]
@@ -91,9 +93,10 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
         self.base_path = base_path
         self.exclude_missing_data = exclude_missing_data
         self.use_cache = use_cache
-        self.only_labeled = only_labeled
         self.label_type = label_type
-        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
+        super().__init__(
+            groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean, only_labeled=only_labeled
+        )
 
     def _sanitize_params(self) -> None:
         # ensure pathlib
@@ -415,18 +418,6 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations):
         if self.is_single(None):
             return reference_data_dict[phases[0]]
         return pd.concat(reference_data_dict, names=["phase"])
-
-    @property
-    def reference_pep(self) -> pd.DataFrame:
-        """Return the reference PEP data.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Reference PEP data as a pandas DataFrame.
-
-        """
-        return compute_reference_pep(self)
 
     @property
     def heartbeats(self) -> HeartbeatSegmentationDataFrame:

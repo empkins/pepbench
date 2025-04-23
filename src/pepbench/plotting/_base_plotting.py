@@ -96,8 +96,11 @@ def plot_signals_with_reference_labels(
     normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
+    kwargs.setdefault("sharex", True)
     kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    plot_ecg = kwargs.get("plot_ecg", True)
+    plot_icg = kwargs.get("plot_icg", True)
     plot_artefacts = kwargs.get("plot_artefacts", False)
     rect = _get_rect(kwargs)
 
@@ -120,8 +123,10 @@ def plot_signals_with_reference_labels(
     # plot q-peak onsets and b-points
     if collapse:
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax, **kwargs)
-        _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
-        _add_icg_b_points(icg_data, b_points, ax, **kwargs)
+        if plot_ecg:
+            _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
+        if plot_icg:
+            _add_icg_b_points(icg_data, b_points, ax, **kwargs)
         if plot_artefacts:
             if not q_peak_artefacts.empty:
                 _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax, **kwargs)
@@ -132,8 +137,10 @@ def plot_signals_with_reference_labels(
     else:
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[0], **kwargs)
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[1], **kwargs)
-        _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
-        _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
+        if plot_ecg:
+            _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
+        if plot_icg:
+            _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
         if plot_artefacts:
             if not q_peak_artefacts.empty:
                 _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax[0], **kwargs)
@@ -268,7 +275,6 @@ def plot_signals_with_algorithm_results(
             sampling_rate_hz=datapoint.sampling_rate_icg,
         )
         b_points = algorithm.points_["b_point_sample"]
-        print(b_points)
         b_points = b_points.loc[heartbeat_subset].dropna()
         if collapse:
             _add_icg_b_points(
@@ -452,6 +458,8 @@ def _plot_signals_one_axis(
     fig, ax = _get_fig_ax(kwargs)
     kwargs.pop("ax", None)
 
+    x_label = "Time [hh:mm:ss]"
+
     if datapoint is not None:
         ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
@@ -460,13 +468,13 @@ def _plot_signals_one_axis(
             ax.legend()
         if plot_icg:
             icg_data.plot(ax=ax)
+
+        if normalize_time or not all(isinstance(data.index, pd.DatetimeIndex) for data in [ecg_data, icg_data]):
+            x_label = "Time [s]"
     else:
         df.plot(ax=ax, color=color)
 
-    if normalize_time:
-        ax.set_xlabel("Time [s]")
-    else:
-        ax.set_xlabel("Time [hh:mm:ss]")
+    ax.set_xlabel(x_label)
     ax.set_ylabel("Amplitude [a.u.]")
 
     _handle_legend_one_axis(fig, ax, **kwargs)
@@ -501,7 +509,7 @@ def _plot_signals_two_axes(
     _handle_legend_two_axes(fig, axs, **kwargs)
 
     for ax in axs:
-        if normalize_time:
+        if normalize_time or not all(isinstance(data.index, pd.DatetimeIndex) for data in [ecg_data, icg_data]):
             ax.set_xlabel("Time [s]")
         else:
             ax.set_xlabel("Time [hh:mm:ss]")

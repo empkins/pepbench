@@ -35,7 +35,8 @@ dev = [
 ]
 
 [tool.uv.sources]
-biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "main" }
+# biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "main" }
+biopsykit = { path = "/Users/richer/Documents/PhD/Code_Repositories/BioPsyKit/BioPsyKit", editable = true }
 
 [build-system]
 requires = ["hatchling"]
