@@ -174,6 +174,8 @@ def _add_icg_b_points(
     alpha = kwargs.get("b_point_alpha", 0.7)
 
     b_points = b_points.astype(int)
+    b_points = np.atleast_1d(b_points)
+
     if len(b_points) == 0:
         return
 
@@ -415,8 +417,9 @@ def _handle_legend_two_axes(
         fig.legends[0].remove()
     if legend_outside:
         handles, labels = axs[0].get_legend_handles_labels()
-        handles += axs[1].get_legend_handles_labels()[0]
-        labels += axs[1].get_legend_handles_labels()[1]
+        for i, ax in enumerate(axs[1:]):
+            handles += ax.get_legend_handles_labels()[0]
+            labels += ax.get_legend_handles_labels()[1]
         for ax in axs:
             ax.legend().remove()
 
@@ -463,9 +466,6 @@ def _get_data(
         ecg_data.index = ecg_data.index.total_seconds()
     if isinstance(icg_data.index, pd.TimedeltaIndex):
         icg_data.index = icg_data.index.total_seconds()
-
-    ecg_data.columns = ["ECG"]
-    icg_data.columns = ["ICG ($dZ/dt$)"]
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
 

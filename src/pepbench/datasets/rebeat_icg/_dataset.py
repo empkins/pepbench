@@ -1,7 +1,6 @@
 import re
 from collections.abc import Sequence
 from functools import lru_cache
-from itertools import product
 from pathlib import Path
 from typing import ClassVar
 

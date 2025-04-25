@@ -464,15 +464,22 @@ def _plot_signals_one_axis(
         ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
         if plot_ecg:
+            ecg_data.columns = ["ECG"]
             ecg_data.plot(ax=ax)
             ax.legend()
         if plot_icg:
+            icg_data.columns = ["ICG ($dZ/dt$)"]
             icg_data.plot(ax=ax)
 
         if normalize_time or not all(isinstance(data.index, pd.DatetimeIndex) for data in [ecg_data, icg_data]):
             x_label = "Time [s]"
     else:
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
+        df.columns = kwargs.get("columns", df.columns)
         df.plot(ax=ax, color=color)
+        if normalize_time or not isinstance(df.index, pd.DatetimeIndex):
+            x_label = "Time [s]"
 
     ax.set_xlabel(x_label)
     ax.set_ylabel("Amplitude [a.u.]")
@@ -503,6 +510,9 @@ def _plot_signals_two_axes(
     colors = iter(cmaps.faculties)
 
     ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    ecg_data.columns = ["ECG"]
+    icg_data.columns = ["ICG ($dZ/dt$)"]
+
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
