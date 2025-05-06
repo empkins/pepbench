@@ -44,7 +44,7 @@ params_dict_b_point = {
     "MinMaxScaler": None,
     "DecisionTreeRegressor": {
         "criterion": ["squared_error", "friedman_mse", "absolute_error"],
-        "splitter": ["best", "random"],
+        "splitter": ["best"],
         "max_depth": [4, 8, 16, 32, None],
         "min_samples_leaf": [2, *list(np.arange(10, 100, 10))],
         "min_samples_split": [2, *list(np.arange(10, 100, 10))],
