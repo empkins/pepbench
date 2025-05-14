@@ -14,7 +14,9 @@ dependencies = [
     "pooch>=1.8.2",
     "shap>=0.47.2",
     "scikit-learn>=1.2.0",
-    "pandas>=2.0.0"
+    "pandas>=2.0.0",
+    "hpc-helper>=0.3.2",
+    "jupyter>=1.1.1",
 ]
 
 [dependency-groups]
@@ -36,6 +38,9 @@ dev = [
     "sphinx-copybutton>=0.5.2",
     "nbsphinx>=0.9.7",
 ]
+
+[tool.uv]
+python-preference = "managed"
 
 [tool.uv.sources]
 biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "main" }
