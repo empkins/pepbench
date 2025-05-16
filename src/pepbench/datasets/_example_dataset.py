@@ -9,7 +9,7 @@ from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
-from pepbench.datasets._helper import compute_reference_heartbeats, compute_reference_pep
+from pepbench.datasets._helper import compute_reference_heartbeats
 from pepbench.utils._types import path_t
 
 HERE = Path(__file__).parent
@@ -136,15 +136,3 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
         return reference_heartbeats
-
-    @property
-    def reference_pep(self) -> pd.DataFrame:
-        """Return the reference PEP values.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Reference PEP values as a pandas DataFrame
-
-        """
-        return compute_reference_pep(self)
