@@ -417,7 +417,7 @@ def _handle_legend_two_axes(
         fig.legends[0].remove()
     if legend_outside:
         handles, labels = axs[0].get_legend_handles_labels()
-        for i, ax in enumerate(axs[1:]):
+        for _i, ax in enumerate(axs[1:]):
             handles += ax.get_legend_handles_labels()[0]
             labels += ax.get_legend_handles_labels()[1]
         for ax in axs:
@@ -482,11 +482,11 @@ def _get_data(
     icg_data = icg_data.iloc[start:end]
 
     if normalize_time:
-        if isinstance(ecg_data.index, (pd.TimedeltaIndex, pd.DatetimeIndex)):
+        if isinstance(ecg_data.index, pd.TimedeltaIndex | pd.DatetimeIndex):
             ecg_data.index = (ecg_data.index - ecg_data.index[0]).total_seconds()
         else:
             ecg_data.index -= ecg_data.index[0]
-        if isinstance(icg_data.index, (pd.TimedeltaIndex, pd.DatetimeIndex)):
+        if isinstance(icg_data.index, pd.TimedeltaIndex | pd.DatetimeIndex):
             icg_data.index = (icg_data.index - icg_data.index[0]).total_seconds()
         else:
             icg_data.index -= icg_data.index[0]

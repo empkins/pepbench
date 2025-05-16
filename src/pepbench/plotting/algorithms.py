@@ -14,8 +14,8 @@ from biopsykit.signals.ecg.event_extraction import (
 from biopsykit.signals.icg.event_extraction import (
     BPointExtractionLozano2007LinearRegression,
     BPointExtractionLozano2007QuadraticRegression,
-    BPointExtractionStern1985,
     BPointExtractionMiljkovic2022,
+    BPointExtractionStern1985,
 )
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -32,7 +32,7 @@ from pepbench.algorithms.icg import (
     CPointExtractionScipyFindPeaks,
 )
 from pepbench.datasets import BasePepDatasetWithAnnotations
-from pepbench.plotting._base_plotting import _plot_signals_one_axis, plot_signals, _plot_signals_two_axes
+from pepbench.plotting._base_plotting import _plot_signals_one_axis, plot_signals
 from pepbench.plotting._utils import (
     _add_ecg_q_peaks,
     _add_ecg_r_peaks,
@@ -2604,7 +2604,7 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
     window_signal = pd.Series(index=icg_data.index, name="Weighted Window")
     window_signal.iloc[:] = 0
 
-    for idx, row in search_window.iterrows():
+    for _idx, row in search_window.iterrows():
         start_sample = row["c_point_sample_minus_250"]
         end_sample = row["c_point_sample"]
         icg_slice = icg_data.iloc[start_sample:end_sample].reset_index(drop=True)

@@ -88,7 +88,7 @@ def plot_signals(
     )
 
 
-def plot_signals_with_reference_labels(
+def plot_signals_with_reference_labels(  # noqa: C901
     datapoint: BasePepDatasetWithAnnotations,
     *,
     heartbeat_subset: Sequence[int] | None = None,

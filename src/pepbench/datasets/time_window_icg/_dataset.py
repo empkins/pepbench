@@ -10,6 +10,7 @@ from biopsykit.signals.ecg.event_extraction import QPeakExtractionVanLien2013
 from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
+from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
@@ -39,7 +40,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         return_clean: bool = True,
         use_cache: bool = True,
         only_labeled: bool = False,
-    ):
+    ) -> None:
         self.base_path = base_path
         self.use_cache = use_cache
         super().__init__(
@@ -78,10 +79,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         file_path = self.base_path.joinpath("signals").joinpath(f"IDN{int(p_id.split('_')[1])}.txt")
 
-        if self.use_cache:
-            data = _cached_get_txt_data(file_path)
-        else:
-            data = _load_txt_data(file_path)
+        data = _cached_get_txt_data(file_path) if self.use_cache else _load_txt_data(file_path)
 
         data = data.copy()
         data.index = pd.to_timedelta(data.index / self.SAMPLING_RATE, unit="s")
@@ -90,17 +88,13 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         if self.is_single("phase"):
             phase = self.subset_index.iloc[0]["phase"]
             split_idx = int(120 * self.sampling_rate_icg)
-            if phase == "Baseline":
-                # Baseline phase is 0-120s
-                data = data.iloc[:split_idx]
-            else:
-                # EmotionInduction phase is 120-end
-                data = data.iloc[split_idx:]
+            # Baseline phase is 0-120s, EmotionInduction phase is 120-end
+            data = data.iloc[:split_idx] if phase == "Baseline" else data.iloc[split_idx:]
 
         return data
 
     @property
-    def ecg(self):
+    def ecg(self) -> EcgRawDataFrame:
         """Return the ECG data.
 
         Returns
@@ -117,7 +111,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         return ecg
 
     @property
-    def icg(self):
+    def icg(self) -> IcgRawDataFrame:
         """Return the ICG data.
 
         Returns

@@ -8,6 +8,7 @@ import pandas as pd
 from biopsykit.signals.ecg.event_extraction import QPeakExtractionVanLien2013
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
+from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._base_pep_extraction_dataset import base_pep_extraction_docfiller
@@ -94,7 +95,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
                     ],
                 )
             )
-            matches = [l[0] for l in label_region_ids]
+            matches = [label_region_id[0] for label_region_id in label_region_ids]
             matches = [(participant.zfill(2), phase, int(label_period)) for participant, phase, label_period in matches]
             index = pd.DataFrame(matches, columns=["participant", "phase", "label_period"])
             index = index.set_index(["participant", "phase"]).rename(index=self.PHASES, level="phase").sort_index()
@@ -151,7 +152,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         return self.SAMPLING_RATE
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame:
         if not self.is_single(None):
             if self.only_labeled:
                 error_msg = "Data can only be accessed for a single participant, phase, and label period."
@@ -169,10 +170,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
             folder_path = self.base_path.joinpath(f"01_{file_prefix}")
 
         file_path = folder_path.joinpath(f"{file_prefix}_Subject_{int(p_id)}_task_{self.PHASES_INVERSE[phase]}.mat")
-        if self.use_cache:
-            data = _cached_get_mat_data(file_path)
-        else:
-            data = _load_mat_data(file_path)
+        data = _cached_get_mat_data(file_path) if self.use_cache else _load_mat_data(file_path)
 
         if data["samplFreq"] != self.SAMPLING_RATE:
             raise ValueError(f"Sampling rate of {data['samplFreq']} does not match expected {self.SAMPLING_RATE}.")
@@ -190,11 +188,11 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         return data
 
     @property
-    def ecg(self):
+    def ecg(self) -> EcgRawDataFrame:
         return self.data[["ecg"]]
 
     @property
-    def icg(self):
+    def icg(self) -> IcgRawDataFrame:
         icg = self.data[["icg_der"]]
         if self.return_clean:
             algo = IcgPreprocessingBandpass()

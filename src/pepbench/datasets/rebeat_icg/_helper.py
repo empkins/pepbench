@@ -13,7 +13,7 @@ def _load_mat_data(file_path: path_t) -> dict[str, np.ndarray]:
     return loadmat(file_path, squeeze_me=True)
 
 
-def generate_labeling_and_heartbeat_borders(base_path: path_t):
+def generate_labeling_and_heartbeat_borders(base_path: path_t) -> None:
     data_folder = base_path.joinpath("01_RawData")
     annotation_folder = base_path.joinpath("03_ExpertAnnotations")
     labeling_border_folder = base_path.joinpath("04_LabelingAndHeartBeatBorders")
@@ -40,12 +40,12 @@ def generate_labeling_and_heartbeat_borders(base_path: path_t):
 
         warnings.simplefilter("ignore", FutureWarning)
         b_point_groups = np.split(b_points, np.where(b_points.diff() > 5 * fs)[0])
-        b_point_groups = pd.concat({i: g for i, g in enumerate(b_point_groups)})
+        b_point_groups = pd.concat(dict(enumerate(b_point_groups)))
         b_point_groups.index = b_point_groups.index.set_names("label_region", level=0)
         b_point_groups = b_point_groups.reset_index()
 
         heartbeat_ids = []
-        for i, b_point in b_point_groups.iterrows():
+        for _i, b_point in b_point_groups.iterrows():
             idx = np.where(
                 (heartbeats["start_sample"] <= b_point["sample_relative"])
                 & (heartbeats["end_sample"] >= b_point["sample_relative"])
@@ -61,19 +61,19 @@ def generate_labeling_and_heartbeat_borders(base_path: path_t):
         heartbeats.index.name = "heartbeat_id"
 
         labeling_borders = heartbeats.groupby("label_region").apply(
-            lambda s: {
-                "start_sample": s.iloc[0]["start_sample"] - int(0.5 * fs),
-                "end_sample": s.iloc[-1]["end_sample"] + int(0.5 * fs),
+            lambda s, sampling_rate=fs: {
+                "start_sample": s.iloc[0]["start_sample"] - int(0.5 * sampling_rate),
+                "end_sample": s.iloc[-1]["end_sample"] + int(0.5 * sampling_rate),
             },
         )
         labeling_borders = labeling_borders.apply(pd.Series).astype("Int64")
 
         for label_id, df in heartbeats.groupby("label_region"):
-            df = df.drop(columns=["label_region"])
+            df_out = df.drop(columns=["label_region"])
             heartbeat_path = labeling_border_folder.joinpath(
                 f"Heartbeats_Subject_{int(p_id)}_task_{phase}_label_{label_id}.csv"
             )
-            df = df.astype(
+            df_out = df_out.astype(
                 {
                     "start_sample": "Int64",
                     "end_sample": "Int64",
@@ -81,7 +81,7 @@ def generate_labeling_and_heartbeat_borders(base_path: path_t):
                     "rr_interval_sample": "Int64",
                 }
             )
-            df.to_csv(heartbeat_path)
+            df_out.to_csv(heartbeat_path)
             labeling_borders_path = labeling_border_folder.joinpath(
                 f"LabelingBorders_Subject_{int(p_id)}_task_{phase}_label_{label_id}.csv"
             )

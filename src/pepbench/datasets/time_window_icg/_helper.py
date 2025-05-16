@@ -13,7 +13,7 @@ def _load_txt_data(file_path: path_t) -> pd.DataFrame:
     return data
 
 
-def _get_match_heartbeat_label_ids(heartbeats, b_points) -> pd.Series:
+def _get_match_heartbeat_label_ids(heartbeats: pd.DataFrame, b_points: pd.DataFrame) -> pd.Series:
     heartbeat_ids = pd.Series(index=heartbeats.index, name="heartbeat_id")
     heartbeat_ids.index.name = "heartbeat_id_b_point"
     for i, b_point in b_points.iterrows():
@@ -32,7 +32,7 @@ def _get_match_heartbeat_label_ids(heartbeats, b_points) -> pd.Series:
     return heartbeat_ids
 
 
-def generate_heartbeat_borders(base_path: path_t):
+def generate_heartbeat_borders(base_path: path_t) -> None:
     data_folder = base_path.joinpath("signals")
     annotation_folder = base_path.joinpath("annotations")
     heartbeat_folder = base_path.joinpath("reference_heartbeats")

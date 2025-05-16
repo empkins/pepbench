@@ -34,7 +34,7 @@ URL = "https://github.com/empkins/pepbench"
 
 # -- Project information -----------------------------------------------------
 
-# Info from poetry config:
+# Info from uv config:
 info = toml.load("../pyproject.toml")["project"]
 
 project = info["name"]
