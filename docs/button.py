@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 import jinja2
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -41,7 +43,7 @@ class ButtonDirective(Directive):
 
 
 # build phase visitor emits HTML to append to output
-def html_visit_button_node(self, node):
+def html_visit_button_node(self, node) -> NoReturn:
     html = BUTTON_TEMPLATE.render(text=node["text"], link=node["link"])
 
     self.body.append(html)
