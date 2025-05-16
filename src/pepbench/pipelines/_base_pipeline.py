@@ -9,7 +9,7 @@ from biopsykit.signals.icg.event_extraction import (
     BaseCPointExtraction,
     CPointExtractionScipyFindPeaks,
 )
-from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection, OutlierCorrectionDummy
+from biopsykit.signals.icg.outlier_correction import BaseBPointOutlierCorrection, OutlierCorrectionDummy
 from biopsykit.signals.pep import PepExtraction
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from biopsykit.utils.dtypes import (
@@ -113,7 +113,7 @@ class BasePepExtractionPipeline(Pipeline):
     q_peak_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]
     c_point_algo: Parameter[BaseCPointExtraction]
-    outlier_correction_algo: Parameter[BaseOutlierCorrection]
+    outlier_correction_algo: Parameter[BaseBPointOutlierCorrection]
     handle_negative_pep: NEGATIVE_PEP_HANDLING
     handle_missing_events: HANDLE_MISSING_EVENTS
 
@@ -131,7 +131,7 @@ class BasePepExtractionPipeline(Pipeline):
         q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
         c_point_algo: BaseCPointExtraction = CloneFactory(CPointExtractionScipyFindPeaks()),
-        outlier_correction_algo: BaseOutlierCorrection | None = None,
+        outlier_correction_algo: BaseBPointOutlierCorrection | None = None,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:
