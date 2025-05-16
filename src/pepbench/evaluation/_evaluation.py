@@ -16,7 +16,7 @@ from pepbench.pipelines import BasePepExtractionPipeline
 from pepbench.utils._timing import measure_time
 from pepbench.utils._types import path_t
 
-__all__ = ["PepEvaluationChallenge", "ChallengeResults"]
+__all__ = ["ChallengeResults", "PepEvaluationChallenge"]
 
 ChallengeResults = namedtuple("ChallengeResults", ["agg_mean_std", "agg_total", "single", "per_sample"])
 

@@ -14,4 +14,4 @@ The following categories of algorithms are available:
 
 from pepbench.algorithms import ecg, heartbeat_segmentation, icg, outlier_correction, preprocessing
 
-__all__ = ["heartbeat_segmentation", "ecg", "icg", "outlier_correction", "preprocessing"]
+__all__ = ["ecg", "heartbeat_segmentation", "icg", "outlier_correction", "preprocessing"]

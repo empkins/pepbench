@@ -25,20 +25,20 @@ from pepbench.utils._rename_maps import (
 )
 
 __all__ = [
-    "boxplot_reference_pep",
-    "violinplot_reference_pep",
     "boxplot_algorithm_performance",
-    "violinplot_algorithm_performance",
-    "residual_plot_pep",
-    "residual_plot_pep_participant",
-    "residual_plot_pep_phase",
-    "residual_plot_pep_heart_rate",
+    "boxplot_reference_pep",
     "histplot_heart_rate",
-    "regplot_error_heart_rate",
-    "regplot_pep_heart_rate",
     "paired_plot_error_outlier_correction",
     "paired_plot_error_pep_pipeline",
     "plot_q_wave_detection_waveform_detailed_comparison",
+    "regplot_error_heart_rate",
+    "regplot_pep_heart_rate",
+    "residual_plot_pep",
+    "residual_plot_pep_heart_rate",
+    "residual_plot_pep_participant",
+    "residual_plot_pep_phase",
+    "violinplot_algorithm_performance",
+    "violinplot_reference_pep",
 ]
 
 from pepbench.utils._types import str_t
@@ -372,7 +372,7 @@ def residual_plot_pep_heart_rate(
         heart_rate_range=pd.cut(
             data[("heart_rate_bpm", "estimated")],
             bins=bin_edges,
-            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i+1])}" for i in range(len(bin_edges) - 1)],
+            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i + 1])}" for i in range(len(bin_edges) - 1)],
         )
     )
     data = data.set_index("heart_rate_range", append=True)

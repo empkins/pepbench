@@ -6,4 +6,4 @@ from pepbench import algorithms, datasets, evaluation, pipelines
 
 __version__ = metadata.version(__name__)
 
-__all__ = ["algorithms", "datasets", "pipelines", "evaluation"]
+__all__ = ["algorithms", "datasets", "evaluation", "pipelines"]

@@ -51,20 +51,20 @@ from pepbench.plotting._utils import (
 )
 
 __all__ = [
-    "plot_q_peak_extraction_martinez2004_neurokit",
-    "plot_q_peak_extraction_vanlien2013",
-    "plot_b_point_extraction_sherwood1990",
-    "plot_b_point_extraction_debski1993_second_derivative",
-    "plot_b_point_extraction_drost2022",
     "plot_b_point_extraction_arbol2017_isoelectric_crossings",
     "plot_b_point_extraction_arbol2017_second_derivative",
     "plot_b_point_extraction_arbol2017_third_derivative",
+    "plot_b_point_extraction_debski1993_second_derivative",
+    "plot_b_point_extraction_drost2022",
     "plot_b_point_extraction_forouzanfar2018",
-    "plot_b_point_extraction_miljkovic2022",
-    "plot_b_point_extraction_lozano2007_quadratic_regression",
-    "plot_q_peak_extraction_forounzafar2018",
     "plot_b_point_extraction_lozano2007_linear_regression",
+    "plot_b_point_extraction_lozano2007_quadratic_regression",
+    "plot_b_point_extraction_miljkovic2022",
+    "plot_b_point_extraction_sherwood1990",
     "plot_b_point_extraction_stern1985",
+    "plot_q_peak_extraction_forounzafar2018",
+    "plot_q_peak_extraction_martinez2004_neurokit",
+    "plot_q_peak_extraction_vanlien2013",
 ]
 
 

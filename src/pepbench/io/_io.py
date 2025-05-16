@@ -5,7 +5,7 @@ import pandas as pd
 from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 
-__all__ = ["load_challenge_results_from_folder", "convert_hz_to_ms"]
+__all__ = ["convert_hz_to_ms", "load_challenge_results_from_folder"]
 
 
 def load_challenge_results_from_folder(

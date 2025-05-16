@@ -4,7 +4,7 @@ import pandas as pd
 
 from pepbench.utils._types import path_t
 
-__all__ = ["load_labeling_borders", "compute_reference_heartbeats"]
+__all__ = ["compute_reference_heartbeats", "load_labeling_borders"]
 
 
 def load_labeling_borders(file_path: path_t) -> pd.DataFrame:

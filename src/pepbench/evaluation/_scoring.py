@@ -10,7 +10,7 @@ from pepbench.evaluation._scoring_aggregator import PerSampleAggregator
 from pepbench.heartbeat_matching import match_heartbeat_lists
 from pepbench.pipelines import BasePepExtractionPipeline
 
-__all__ = ["score_pep_evaluation", "mean_and_std"]
+__all__ = ["mean_and_std", "score_pep_evaluation"]
 
 
 def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePepDatasetWithAnnotations) -> dict:

@@ -3,9 +3,9 @@ import numpy as np
 from pepbench.utils._types import str_t
 
 __all__ = [
-    "rename_metrics",
-    "rename_algorithms",
     "get_nan_reason_mapping",
+    "rename_algorithms",
+    "rename_metrics",
 ]
 
 _ylabel_mapping = {

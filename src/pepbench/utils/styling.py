@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-__all__ = ["highlight_outlier_improvement", "highlight_min_per_group", "highlight_min_uncertainty"]
+__all__ = ["highlight_min_per_group", "highlight_min_uncertainty", "highlight_outlier_improvement"]
 
 
 def highlight_outlier_improvement(col: pd.Series) -> pd.Series:

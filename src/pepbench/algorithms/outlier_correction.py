@@ -6,4 +6,4 @@ from biopsykit.signals.icg.outlier_correction import (
     OutlierCorrectionLinearInterpolation,
 )
 
-__all__ = ["OutlierCorrectionDummy", "OutlierCorrectionLinearInterpolation", "OutlierCorrectionForouzanfar2018"]
+__all__ = ["OutlierCorrectionDummy", "OutlierCorrectionForouzanfar2018", "OutlierCorrectionLinearInterpolation"]

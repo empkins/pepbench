@@ -43,11 +43,11 @@ from pepbench.datasets.time_window_icg import TimeWindowIcgDataset
 
 __all__ = [
     "BasePepDataset",
-    "PepLabelMixin",
-    "MetadataMixin",
     "BasePepDatasetWithAnnotations",
-    "GuardianDataset",
     "EmpkinsDataset",
+    "GuardianDataset",
+    "MetadataMixin",
+    "PepLabelMixin",
     "ReBeatIcgDataset",
     "TimeWindowIcgDataset",
 ]
