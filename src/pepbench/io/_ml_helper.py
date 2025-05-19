@@ -6,7 +6,7 @@ import numpy as np
 from pepbench.utils._types import path_t
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
 
-__all__ = ["load_preprocessed_training_data", "compute_mae_std_from_permuter", "compute_abs_error", "compute_error",
+__all__ = ["load_preprocessed_training_data", "compute_mae_std_from_permuter", "compute_mae_std_from_metric_summary", "compute_abs_error", "compute_error",
            "impute_missing_values"]
 
 
@@ -84,9 +84,37 @@ def compute_mae_std_from_permuter(
     pd.DataFrame
         Dataframe containing the mae, std, true_labels, predicted_labels, and the absolute_error of the predictions.
     """
-    permuter_metrics = pd.DataFrame(data=pipeline_permuter.metric_summary()[['true_labels', 'predicted_labels']],
-                                    columns=['mae', 'std', 'true_labels', 'predicted_labels'],
-                                    index=pipeline_permuter.metric_summary().index)
+    if pipeline_permuter is not None:
+        permuter_metrics = pd.DataFrame(data=pipeline_permuter.metric_summary()[['true_labels', 'predicted_labels']],
+                                        columns=['mae', 'std', 'true_labels', 'predicted_labels'],
+                                        index=pipeline_permuter.metric_summary().index)
+
+
+    permuter_metrics['absolute_error'] = np.abs(permuter_metrics['true_labels'] - permuter_metrics['predicted_labels'])
+
+    for index in permuter_metrics.index:
+        permuter_metrics.at[index, 'mae'] = np.mean(permuter_metrics.loc[index]['absolute_error'])
+        permuter_metrics.at[index, 'std'] = np.std(permuter_metrics.loc[index]['absolute_error'])
+    return permuter_metrics
+
+def compute_mae_std_from_metric_summary(
+        pipeline_permuter: pd.DataFrame,
+):
+    """
+    Compute mae and std from permuter.
+    Parameters
+    ----------
+    input_data: pd.DataFrame
+        DataFrame containing the regression results.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe containing the mae, std, true_labels, predicted_labels, and the absolute_error of the predictions.
+    """
+    permuter_metrics = pd.DataFrame(data=pipeline_permuter[['true_labels', 'predicted_labels']],
+                                        columns=['mae', 'std', 'true_labels', 'predicted_labels'],
+                                        index=pipeline_permuter.index)
 
     permuter_metrics['absolute_error'] = np.abs(permuter_metrics['true_labels'] - permuter_metrics['predicted_labels'])
 
