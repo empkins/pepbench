@@ -5,9 +5,10 @@ import numpy as np
 
 from pepbench.utils._types import path_t
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
+import shap
 
 __all__ = ["load_preprocessed_training_data", "compute_mae_std_from_permuter", "compute_mae_std_from_metric_summary", "compute_abs_error", "compute_error",
-           "impute_missing_values"]
+           "impute_missing_values", "compute_shap_values"]
 
 
 def load_preprocessed_training_data(
@@ -205,3 +206,44 @@ def impute_missing_values(
         input_data.iloc[sample, np.isnan(input_data.iloc[sample, :].values)] = imputation_values[sample]
 
     return input_data
+
+def compute_shap_values(
+        pipeline_permuter: SklearnPipelinePermuter,
+        training_data: pd.DataFrame,
+        pipeline_elements: tuple
+):
+    """
+    Compute the SHAP values of the machine learning estimator.
+    Parameters
+    ----------
+    pipeline_permuter: SklearnPipelinePermuter
+        Pipeline Permuter containing the trained machine learning estimators.
+    training_data: pd.DataFrame
+        Data that was used for training the estimators.
+    pipeline: list(str)
+        Pipeline combination shap values should be computed on.
+    Returns
+    -------
+    shap_per_fold: np.array
+        SHAP values of the machine learning estimator per fold.
+    test_folds: np.array
+        Test folds used for training of the machine learning estimator.
+    pipeline_folds: list
+        List containing the pipeline objects per fold.
+    """
+    pipeline_folds = pipeline_permuter.best_estimator_summary().loc[pipeline_elements]['best_estimator'].pipeline
+    test_folds = pipeline_permuter.metric_summary().loc[pipeline_elements]['test_indices_folds']
+    training_folds = pipeline_permuter.metric_summary().loc[pipeline_elements]['train_indices_folds']
+    shap_per_fold = []
+    for fold, pipeline in enumerate(pipeline_folds):
+        X_test = training_data.iloc[list(test_folds[fold]), :]
+        X_train = training_data.iloc[list(training_folds[fold]), :]
+        num_samples_to_select = min(1000, X_train.shape)
+        random_indices = np.random.choice(X_train.shape, num_samples_to_select, replace=False)
+        X_train_subset = X_train[random_indices, :]
+        estimator = pipeline[-1]
+        # Create Explainer object that can calculate shap values
+        explainer = shap.TreeExplainer(estimator, data=X_train_subset, feature_perturbation='interventional')
+        shap_values_fold = np.array(explainer.shap_values(X_test))
+        shap_per_fold.append(shap_values_fold)
+    return shap_per_fold, test_folds, pipeline_folds
