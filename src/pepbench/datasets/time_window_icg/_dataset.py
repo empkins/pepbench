@@ -27,9 +27,13 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     base_path: Path
     use_cache: bool
 
+    exclude_r_peak_detection_errors: bool
+
     SAMPLING_RATE: ClassVar[int] = 2000
 
     PHASES: ClassVar[Sequence[str]] = ["Baseline", "EmotionInduction"]
+
+    SUBSET_R_PEAK_DETECTION_ERRORS = ["IDN_17"]
 
     def __init__(
         self,
@@ -39,10 +43,13 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         *,
         return_clean: bool = True,
         use_cache: bool = True,
+        exclude_r_peak_detection_errors: bool = True,
         only_labeled: bool = False,
     ) -> None:
         self.base_path = base_path
         self.use_cache = use_cache
+        self.exclude_r_peak_detection_errors = exclude_r_peak_detection_errors
+        self.data_to_exclude = self._find_data_to_exclude()
         super().__init__(
             groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean, only_labeled=only_labeled
         )
@@ -59,8 +66,19 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         p_ids = sorted([f"IDN_{p_id.zfill(2)}" for p_id in p_ids])
         index = product(p_ids, self.PHASES)
         index = pd.DataFrame(index, columns=["participant", "phase"])
+        index = index.set_index("participant")
+
+        index = index.drop(self.data_to_exclude)
+        index = index.reset_index()
 
         return index
+
+    def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
+        data_to_exclude = []
+        if self.exclude_r_peak_detection_errors:
+            data_to_exclude.extend(self.SUBSET_R_PEAK_DETECTION_ERRORS)
+
+        return data_to_exclude
 
     @property
     def sampling_rate_ecg(self) -> int:
@@ -164,9 +182,16 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         if not self.is_single("participant"):
             raise ValueError("Reference heartbeats can only be loaded for a single participant.")
 
+        reference_heartbeat_folder = self.base_path.joinpath("reference_heartbeats")
+        if not reference_heartbeat_folder.exists():
+            raise ValueError(
+                "Reference heartbeats not found. Please generate them first by calling "
+                "`pepbench.datasets.time_window_icg.generate_heartbeat_borders()`."
+            )
+
         p_id = self.subset_index.iloc[0]["participant"]
 
-        file_path = self.base_path.joinpath("reference_heartbeats").joinpath(f"IDN{int(p_id.split('_')[1])}.csv")
+        file_path = reference_heartbeat_folder.joinpath(f"IDN{int(p_id.split('_')[1])}.csv")
         reference_heartbeats = pd.read_csv(file_path)
         reference_heartbeats = reference_heartbeats.set_index("heartbeat_id")
         if self.is_single("phase"):
@@ -185,6 +210,15 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
                     r_peak_sample=reference_heartbeats["r_peak_sample"] - split_idx,
                 )
                 reference_heartbeats.index -= reference_heartbeats.index[0]
+        reference_heartbeats = reference_heartbeats.astype(
+            {
+                "start_sample": "Int64",
+                "end_sample": "Int64",
+                "r_peak_sample": "Int64",
+                "rr_interval_sample": "Int64",
+                "rr_interval_ms": "Float64",
+            }
+        )
         return reference_heartbeats
 
     @property
@@ -211,6 +245,9 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
                 b_points.index -= b_points.index[0]
 
         ret = _get_match_heartbeat_label_ids(heartbeats=reference_heartbeats, b_points=b_points)
+        # drop duplicate values
+        ret = ret.drop_duplicates()
+
         heartbeats_match = reference_heartbeats.loc[ret]
         heartbeats_match.index.name = "heartbeat_id"
         bpoints_match = b_points.loc[ret.index]
@@ -222,7 +259,9 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         reference_labels = pd.concat({"heartbeats": heartbeats_match, "ICG": bpoints_match}, axis=1)
         reference_labels = reference_labels.stack([0, 1], future_stack=True)
         reference_labels.index = reference_labels.index.set_names(["heartbeat_id", "channel", "label"])
-        reference_labels = reference_labels.sort_values().to_frame(name="sample_relative")
+        # sort values within each heartbeat
+        reference_labels = reference_labels.groupby("heartbeat_id", group_keys=False).apply(lambda x: x.sort_values())
+        reference_labels = reference_labels.to_frame(name="sample_relative")
         return reference_labels
 
     @property

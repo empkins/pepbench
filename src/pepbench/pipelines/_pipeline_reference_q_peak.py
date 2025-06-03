@@ -96,6 +96,8 @@ class PepExtractionPipelineReferenceQPeaks(BasePepExtractionPipeline):
         c_point_samples = c_point_algo.points_
         c_point_samples_tp = c_point_samples.loc[tp_matches["heartbeat_id"]]
 
+        tp_matches = tp_matches.set_index("heartbeat_id")
+
         q_peak_samples_tp.index = tp_matches.index
         c_point_samples_tp.index = tp_matches.index
         b_point_samples_tp.index = tp_matches.index

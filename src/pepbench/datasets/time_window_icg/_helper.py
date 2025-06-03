@@ -51,5 +51,7 @@ def generate_heartbeat_borders(base_path: path_t) -> None:
         heartbeat_algo.extract(ecg=data[["ecg"]], sampling_rate_hz=fs)
         heartbeats = heartbeat_algo.heartbeat_list_
 
+        heartbeats = heartbeats.round(2)
+
         heartbeat_path = heartbeat_folder.joinpath(f"IDN{p_id}.csv")
         heartbeats.to_csv(heartbeat_path)
