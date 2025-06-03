@@ -33,6 +33,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
     SUBSET_ANNOTATION_ERRORS = (
         ("11", "Baseline"),
         ("11", "CognitiveWorkload"),
+        ("12", "CognitiveWorkload"),
         ("16", "Baseline"),
         ("23", "Baseline"),
         ("23", "CognitiveWorkload"),
@@ -256,7 +257,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         if not reference_heartbeat_folder.exists():
             raise ValueError(
                 "Reference heartbeats not found. Please generate them first by calling "
-                "`generate_labeling_and_heartbeat_borders()`."
+                "`pepbench.datasets.rebeat_icg.generate_labeling_and_heartbeat_borders()`."
             )
 
         p_id = self.index["participant"][0]

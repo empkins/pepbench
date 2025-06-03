@@ -1,4 +1,5 @@
 import re
+import warnings
 from collections.abc import Callable
 
 import numpy as np
@@ -35,8 +36,6 @@ def generate_labeling_and_heartbeat_borders(base_path: path_t) -> None:
         heartbeat_algo = HeartbeatSegmentationNeurokit()
         heartbeat_algo.extract(ecg=data[["ecg"]], sampling_rate_hz=fs)
         heartbeats = heartbeat_algo.heartbeat_list_
-
-        import warnings
 
         warnings.simplefilter("ignore", FutureWarning)
         b_point_groups = np.split(b_points, np.where(b_points.diff() > 5 * fs)[0])
