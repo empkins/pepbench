@@ -225,13 +225,15 @@ def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data.join(heart_rate_bpm)
 
 
-def correlation_reference_pep_heart_rate(data: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def correlation_reference_pep_heart_rate(data: pd.DataFrame, groupby: str | None = None) -> dict[str, pd.DataFrame]:
     """Compute the correlation between the reference PEP values and the heart rate.
 
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
         The data containing the reference PEP values and the heart rate.
+    groupby : str, optional
+        The column to group the data by. If None, no grouping is applied. Default: None.
 
     Returns
     -------
@@ -242,8 +244,14 @@ def correlation_reference_pep_heart_rate(data: pd.DataFrame) -> dict[str, pd.Dat
     data = get_reference_data(data)
 
     # compute a linear regression model
-    linreg = pg.linear_regression(X=data["heart_rate_bpm"], y=data["pep_ms"], remove_na=True)
-    corr = pg.corr(data["heart_rate_bpm"], data["pep_ms"], method="pearson")
+    if groupby is None:
+        linreg = pg.linear_regression(X=data["heart_rate_bpm"], y=data["pep_ms"], remove_na=True)
+        corr = pg.corr(data["heart_rate_bpm"], data["pep_ms"], method="pearson")
+    else:
+        linreg = data.groupby(groupby).apply(
+            lambda df: pg.linear_regression(X=df["heart_rate_bpm"], y=df["pep_ms"], remove_na=True)
+        )
+        corr = data.groupby(groupby).apply(lambda df: pg.corr(df["heart_rate_bpm"], df["pep_ms"], method="pearson"))
 
     return {"linear_regression": linreg, "correlation": corr}
 
