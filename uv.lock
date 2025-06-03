@@ -80,7 +80,7 @@ wheels = [
 [[package]]
 name = "biopsykit"
 version = "0.13.0"
-source = { git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main#97880bd0590f7dc21fc4f0b623057f4533206fb5" }
+source = { editable = "../../BioPsyKit/BioPsyKit" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
@@ -102,6 +102,56 @@ dependencies = [
     { name = "ts2vg" },
     { name = "xlrd" },
     { name = "xlsxwriter" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bioread", specifier = ">=3,<4" },
+    { name = "fau-colors", specifier = "~=1.1" },
+    { name = "ipympl", marker = "extra == 'jupyter'", specifier = ">=0.9,<0.10" },
+    { name = "ipython", marker = "extra == 'jupyter'", specifier = ">=7,<8" },
+    { name = "ipywidgets", marker = "extra == 'jupyter'", specifier = ">=8,<9" },
+    { name = "joblib", specifier = ">=1,<2" },
+    { name = "matplotlib", specifier = "~=3.9" },
+    { name = "mne", marker = "extra == 'mne'", specifier = ">=1.2.1,<2" },
+    { name = "neurokit2", specifier = ">=0,<0.2.11" },
+    { name = "nilspodlib", specifier = ">=4.0.0" },
+    { name = "numpy", specifier = ">=1.26" },
+    { name = "openpyxl", specifier = ">=3,<4" },
+    { name = "pandas", specifier = ">=2,<3" },
+    { name = "pingouin", specifier = ">=0.5.2,<0.6" },
+    { name = "scikit-learn", specifier = "~=1.0" },
+    { name = "scipy", specifier = ">=1,<2" },
+    { name = "seaborn", specifier = ">=0,<1" },
+    { name = "statannotations", specifier = ">=0.7.1,<0.8" },
+    { name = "statsmodels", specifier = ">=0,<1" },
+    { name = "tpcp", specifier = ">=1" },
+    { name = "tqdm", specifier = ">=4,<5" },
+    { name = "ts2vg", specifier = ">=1.2.4,<2" },
+    { name = "xlrd", specifier = ">=2,<3" },
+    { name = "xlsxwriter", specifier = ">=1,<2" },
+]
+provides-extras = ["mne", "jupyter"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=25" },
+    { name = "coverage-badge", specifier = ">=1.0.1,<2" },
+    { name = "ipykernel", specifier = ">=6,<7" },
+    { name = "memory-profiler", specifier = ">=0.57.0,<0.58" },
+    { name = "nbsphinx", specifier = ">=0.8.7,<0.9" },
+    { name = "numpydoc", specifier = ">=1,<2" },
+    { name = "poethepoet", specifier = ">=0.10.0,<0.11" },
+    { name = "pydata-sphinx-theme", specifier = ">=0.6.2,<0.7" },
+    { name = "pytest", specifier = ">=6,<7" },
+    { name = "pytest-cov", specifier = ">=2,<3" },
+    { name = "recommonmark", specifier = ">=0.6.0,<0.7" },
+    { name = "ruff", specifier = ">=0,<1" },
+    { name = "sphinx", specifier = ">=5,<6" },
+    { name = "sphinx-copybutton", specifier = ">=0.4.0,<0.5" },
+    { name = "sphinx-gallery", specifier = ">=0.10.0,<0.11" },
+    { name = "sphinx-issues", specifier = ">=1.2.0,<2" },
+    { name = "toml", specifier = ">=0.10.1,<0.11" },
 ]
 
 [[package]]
@@ -536,16 +586,15 @@ wheels = [
 
 [[package]]
 name = "fau-colors"
-version = "1.9.0"
+version = "1.10.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
     { name = "seaborn" },
-    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/0a/e2f005f06f0d57e1008e802c2adebffd8c8684e3612567fc2d5f85787c86/fau_colors-1.9.0.tar.gz", hash = "sha256:a9868f9a3ccb42ffd5c7725247ecf697cffd02d89fb26a438d80f2c66b298b78", size = 11295, upload-time = "2025-05-22T15:02:34.779Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d0/43/ec6b51bfd3b9297479188e43de3583c6f2fe57d9c6da5d4fc0dbdadec4ab/fau_colors-1.10.1.tar.gz", hash = "sha256:2bdd42096507d256cff04d8752f041ca8e32e8bf2c4959b6b8d3100b21fb8d75", size = 11666, upload-time = "2025-05-28T19:28:00.868Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/4f/83b5b222b58a32f5dc6e28520d2d23be8f6851bbf0e45b10c19abea43f7d/fau_colors-1.9.0-py3-none-any.whl", hash = "sha256:6eb7226980fa936496ee298d89e5645911a707cc6ecc7661a0af0c8209b30c6b", size = 10668, upload-time = "2025-05-22T15:02:33.477Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/1a/5f851b5936d45ff56502c15785e116c0033c8b72b7912dcf65099e0d24dd/fau_colors-1.10.1-py3-none-any.whl", hash = "sha256:c2c021de8bd3a839995ca7219de1b6269a71e59d5e0329150f83ff422101f5c3", size = 10972, upload-time = "2025-05-28T19:27:59.584Z" },
 ]
 
 [[package]]
@@ -744,7 +793,7 @@ wheels = [
 
 [[package]]
 name = "jsonschema"
-version = "4.23.0"
+version = "4.24.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -752,9 +801,9 @@ dependencies = [
     { name = "referencing" },
     { name = "rpds-py" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/38/2e/03362ee4034a4c917f697890ccd4aec0800ccf9ded7f511971c75451deec/jsonschema-4.23.0.tar.gz", hash = "sha256:d71497fef26351a33265337fa77ffeb82423f3ea21283cd9467bb03999266bc4", size = 325778, upload-time = "2024-07-08T18:40:05.546Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/d3/1cf5326b923a53515d8f3a2cd442e6d7e94fcc444716e879ea70a0ce3177/jsonschema-4.24.0.tar.gz", hash = "sha256:0b4e8069eb12aedfa881333004bccaec24ecef5a8a6a4b6df142b2cc9599d196", size = 353480, upload-time = "2025-05-26T18:48:10.459Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/4a/4f9dbeb84e8850557c02365a0eee0649abe5eb1d84af92a25731c6c0f922/jsonschema-4.23.0-py3-none-any.whl", hash = "sha256:fbadb6f8b144a8f8cf9f0b89ba94501d143e50411a1278633f56a7acf7fd5566", size = 88462, upload-time = "2024-07-08T18:40:00.165Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/3d/023389198f69c722d039351050738d6755376c8fd343e91dc493ea485905/jsonschema-4.24.0-py3-none-any.whl", hash = "sha256:a462455f19f5faf404a7902952b6f0e3ce868f3ee09a359b05eca6673bd8412d", size = 88709, upload-time = "2025-05-26T18:48:08.417Z" },
 ]
 
 [[package]]
@@ -787,16 +836,16 @@ wheels = [
 
 [[package]]
 name = "jupyter-core"
-version = "5.7.2"
+version = "5.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "platformdirs" },
     { name = "pywin32", marker = "platform_python_implementation != 'PyPy' and sys_platform == 'win32'" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/11/b56381fa6c3f4cc5d2cf54a7dbf98ad9aa0b339ef7a601d6053538b079a7/jupyter_core-5.7.2.tar.gz", hash = "sha256:aa5f8d32bbf6b431ac830496da7392035d6f61b4f54872f15c4bd2a9c3f536d9", size = 87629, upload-time = "2024-03-12T12:37:35.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/1b/72906d554acfeb588332eaaa6f61577705e9ec752ddb486f302dafa292d9/jupyter_core-5.8.1.tar.gz", hash = "sha256:0a5f9706f70e64786b75acba995988915ebd4601c8a52e534a40b51c95f59941", size = 88923, upload-time = "2025-05-27T07:38:16.655Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/fb/108ecd1fe961941959ad0ee4e12ee7b8b1477247f30b1fdfd83ceaf017f0/jupyter_core-5.7.2-py3-none-any.whl", hash = "sha256:4f7315d2f6b4bcf2e3e7cb6e46772eba760ae459cd1f59d29eb57b0a01bd7409", size = 28965, upload-time = "2024-03-12T12:37:32.36Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/57/6bffd4b20b88da3800c5d691e0337761576ee688eb01299eae865689d2df/jupyter_core-5.8.1-py3-none-any.whl", hash = "sha256:c28d268fc90fb53f1338ded2eb410704c5449a358406e8a948b75706e24863d0", size = 28880, upload-time = "2025-05-27T07:38:15.137Z" },
 ]
 
 [[package]]
@@ -1394,7 +1443,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "biopsykit", git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main" },
+    { name = "biopsykit", editable = "../../BioPsyKit/BioPsyKit" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "tpcp", specifier = ">=2" },
