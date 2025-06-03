@@ -16,8 +16,9 @@ from biopsykit.signals.icg.event_extraction import (
     BPointExtractionLozano2007QuadraticRegression,
     BPointExtractionMiljkovic2022,
     BPointExtractionStern1985,
+    BPointExtractionPale2021,
 )
-from fau_colors import cmaps
+from fau_colors.v2021 import cmaps
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 
@@ -60,6 +61,7 @@ __all__ = [
     "plot_b_point_extraction_lozano2007_linear_regression",
     "plot_b_point_extraction_lozano2007_quadratic_regression",
     "plot_b_point_extraction_miljkovic2022",
+    "plot_b_point_extraction_pale2021",
     "plot_b_point_extraction_sherwood1990",
     "plot_b_point_extraction_stern1985",
     "plot_q_peak_extraction_forounzafar2018",
@@ -2470,6 +2472,292 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
     return fig, ax
 
 
+def plot_b_point_extraction_pale2021(  # noqa: PLR0915
+    datapoint: BasePepDatasetWithAnnotations,
+    *,
+    heartbeat_subset: Sequence[int] | None = None,
+    normalize_time: bool = False,
+    algo_params: dict | None = None,
+    **kwargs: Any,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot example of B-point extraction using the method by Pale et al. (2021) [1].
+
+    The algorithm is implemented as :class:``BPointExtractionPale2021``.
+
+    Parameters
+    ----------
+    datapoint : BasePepDatasetWithAnnotations
+        Datapoint to plot.
+    heartbeat_subset : list of int, optional
+        List of heartbeat_ids to plot. If None, all heartbeats are plotted.
+    normalize_time : bool, optional
+        Whether to normalize the time axis to seconds, starting at 0, or not. Default: False
+    algo_params : dict, optional
+        Parameters passed to the algorithm instance for C-point and B-point extraction.
+        See :class:``pepbench.algorithms.icg.CPointExtractionScipyFindPeaks`` and
+            :class:``pepbench.algorithms.icg.BPointExtractionPale2021`` for available parameters.
+        Default: None (i.e., the default parameters of the algorithms are used).
+    kwargs : dict
+        Additional keyword arguments to pass to the plotting functions. Examples are:
+        --- General ---
+        * ``fig``, ``ax``: :class:`matplotlib.figure.Figure`, :class:`matplotlib.axes.Axes`
+            Figure and Axes objects to plot on; If not provided, a new figure and axes are created.
+        * ``figsize``: tuple
+            Size of the figure.
+        * ``legend_loc``: str
+            Location of the legend
+        * ``legend_outside``: bool
+            Whether to place the legend outside the plot or not.
+        * ``legend_orientation``: str
+            Orientation of the legend, either "horizontal" or "vertical".
+        * ``legend_max_cols``: int
+            Maximum number of columns for the legend if ``legend_orientation`` is "horizontal".
+        * ``rect``: tuple
+            Rectangle coordinates for tight layout, i.e, the bounding box (x0, y0, x1, y1) that the subplots will fit
+            into.
+        * ``use_tight``: bool
+            Whether to use tight layout or not. Default: True
+        --- Heartbeat Borders ---
+        * ``heartbeat_border_color``: str
+            Color of the heartbeat borders.
+        --- R-Peaks ---
+        * ``r_peak_marker``: str
+            Marker style for R-peaks.
+        * ``r_peak_linestyle``: str
+            Line style for R-peaks.
+        * ``r_peak_linewidth``: float
+            Line width for R-peaks.
+        * ``r_peak_alpha``: float
+            Alpha value for the R-peak vertical lines
+        * ``r_peak_plot_marker``: bool
+            Whether to plot markers at the R-peaks or not.
+        * ``r_peak_plot_vline``: bool
+            Whether to plot vertical lines at the R-peaks or not.
+        --- B-Points ---
+        * ``b_point_marker``: str
+            Marker style for B-points.
+        * ``b_point_linestyle``: str
+            Line style for B-points.
+        * ``b_point_linewidth``: float
+            Line width for B-points.
+        * ``b_point_alpha``: float
+            Alpha value for B-point vertical lines.
+
+
+    Return
+    ------
+    fig : :class:`matplotlib.figure.Figure`
+        Figure object.
+    axs : list of :class:`matplotlib.axes.Axes`
+        list of Axes objects, one for each subplot.
+
+    See Also
+    --------
+    :class:``pepbench.algorithms.icg.BPointExtractionMiljkovic2022``
+        Algorithm implementation.
+
+    References
+    ----------
+    .. [1] Pale, U., Muller, N., Arza, A., & Atienza, D. (2021). ReBeatICG: Real-time Low-Complexity Beat-to-beat
+        Impedance Cardiogram Delineation Algorithm. 2021 43rd Annual International Conference of the IEEE Engineering
+        in Medicine & Biology Society (EMBC), 5618–5624. https://doi.org/10.1109/EMBC46164.2021.9630170
+
+    """
+    fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
+    kwargs.setdefault("legend_max_cols", 4)
+    kwargs.setdefault("legend_outside", True)
+    kwargs.setdefault("legend_orientation", "horizontal")
+    kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    kwargs.setdefault("rect", (0, 0, 1.0, 0.85))
+    rect = _get_rect(kwargs)
+
+    if algo_params is None:
+        algo_params = {}
+
+    heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
+
+    heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
+
+    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
+
+    algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
+    algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
+    c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
+    c_point_algo.extract(icg=icg_data, heartbeats=heartbeats, sampling_rate_hz=datapoint.sampling_rate_icg)
+
+    b_point_algo = BPointExtractionPale2021(**algo_params_b_point)
+    b_point_algo.extract(
+        icg=icg_data, heartbeats=heartbeats, c_points=c_point_algo.points_, sampling_rate_hz=datapoint.sampling_rate_icg
+    )
+
+    b_point_samples = b_point_algo.points_["b_point_sample"].dropna().astype(int)
+    c_point_samples = c_point_algo.points_["c_point_sample"].dropna().astype(int)
+
+    search_window_start_samples = c_point_samples - int(80 / 1000 * datapoint.sampling_rate_icg)
+    search_window_start_samples.name = "search_window_start"
+
+    c_point_amplitude_fraction = algo_params_b_point.get("c_point_amplitude_fraction", 0.5)
+    b_point_slope_threshold_01 = algo_params_b_point.get("b_point_slope_threshold_01", 0.11)
+    b_point_slope_threshold_02 = algo_params_b_point.get("b_point_slope_threshold_02", 0.08)
+
+    b_point_candidates = []
+
+    icg_der = pd.DataFrame(
+        np.gradient(icg_data.squeeze()), index=icg_data.index, columns=["ICG 2nd Deriv. ($d^2Z/dt^2$)"]
+    )
+
+    for idx, data in heartbeats.iterrows():
+        # Get the C-Point location at the current heartbeat id
+        c_point = c_point_samples[idx]
+        search_window_start = search_window_start_samples[idx]
+
+        # end of the search window is the closest point before the C-point with amplitude less than
+        # c_point_amplitude_fraction * c_point
+        c_point_amplitude_threshold = icg_data.iloc[c_point] * c_point_amplitude_fraction
+
+        search_window_end = np.where((icg_data.iloc[search_window_start:c_point] < c_point_amplitude_threshold))[0]
+        # If no point is found, use the C-point as the end of the search window; otherwise, use the last point
+        # before the C-point that meets the condition
+        search_window_end = c_point if search_window_end.size == 0 else search_window_end[-1] + search_window_start
+
+        icg_slice = icg_data.iloc[search_window_start:search_window_end]
+
+        b_point_min = data["start_sample"] + np.argmin(icg_slice)
+
+        # candidate 1: search for the local minimum closest to the C-point
+        icg_der_slice = icg_der.iloc[search_window_start:search_window_end]
+        # find zero crossings in the derivative
+        zero_crossings = np.where(np.diff(np.signbit(icg_der_slice)))[0]
+        # candidate 2: search for the first point at which the slope exceeds the threshold; the slope is already
+        # calculated in the derivative
+        slope_exceeds_threshold = np.where(icg_der_slice > b_point_slope_threshold_01)[0]
+        # if no slope exceeds the threshold, use the second threshold
+        if slope_exceeds_threshold.size == 0:
+            slope_exceeds_threshold = np.where(icg_der_slice > b_point_slope_threshold_02)[0]
+        # concatenate and sort the candidates
+        candidates = np.sort(np.concatenate((zero_crossings, slope_exceeds_threshold)))
+
+        if candidates.size == 0:
+            b_point_candidates.append([b_point_min])
+        else:
+            b_point_candidates.append(search_window_start + candidates)
+
+        start = icg_data.index[search_window_start]
+        end = icg_data.index[search_window_end]
+        axs[0].axvspan(
+            start,
+            end,
+            color=cmaps.tech_light[0],
+            alpha=0.3,
+            zorder=0,
+            label="B-Point Search Windows",
+        )
+        axs[1].axvspan(
+            start,
+            end,
+            color=cmaps.tech_light[0],
+            alpha=0.3,
+            zorder=0,
+            label="B-Point Search Windows",
+        )
+
+        axs[0].hlines(
+            y=np.squeeze(c_point_amplitude_threshold),
+            xmin=start,
+            xmax=end,
+            color=cmaps.nat[0],
+            zorder=5,
+            ls="--",
+            label="C-Point Amplitude Threshold",
+        )
+
+        axs[1].hlines(
+            y=b_point_slope_threshold_01,
+            xmin=start,
+            xmax=end,
+            color=cmaps.nat_dark[0],
+            zorder=5,
+            ls="--",
+            label="ICG 2nd Der. ($d^2Z/dt^2$) Thres. 01",
+        )
+
+        axs[1].hlines(
+            y=b_point_slope_threshold_02,
+            xmin=start,
+            xmax=end,
+            color=cmaps.nat_dark[1],
+            zorder=5,
+            ls="--",
+            label="ICG 2nd Der. ($d^2Z/dt^2$) Thres. 02",
+        )
+
+    b_point_candidates = np.concatenate(b_point_candidates)
+
+    _plot_signals_one_axis(
+        df=icg_data,
+        ax=axs[0],
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        color=cmaps.tech[0],
+        columns=["ICG ($dZ/dt$)"],
+        **kwargs,
+    )
+
+    _plot_signals_one_axis(
+        df=icg_der,
+        normalize_time=normalize_time,
+        heartbeat_subset=heartbeat_subset,
+        plot_ecg=False,
+        ax=axs[1],
+        color=cmaps.fau_light[0],
+        **kwargs,
+    )
+
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[0], **kwargs)
+    _add_heartbeat_borders(heartbeats=heartbeat_borders, ax=axs[1], **kwargs)
+
+    _add_icg_c_points(
+        icg_data,
+        c_point_samples,
+        ax=axs[0],
+        **kwargs,
+    )
+
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples_reference,
+        ax=axs[0],
+        b_point_label="Reference B-Points",
+        b_point_color=cmaps.phil_dark[0],
+        **kwargs,
+    )
+    _add_icg_b_points(
+        icg_data,
+        b_point_samples,
+        ax=axs[0],
+        b_point_label="Detected B-Points",
+        **kwargs,
+    )
+    _add_icg_b_points(
+        icg_der,
+        b_point_candidates,
+        b_point_label="B-Point Candidates",
+        b_point_color=cmaps.phil[2],
+        ax=axs[1],
+        **kwargs,
+    )
+
+    _handle_legend_two_axes(fig=fig, axs=axs, **kwargs)
+
+    if normalize_time or not isinstance(icg_data.index, pd.DatetimeIndex):
+        axs[1].set_xlabel("Time [s]")
+
+    fig.tight_layout(rect=rect)
+    return fig, axs
+
+
 def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
     datapoint: BasePepDatasetWithAnnotations,
     *,
@@ -2556,7 +2844,7 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
 
     References
     ----------
-    .. [Mil22] Miljković, N., & Šekara, T. B. (2022). A New Weighted Time Window-based Method to Detect B-point in
+    .. [1] Miljković, N., & Šekara, T. B. (2022). A New Weighted Time Window-based Method to Detect B-point in
         Impedance Cardiogram (Version 3). arXiv. https://doi.org/10.48550/ARXIV.2207.04490
 
     """
@@ -2576,6 +2864,8 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
+    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
+
     algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
     algo_params_b_point = {key: val for key, val in algo_params.items() if key not in algo_params_c_point}
     c_point_algo = CPointExtractionScipyFindPeaks(**algo_params_c_point)
@@ -2592,8 +2882,6 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
     c_point_minus_250_samples = c_point_samples - int(250 / 1000 * datapoint.sampling_rate_icg)
     c_point_minus_250_samples.name = "c_point_sample_minus_250"
     search_window = pd.concat([c_point_minus_250_samples, c_point_samples], axis=1)
-
-    b_point_samples_reference = _get_reference_labels(datapoint, heartbeat_subset)["b_points"]
 
     icg_data = icg_data.squeeze()
 
@@ -2665,7 +2953,7 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
 
     _add_icg_c_points(
         icg_data,
-        c_point_algo.points_["c_point_sample"].dropna().astype(int),
+        c_point_samples,
         ax=axs[0],
         **kwargs,
     )
@@ -3124,14 +3412,17 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
 
 
 def _get_heartbeats(
-    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None
+    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
 ) -> pd.DataFrame:
     heartbeats = datapoint.heartbeats.drop(columns="start_time")
     if heartbeat_subset is not None:
         heartbeats = heartbeats.loc[heartbeat_subset][["start_sample", "end_sample", "r_peak_sample"]]
         heartbeats = (heartbeats - heartbeats.iloc[0]["start_sample"]).astype(int)
 
-    return heartbeats  # .reset_index(drop=True)
+    if normalize:
+        heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
+        heartbeats -= heartbeats["start_sample"].iloc[0]
+    return heartbeats
 
 
 def _get_heartbeat_borders(data: pd.DataFrame, heartbeats: pd.DataFrame) -> pd.DataFrame:
