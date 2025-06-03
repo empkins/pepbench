@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from biopsykit.signals._base_extraction import BaseExtraction
-from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
+from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction, BaseEcgExtractionWithHeartbeats
 from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -44,6 +44,8 @@ __all__ = [
     "plot_signals_with_reference_labels",
     "plot_signals_with_reference_pep",
 ]
+
+from pepbench.plotting.algorithms import _get_heartbeats
 
 
 def plot_signals(
@@ -229,21 +231,18 @@ def plot_signals_with_algorithm_results(
         **kwargs,
     )
 
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    heartbeats = datapoint.heartbeats.loc[heartbeat_subset]
-    # heartbeat needs to be relative to the start of the signal after subset
-    heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
-    heartbeats -= heartbeats["start_sample"].iloc[0]
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
 
-    if isinstance(algorithm, BaseEcgExtraction):
+    if isinstance(algorithm, BaseEcgExtractionWithHeartbeats):
         algorithm.extract(
             ecg=ecg_data,
             heartbeats=heartbeats,
             sampling_rate_hz=datapoint.sampling_rate_ecg,
         )
         q_peaks = algorithm.points_["q_peak_sample"]
-        q_peaks = q_peaks.loc[heartbeat_subset].dropna()
+        q_peaks = q_peaks.loc[heartbeats.index].dropna()
 
         if collapse:
             _add_ecg_q_peaks(
@@ -275,7 +274,7 @@ def plot_signals_with_algorithm_results(
             sampling_rate_hz=datapoint.sampling_rate_icg,
         )
         b_points = algorithm.points_["b_point_sample"]
-        b_points = b_points.loc[heartbeat_subset].dropna()
+        b_points = b_points.loc[heartbeats.index].dropna()
         if collapse:
             _add_icg_b_points(
                 icg_data,
@@ -946,9 +945,9 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
     if order is None:
         order = x_cat
     else:
-        assert len(order) == len(x_cat), (
-            "Order must have the same number of elements as the number of levels in `within`."
-        )
+        assert len(order) == len(
+            x_cat
+        ), "Order must have the same number of elements as the number of levels in `within`."
 
     # Substitute within by integer order of the ordered columns to allow for
     # changing the order of numeric withins.

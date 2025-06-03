@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fau_colors import cmaps
+from fau_colors.v2021 import cmaps
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.transforms import Bbox
