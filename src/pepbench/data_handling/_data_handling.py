@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import numpy as np
 import pandas as pd
 import pingouin as pg
+from pathlib import Path
 
 from pepbench.utils._types import str_t
 
@@ -19,6 +20,7 @@ __all__ = [
     "add_unique_id_to_results_dataframe",
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
+    "build_ml_results_df",
 ]
 
 
@@ -33,6 +35,24 @@ _pep_number_map = {
     "num_pep_valid": "Valid PEPs",
     "num_pep_invalid": "Invalid PEPs",
     "num_pep_total": "Total PEPs",
+}
+
+_ml_b_point_algo_data_map = {
+    "Without-RR-Interval": "without-rr-interval/train_data_b_point",
+    "Without-RR-Interval-Include-Nan": "without-rr-interval/train_data_b_point_include_nan",
+    "Without-RR-Interval-Median-Imputed": "without-rr-interval/train_data_b_point_median_imputed",
+    "RR-Interval": "rr-interval/train_data_b_point_rr_interval",
+    "RR-Interval-Include-Nan": "rr-interval/train_data_b_point_rr_interval_include_nan",
+    "RR-Interval-Median-Imputed": "rr-interval/train_data_b_point_rr_interval_median_imputed",
+}
+
+_ml_q_peak_algo_data_map = {
+    "Without-RR-Interval": "without-rr-interval/train_data_q_peak",
+    "Without-RR-Interval-Include-Nan": "without-rr-interval/train_data_q_peak_include_nan",
+    "Without-RR-Interval-Median-Imputed": "without-rr-interval/train_data_q_peak_median_imputed",
+    "RR-Interval": "rr-interval/train_data_q_peak_rr_interval",
+    "RR-Interval-Include-Nan": "rr-interval/train_data_q_peak_rr_interval_include_nan",
+    "RR-Interval-Median-Imputed": "rr-interval/train_data_q_peak_rr_interval_median_imputed",
 }
 
 
@@ -386,3 +406,24 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
     data = data.apply(pd.Series.value_counts, normalize=True) * 100
 
     return data
+
+def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
+    print(f"data path: {data_path}")
+    print(f"permuter path: {permuter_path}")
+    if event == 'b_point':
+        algo_dict = _ml_b_point_algo_data_map
+    elif event  == 'q_peak':
+        algo_dict = _ml_q_peak_algo_data_map
+    else:
+        raise(KeyError("event must be 'b_point' or 'q_peak'"))
+
+    merged_permuter = pd.read_json(permuter_path.joinpath(f"merged_{event}_permuter.json"), orient="records",
+                                   lines=True).set_index(['pipeline_scaler', 'pipeline_reduce_dim', 'pipeline_clf'])
+
+    for key, value in algo_dict.items():
+        permuter = merged_permuter[merged_permuter['Dataset'] == key]
+        data = pd.read_csv(data_path.joinpath(f"{value}.csv")).drop(columns=["Unnamed: 0"])
+        for index, row in permuter[['test_indices', 'predicted_labels', 'EstimatorID']].iterrows():
+            data[row['EstimatorID']] = np.nan
+            data.loc[row['test_indices'], row['EstimatorID']] = row['predicted_labels']
+        data.to_csv(data_path.joinpath(f"{value}_ml_results.csv"), index=True)

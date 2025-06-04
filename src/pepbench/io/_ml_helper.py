@@ -126,8 +126,8 @@ def compute_mae_std_from_metric_summary(
 
 
 def compute_abs_error(
-        input_data: pd.DataFrame,
-        reference: pd.Series,
+        predicted_labels: np.array,
+        true_labels: np.array,
 ):
     """
     Compute the absolute error of the B-Point extraction algorithms present in the Datframe against the labeled reference data.
@@ -144,10 +144,10 @@ def compute_abs_error(
     pd.DataFrame
         The absolute errors of the extracted B-Point locations against the labeled reference data
     """
-    if reference.name in input_data.columns:
-        input_data = input_data.drop(columns=reference.name)
+    #if reference.name in input_data.columns:
+    #    input_data = input_data.drop(columns=reference.name)
 
-    abs_error = input_data.subtract(reference, axis=0).abs()
+    abs_error = np.abs(predicted_labels - true_labels)
     return abs_error
 
 
@@ -230,20 +230,26 @@ def compute_shap_values(
         Test folds used for training of the machine learning estimator.
     pipeline_folds: list
         List containing the pipeline objects per fold.
+    explainer_per_fold: list
+        List containing explainer objects.
+    feature_names_per_fold: list
+        List of the included features.
     """
     pipeline_folds = pipeline_permuter.best_estimator_summary().loc[pipeline_elements]['best_estimator'].pipeline
     test_folds = pipeline_permuter.metric_summary().loc[pipeline_elements]['test_indices_folds']
-    training_folds = pipeline_permuter.metric_summary().loc[pipeline_elements]['train_indices_folds']
     shap_per_fold = []
+    explainer_per_fold = []
+    feature_names_per_fold = []
     for fold, pipeline in enumerate(pipeline_folds):
-        X_test = training_data.iloc[list(test_folds[fold]), :]
-        X_train = training_data.iloc[list(training_folds[fold]), :]
-        num_samples_to_select = min(1000, X_train.shape)
-        random_indices = np.random.choice(X_train.shape, num_samples_to_select, replace=False)
-        X_train_subset = X_train[random_indices, :]
         estimator = pipeline[-1]
+        feature_selector = pipeline[-2]
+        feature_names = training_data.columns[feature_selector.get_support()]
+        print(feature_names)
+        X_test = training_data.iloc[list(test_folds[fold]), :][feature_names]
         # Create Explainer object that can calculate shap values
-        explainer = shap.TreeExplainer(estimator, data=X_train_subset, feature_perturbation='interventional')
+        explainer = shap.TreeExplainer(estimator)
         shap_values_fold = np.array(explainer.shap_values(X_test))
         shap_per_fold.append(shap_values_fold)
-    return shap_per_fold, test_folds, pipeline_folds
+        explainer_per_fold.append(explainer)
+        feature_names_per_fold.append(feature_names)
+    return shap_per_fold, test_folds, pipeline_folds, explainer_per_fold, feature_names_per_fold

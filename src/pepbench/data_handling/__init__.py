@@ -14,6 +14,7 @@ from pepbench.data_handling._data_handling import (
     get_reference_data,
     get_reference_pep,
     rr_interval_to_heart_rate,
+    build_ml_results_df,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "add_unique_id_to_results_dataframe",
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
+    "build_ml_results_df",
 ]
