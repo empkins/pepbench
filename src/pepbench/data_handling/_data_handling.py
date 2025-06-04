@@ -408,6 +408,22 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
     return data
 
 def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
+    """Add the predictions of the ML-Estimators to the corresponding training data.
+
+    Parameters
+    ----------
+    data_path: Path
+        Path to the directory containing the training data.
+    permuter_path: Path
+        Path to the directory containing the merged permuter.
+    event: str
+        Specifies whether the b_point or q_peak dataframe should be build.
+    Returns: None
+        The function does not return anything. It rather adds the predictions of the ML-Estimators to the corresponding
+        training data and saves them in the same directory with the suffix _ml_results.
+    -------
+
+    """
     print(f"data path: {data_path}")
     print(f"permuter path: {permuter_path}")
     if event == 'b_point':
