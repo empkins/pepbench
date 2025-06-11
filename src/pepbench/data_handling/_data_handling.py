@@ -21,6 +21,7 @@ __all__ = [
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
     "build_ml_results_df",
+    "merge_ml_result_dfs"
 ]
 
 
@@ -443,3 +444,40 @@ def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
             data[row['EstimatorID']] = np.nan
             data.loc[row['test_indices'], row['EstimatorID']] = row['predicted_labels']
         data.to_csv(data_path.joinpath(f"{value}_ml_results.csv"), index=True)
+
+def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
+    if event == 'b_point':
+        algo_dict = _ml_b_point_algo_data_map
+    elif event == 'q_peak':
+        algo_dict = _ml_q_peak_algo_data_map
+    else:
+        raise(KeyError("event must be 'b_point' or 'q_peak'"))
+
+    old_b_point_algos = ["arbol2017-isoelectric-crossings", "arbol2017-second-derivative", "arbol2017-third-derivative",
+                         "debski1993-second-derivative", "drost2022", "forounzafar2018", "lozano2007-linear-regression",
+                         "lozano2007-quadratic-regression", "sherwood1990", "stern1985"]
+    old_q_peak_algos = ["forounzafar2018", "martinez2004", "vanlien2013-32-ms",
+                        "vanlien2013-34-ms", "vanlien2013-36-ms", "vanlien2013-38-ms", "vanlien2013-40-ms",
+                        "vanlien2013-42-ms"]
+
+    old_q_peak_algos_rr = old_q_peak_algos.copy()
+    old_q_peak_algos_rr.append("rr_interval_ms_estimated")
+
+    merged_df = master_df.copy()
+    for key, value in algo_dict.items():
+        print(data_path.joinpath(f"{value}_ml_results.csv"))
+        if event == 'b_point':
+            data = pd.read_csv(data_path.joinpath(f"{value}_ml_results.csv"), index_col=[0,1,2,3,4,5]).drop(columns=old_b_point_algos)
+        elif event == 'q_peak':
+            if value.startswith("rr-interval"):
+                data = pd.read_csv(data_path.joinpath(f"{value}_ml_results.csv"), index_col=[0,1,2,3,4,5]).drop(
+                columns=old_q_peak_algos_rr)
+            else:
+                data = pd.read_csv(data_path.joinpath(f"{value}_ml_results.csv"), index_col=[0, 1, 2, 3, 4, 5]).drop(
+                    columns=old_q_peak_algos)
+        else:
+            raise (KeyError("event must be 'b_point' or 'q_peak'"))
+        #print(f"Merged dataframe index: {merged_df.index}")
+        #print(f"Dataframe to join index: {data.index}")
+        merged_df = pd.merge(merged_df, data, left_index=True, right_index=True, how='left')
+    return merged_df

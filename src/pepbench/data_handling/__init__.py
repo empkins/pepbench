@@ -15,6 +15,7 @@ from pepbench.data_handling._data_handling import (
     get_reference_pep,
     rr_interval_to_heart_rate,
     build_ml_results_df,
+    merge_ml_result_dfs,
 )
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
     "build_ml_results_df",
+    "merge_ml_result_dfs",
 ]
