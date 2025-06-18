@@ -446,6 +446,24 @@ def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
         data.to_csv(data_path.joinpath(f"{value}_ml_results.csv"), index=True)
 
 def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
+    """ Combine the ML-Predictions + training data dataframes in one dataframe.
+
+    Parameters
+    ----------
+    data_path: Path
+        Path to the directory containing the training data.
+    master_df: Path
+        Dataframe that contains the most rows (*_include_nan)
+    event: str
+        Specifies whether the b_point or q_peak dataframe should be build.
+    Returns: pd.DataFrame
+        Dataframe that contains the ML-Predictions of all experiments.
+            - dropped missing values
+            - median imputed missing values
+            - kept missing values
+    -------
+
+    """
     if event == 'b_point':
         algo_dict = _ml_b_point_algo_data_map
     elif event == 'q_peak':
@@ -477,7 +495,9 @@ def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
                     columns=old_q_peak_algos)
         else:
             raise (KeyError("event must be 'b_point' or 'q_peak'"))
-        #print(f"Merged dataframe index: {merged_df.index}")
-        #print(f"Dataframe to join index: {data.index}")
+        for column in data.columns:
+            if column in merged_df.columns:
+                data = data.drop(columns=column)
+                print("Detected duplicate column: ", column)
         merged_df = pd.merge(merged_df, data, left_index=True, right_index=True, how='left')
     return merged_df
