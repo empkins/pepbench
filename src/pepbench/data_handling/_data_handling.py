@@ -481,7 +481,7 @@ def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
     old_q_peak_algos_rr = old_q_peak_algos.copy()
     old_q_peak_algos_rr.append("rr_interval_ms_estimated")
 
-    merged_df = master_df.copy()
+    merged_df = master_df.copy().reset_index(level=0)
     for key, value in algo_dict.items():
         print(data_path.joinpath(f"{value}_ml_results.csv"))
         if event == 'b_point':
@@ -495,6 +495,7 @@ def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
                     columns=old_q_peak_algos)
         else:
             raise (KeyError("event must be 'b_point' or 'q_peak'"))
+        data = data.reset_index(level=0)
         for column in data.columns:
             if column in merged_df.columns:
                 data = data.drop(columns=column)
