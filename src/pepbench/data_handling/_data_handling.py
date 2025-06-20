@@ -22,6 +22,7 @@ __all__ = [
     "compute_improvement_pipeline",
     "build_ml_results_df",
     "merge_ml_result_dfs"
+    "describe_ml_results_df"
 ]
 
 
@@ -54,6 +55,13 @@ _ml_q_peak_algo_data_map = {
     "RR-Interval": "rr-interval/train_data_q_peak_rr_interval",
     "RR-Interval-Include-Nan": "rr-interval/train_data_q_peak_rr_interval_include_nan",
     "RR-Interval-Median-Imputed": "rr-interval/train_data_q_peak_rr_interval_median_imputed",
+}
+
+_metric_dict = {
+    "abs_rel_error": "MARE",
+    "abs_error": "MAE",
+    "rel_error": "MRE",
+    "error": "ME",
 }
 
 
@@ -502,3 +510,55 @@ def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
                 print("Detected duplicate column: ", column)
         merged_df = pd.merge(merged_df, data, left_index=True, right_index=True, how='left')
     return merged_df
+
+def describe_ml_results_df(
+        data: pd.DataFrame, ascending: bool | None = True
+        ) -> pd.DataFrame:
+    """Compute mean and std on the ml results error metrics.
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        DataFrame containing the error, relative error, absolute error, and absolute relative error of all Estimators per sample.
+    ascending: bool, optional
+        Specifies whether the data should be sorted in an ascending order.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe containing the MAE, ME, MARE, and MRE and the corresponding std in [ms].
+    """
+    summarized_results = data.describe().T.drop(columns=['min', 'max', '25%', '50%', '75%'])
+    new_index = summarized_results.index.to_list()
+
+    for old_suffix, new_suffix in _metric_dict.items():
+        new_index = [s.replace(old_suffix, new_suffix) for s in new_index]
+
+    summarized_results.index = new_index
+    summarized_results = summarized_results.reset_index()
+
+    pattern = r'(.*)_(ME|MRE|MAE|MARE)$'
+    if 'martinez2004_ME' in summarized_results['index'].unique():
+        algorithm = 'Q-Peak Algorithm'
+        summarized_results[[algorithm, 'metric_type']] = summarized_results['index'].str.extract(pattern)
+    else:
+        algorithm = 'B-Point Algorithm'
+        summarized_results[[algorithm, 'metric_type']] = summarized_results['index'].str.extract(pattern)
+
+    summarized_results_pivot = summarized_results.pivot(
+        index=algorithm,
+        columns='metric_type',
+        values=['mean', 'std']
+    )
+
+    relative_error_map = [('mean', 'MARE'), ('mean', 'MRE'), ('std', 'MARE'), ('std', 'MRE')]
+    summarized_results_pivot[relative_error_map] = summarized_results_pivot[relative_error_map] * 100
+    if 'index' in summarized_results_pivot.index:
+        summarized_results_pivot = summarized_results_pivot.drop(index='index')
+
+    if ascending:
+        summarized_results_pivot = summarized_results_pivot.sort_values(by=('mean', 'MAE'), ascending=True)
+    else:
+        summarized_results_pivot = summarized_results_pivot.sort_values(by=('mean', 'MAE'), ascending=False)
+
+    return summarized_results_pivot

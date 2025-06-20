@@ -6,6 +6,7 @@ from pepbench.export._latex import (
     create_nan_reason_table,
     create_outlier_correction_table,
     create_reference_pep_table,
+    create_ml_algo_performance_table,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "create_nan_reason_table",
     "create_outlier_correction_table",
     "convert_to_latex",
+    "create_ml_algo_performance_table",
 ]

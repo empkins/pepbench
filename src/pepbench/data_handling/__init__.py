@@ -16,6 +16,7 @@ from pepbench.data_handling._data_handling import (
     rr_interval_to_heart_rate,
     build_ml_results_df,
     merge_ml_result_dfs,
+    describe_ml_results_df,
 )
 
 __all__ = [
@@ -34,4 +35,5 @@ __all__ = [
     "compute_improvement_pipeline",
     "build_ml_results_df",
     "merge_ml_result_dfs",
+    "describe_ml_results_df"
 ]
