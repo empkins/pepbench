@@ -110,7 +110,7 @@ def create_nan_reason_table(
     return data
 
 def create_ml_algo_performance_table(
-        data: pd.DataFrame, algos: Sequence[str] | None = None, ascending: bool | None = True
+        data: pd.DataFrame, algos: Sequence[str] | None = None, n_algos: int | None = None, ascending: bool | None = True
 ) -> pd.DataFrame:
     """Create a table with the MAE, ME, MRE, MARE and the corresponding std for all Estimators.
 
@@ -120,6 +120,8 @@ def create_ml_algo_performance_table(
         Output of the describe_ml_results_df function or data in similar format.
     algos: list of [str], optional
         Estimators that should be added to the table.
+    n_algos: int, optional
+        Amount of estimator results that should be returned.
     ascending: bool, optional
         Specifies whether the data should be sorted in an ascending order.
 
@@ -128,30 +130,33 @@ def create_ml_algo_performance_table(
     pd.DataFrame
         Dataframe containing the specified data.
     """
+    table = data.copy()
     columns = []
     for level1, level2 in data.columns:
         if level1 == 'mean':
             columns.append(level2)
         elif level1 == 'std':
             columns.append(f"{level2} std")
-    data.columns = columns
+    table.columns = columns
 
-    data = data.round(1)
+    table = table.round(1)
     if ascending:
-        data = data.sort_values(by='MAE', ascending=True)
+        table = table.sort_values(by='MAE', ascending=True)
     else:
-        data = data.sort_values(by='MAE', ascending=False)
+        table = table.sort_values(by='MAE', ascending=False)
 
 
     for metric in ['MAE', 'ME', 'MRE', 'MARE']:
-        data[metric] = data.apply(
+        table[metric] = table.apply(
             lambda row: f"{str(row[metric])} ± {str(row[f"{metric} std"])}", axis=1
         )
-    data = data.drop(columns=["MAE std", "ME std", "MRE std", "MARE std"])
+    table = table.drop(columns=["MAE std", "ME std", "MRE std", "MARE std"])
     if algos is not None:
-        return data.loc[algos]
+        return table.loc[algos]
+    elif n_algos is not None:
+        return table.head(n_algos)
     else:
-        return data
+        return table
 
 
 
