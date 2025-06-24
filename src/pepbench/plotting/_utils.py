@@ -635,3 +635,25 @@ def add_fancy_patch_around(
     fancy = FancyBboxPatch(bb.p0, bb.width, bb.height, **kwargs)
     ax.add_patch(fancy)
     return fancy
+
+
+def _get_heartbeats(
+    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
+) -> pd.DataFrame:
+    heartbeats = datapoint.heartbeats.drop(columns="start_time")
+    if heartbeat_subset is not None:
+        heartbeats = heartbeats.loc[heartbeat_subset][["start_sample", "end_sample", "r_peak_sample"]]
+        heartbeats = (heartbeats - heartbeats.iloc[0]["start_sample"]).astype(int)
+
+    if normalize:
+        heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
+        heartbeats -= heartbeats["start_sample"].iloc[0]
+    return heartbeats
+
+
+def _get_heartbeat_borders(data: pd.DataFrame, heartbeats: pd.DataFrame) -> pd.DataFrame:
+    start_samples = data.index[heartbeats["start_sample"]]
+    end_sample = data.index[heartbeats["end_sample"] - 1][-1]
+    # combine both into one array
+    heartbeat_borders = start_samples.append(pd.Index([end_sample]))
+    return heartbeat_borders

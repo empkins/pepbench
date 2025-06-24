@@ -15,8 +15,8 @@ from biopsykit.signals.icg.event_extraction import (
     BPointExtractionLozano2007LinearRegression,
     BPointExtractionLozano2007QuadraticRegression,
     BPointExtractionMiljkovic2022,
-    BPointExtractionStern1985,
     BPointExtractionPale2021,
+    BPointExtractionStern1985,
 )
 from fau_colors.v2021 import cmaps
 from matplotlib import pyplot as plt
@@ -43,6 +43,8 @@ from pepbench.plotting._utils import (
     _get_annotation_bbox_no_edge,
     _get_data,
     _get_fig_ax,
+    _get_heartbeat_borders,
+    _get_heartbeats,
     _get_legend_loc,
     _get_rect,
     _get_reference_labels,
@@ -2560,7 +2562,7 @@ def plot_b_point_extraction_pale2021(  # noqa: PLR0915
     ----------
     .. [1] Pale, U., Muller, N., Arza, A., & Atienza, D. (2021). ReBeatICG: Real-time Low-Complexity Beat-to-beat
         Impedance Cardiogram Delineation Algorithm. 2021 43rd Annual International Conference of the IEEE Engineering
-        in Medicine & Biology Society (EMBC), 5618–5624. https://doi.org/10.1109/EMBC46164.2021.9630170
+        in Medicine & Biology Society (EMBC), 5618-5624. https://doi.org/10.1109/EMBC46164.2021.9630170
 
     """
     fig, axs = plt.subplots(nrows=2, sharex=True, **kwargs)
@@ -2617,7 +2619,7 @@ def plot_b_point_extraction_pale2021(  # noqa: PLR0915
         # c_point_amplitude_fraction * c_point
         c_point_amplitude_threshold = icg_data.iloc[c_point] * c_point_amplitude_fraction
 
-        search_window_end = np.where((icg_data.iloc[search_window_start:c_point] < c_point_amplitude_threshold))[0]
+        search_window_end = np.where(icg_data.iloc[search_window_start:c_point] < c_point_amplitude_threshold)[0]
         # If no point is found, use the C-point as the end of the search window; otherwise, use the last point
         # before the C-point that meets the condition
         search_window_end = c_point if search_window_end.size == 0 else search_window_end[-1] + search_window_start
@@ -3409,25 +3411,3 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
     fig.align_ylabels()
 
     return fig, axs
-
-
-def _get_heartbeats(
-    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
-) -> pd.DataFrame:
-    heartbeats = datapoint.heartbeats.drop(columns="start_time")
-    if heartbeat_subset is not None:
-        heartbeats = heartbeats.loc[heartbeat_subset][["start_sample", "end_sample", "r_peak_sample"]]
-        heartbeats = (heartbeats - heartbeats.iloc[0]["start_sample"]).astype(int)
-
-    if normalize:
-        heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
-        heartbeats -= heartbeats["start_sample"].iloc[0]
-    return heartbeats
-
-
-def _get_heartbeat_borders(data: pd.DataFrame, heartbeats: pd.DataFrame) -> pd.DataFrame:
-    start_samples = data.index[heartbeats["start_sample"]]
-    end_sample = data.index[heartbeats["end_sample"] - 1][-1]
-    # combine both into one array
-    heartbeat_borders = start_samples.append(pd.Index([end_sample]))
-    return heartbeat_borders

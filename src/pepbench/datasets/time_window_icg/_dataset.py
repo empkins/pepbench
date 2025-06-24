@@ -33,7 +33,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     PHASES: ClassVar[Sequence[str]] = ["Baseline", "EmotionInduction"]
 
-    SUBSET_R_PEAK_DETECTION_ERRORS = ["IDN_17"]
+    SUBSET_R_PEAK_DETECTION_ERRORS: ClassVar[Sequence[str]] = ["IDN_17"]
 
     def __init__(
         self,

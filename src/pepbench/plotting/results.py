@@ -538,7 +538,7 @@ def _residual_plot_error_detailed_helper(
     return fig, ax
 
 
-def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes, **kwargs) -> None:
+def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes, **kwargs: dict) -> None:
     kwargs.setdefault("x_coord", 0.95)
     kwargs.setdefault("y_coord", 0.95)
 

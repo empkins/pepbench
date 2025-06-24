@@ -79,7 +79,7 @@ wheels = [
 
 [[package]]
 name = "biopsykit"
-version = "0.13.0"
+version = "0.13.1"
 source = { editable = "../../BioPsyKit/BioPsyKit" }
 dependencies = [
     { name = "bioread" },

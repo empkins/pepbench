@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from biopsykit.signals._base_extraction import BaseExtraction
-from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction, BaseEcgExtractionWithHeartbeats
+from biopsykit.signals.ecg.event_extraction import BaseEcgExtractionWithHeartbeats
 from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -25,6 +25,7 @@ from pepbench.plotting._utils import (
     _get_data,
     _get_fig_ax,
     _get_fig_axs,
+    _get_heartbeats,
     _get_labels_from_challenge_results,
     _get_legend_loc,
     _get_rect,
@@ -44,8 +45,6 @@ __all__ = [
     "plot_signals_with_reference_labels",
     "plot_signals_with_reference_pep",
 ]
-
-from pepbench.plotting.algorithms import _get_heartbeats
 
 
 def plot_signals(
@@ -326,6 +325,9 @@ def plot_signals_from_challenge_results(
     ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     labels_from_challenge = _get_labels_from_challenge_results(pep_results_per_sample, heartbeat_subset)
+
+    print(ecg_data)
+    print(labels_from_challenge["heartbeats_start"])
 
     heartbeats_start = ecg_data.index[labels_from_challenge["heartbeats_start"]]
     heartbeats_end = ecg_data.index[labels_from_challenge["heartbeats_end"] - 1]
