@@ -79,8 +79,8 @@ wheels = [
 
 [[package]]
 name = "biopsykit"
-version = "0.13.1"
-source = { editable = "../../BioPsyKit/BioPsyKit" }
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
@@ -103,55 +103,9 @@ dependencies = [
     { name = "xlrd" },
     { name = "xlsxwriter" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "bioread", specifier = ">=3,<4" },
-    { name = "fau-colors", specifier = "~=1.1" },
-    { name = "ipympl", marker = "extra == 'jupyter'", specifier = ">=0.9,<0.10" },
-    { name = "ipython", marker = "extra == 'jupyter'", specifier = ">=7,<8" },
-    { name = "ipywidgets", marker = "extra == 'jupyter'", specifier = ">=8,<9" },
-    { name = "joblib", specifier = ">=1,<2" },
-    { name = "matplotlib", specifier = "~=3.9" },
-    { name = "mne", marker = "extra == 'mne'", specifier = ">=1.2.1,<2" },
-    { name = "neurokit2", specifier = ">=0,<0.2.11" },
-    { name = "nilspodlib", specifier = ">=4.0.0" },
-    { name = "numpy", specifier = ">=1.26" },
-    { name = "openpyxl", specifier = ">=3,<4" },
-    { name = "pandas", specifier = ">=2,<3" },
-    { name = "pingouin", specifier = ">=0.5.2,<0.6" },
-    { name = "scikit-learn", specifier = "~=1.0" },
-    { name = "scipy", specifier = ">=1,<2" },
-    { name = "seaborn", specifier = ">=0,<1" },
-    { name = "statannotations", specifier = ">=0.7.1,<0.8" },
-    { name = "statsmodels", specifier = ">=0,<1" },
-    { name = "tpcp", specifier = ">=1" },
-    { name = "tqdm", specifier = ">=4,<5" },
-    { name = "ts2vg", specifier = ">=1.2.4,<2" },
-    { name = "xlrd", specifier = ">=2,<3" },
-    { name = "xlsxwriter", specifier = ">=1,<2" },
-]
-provides-extras = ["mne", "jupyter"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=25" },
-    { name = "coverage-badge", specifier = ">=1.0.1,<2" },
-    { name = "ipykernel", specifier = ">=6,<7" },
-    { name = "memory-profiler", specifier = ">=0.57.0,<0.58" },
-    { name = "nbsphinx", specifier = ">=0.8.7,<0.9" },
-    { name = "numpydoc", specifier = ">=1,<2" },
-    { name = "poethepoet", specifier = ">=0.10.0,<0.11" },
-    { name = "pydata-sphinx-theme", specifier = ">=0.6.2,<0.7" },
-    { name = "pytest", specifier = ">=6,<7" },
-    { name = "pytest-cov", specifier = ">=2,<3" },
-    { name = "recommonmark", specifier = ">=0.6.0,<0.7" },
-    { name = "ruff", specifier = ">=0,<1" },
-    { name = "sphinx", specifier = ">=5,<6" },
-    { name = "sphinx-copybutton", specifier = ">=0.4.0,<0.5" },
-    { name = "sphinx-gallery", specifier = ">=0.10.0,<0.11" },
-    { name = "sphinx-issues", specifier = ">=1.2.0,<2" },
-    { name = "toml", specifier = ">=0.10.1,<0.11" },
+sdist = { url = "https://files.pythonhosted.org/packages/5f/19/9fef78f59bf795752246e430e11047faa8cdc3c3d6192eb0ae524beb111c/biopsykit-0.13.0.tar.gz", hash = "sha256:e49d6f740d545c9608a4b1ded684635b65da1e4c320788a51a730b6b975db9a2", size = 263015, upload-time = "2025-04-16T13:39:54.189Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fd/23/f55cfe32c4bd4031f7315ed22580793a69ceff0066c965c618bf7b8f5a93/biopsykit-0.13.0-py3-none-any.whl", hash = "sha256:efdbe4ed8a6780d8a8628693c29ac3aa6955278f8daa59f0197467c4030286a2", size = 344781, upload-time = "2025-04-16T13:39:52.047Z" },
 ]
 
 [[package]]
@@ -1182,7 +1136,7 @@ wheels = [
 
 [[package]]
 name = "neurokit2"
-version = "0.2.10"
+version = "0.2.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
@@ -1192,9 +1146,9 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/15/b7ee49b8540f665d7f53f33ed6947afe5bd6d0d768081f8d688ce32c5880/neurokit2-0.2.10.tar.gz", hash = "sha256:31e4eb2a187aa0c8eb26a63d0ef9072891d6b6d4dde384d9691b82074d539aba", size = 20798338, upload-time = "2024-08-16T13:38:57.907Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/32/cc/745ec7826d1f6ceca29406d1cd9762fd23103c15546b5b85867b5111aacc/neurokit2-0.2.11.tar.gz", hash = "sha256:c05f4144168918d401b805447a1d994ed31c63912eaece8bbee25f3acf463e5d", size = 20801501, upload-time = "2025-05-13T11:17:29.346Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/5a/c74a250f656ec04e05b6f847f636b03c63d8032eeafb6865410f58a8d6f5/neurokit2-0.2.10-py2.py3-none-any.whl", hash = "sha256:43b859595100fb862c3bacc6b6b027fe4aef7aff3d35f7e23fb79fd116fbe936", size = 693108, upload-time = "2024-08-16T13:38:55.38Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/2e/eb14351b2d2fcdb6f9821553c36db0788ff8d9bc5b906480ab3d637f2227/neurokit2-0.2.11-py2.py3-none-any.whl", hash = "sha256:93e70203c5059faa88075d5d5b7c4cb76c42c27160f8b7d11f750e55db935ef8", size = 696458, upload-time = "2025-05-13T11:17:27.373Z" },
 ]
 
 [[package]]
@@ -1443,7 +1397,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "biopsykit", editable = "../../BioPsyKit/BioPsyKit" },
+    { name = "biopsykit", specifier = ">=0.13.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "tpcp", specifier = ">=2" },
@@ -2614,25 +2568,25 @@ wheels = [
 
 [[package]]
 name = "xarray"
-version = "2025.4.0"
+version = "2025.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
     { name = "packaging" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9b/29/37761364e137db13898cf5a790574dd7883f7355d5dfb42b66ee7a9a6318/xarray-2025.4.0.tar.gz", hash = "sha256:2a89cd6a1dfd589aa90ac45f4e483246f31fc641836db45dd2790bb78bd333dc", size = 2974151, upload-time = "2025-04-29T23:27:59.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/ec/e50d833518f10b0c24feb184b209bb6856f25b919ba8c1f89678b930b1cd/xarray-2025.6.1.tar.gz", hash = "sha256:a84f3f07544634a130d7dc615ae44175419f4c77957a7255161ed99c69c7c8b0", size = 3003185, upload-time = "2025-06-12T03:04:09.099Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/1e/96fd96419fec1a37da998a1ca3d558f2cae2f6f3cd5015170371b05a2b6b/xarray-2025.4.0-py3-none-any.whl", hash = "sha256:b27defd082c5cb85d32c695708de6bb05c2838fb7caaf3f952982e602a35b9b8", size = 1290171, upload-time = "2025-04-29T23:27:57.059Z" },
+    { url = "https://files.pythonhosted.org/packages/82/8a/6b50c1dd2260d407c1a499d47cf829f59f07007e0dcebafdabb24d1d26a5/xarray-2025.6.1-py3-none-any.whl", hash = "sha256:8b988b47f67a383bdc3b04c5db475cd165e580134c1f1943d52aee4a9c97651b", size = 1314739, upload-time = "2025-06-12T03:04:06.708Z" },
 ]
 
 [[package]]
 name = "xlrd"
-version = "2.0.1"
+version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a6/b3/19a2540d21dea5f908304375bd43f5ed7a4c28a370dc9122c565423e6b44/xlrd-2.0.1.tar.gz", hash = "sha256:f72f148f54442c6b056bf931dbc34f986fd0c3b0b6b5a58d013c9aef274d0c88", size = 100259, upload-time = "2020-12-11T10:14:22.201Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/5a/377161c2d3538d1990d7af382c79f3b2372e880b65de21b01b1a2b78691e/xlrd-2.0.2.tar.gz", hash = "sha256:08b5e25de58f21ce71dc7db3b3b8106c1fa776f3024c54e45b45b374e89234c9", size = 100167, upload-time = "2025-06-14T08:46:39.039Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/0c/c2a72d51fe56e08a08acc85d13013558a2d793028ae7385448a6ccdfae64/xlrd-2.0.1-py2.py3-none-any.whl", hash = "sha256:6a33ee89877bd9abc1158129f6e94be74e2679636b8a205b43b85206c3f0bbdd", size = 96531, upload-time = "2020-12-11T10:14:20.877Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/62/c8d562e7766786ba6587d09c5a8ba9f718ed3fa8af7f4553e8f91c36f302/xlrd-2.0.2-py2.py3-none-any.whl", hash = "sha256:ea762c3d29f4cca48d82df517b6d89fbce4db3107f9d78713e48cd321d5c9aa9", size = 96555, upload-time = "2025-06-14T08:46:37.766Z" },
 ]
 
 [[package]]

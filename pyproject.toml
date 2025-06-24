@@ -7,7 +7,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "biopsykit>=0.12.3",
+    "biopsykit>=0.13.0",
     "tpcp>=2",
     "jinja2>=3.1.4,<4",
     "pooch>=1.8.2",
@@ -35,7 +35,7 @@ dev = [
 
 [tool.uv.sources]
 #biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "main" }
-biopsykit = { path = "/Users/richer/Documents/PhD/Code_Repositories/BioPsyKit/BioPsyKit", editable = true }
+#biopsykit = { path = "/Users/richer/Documents/PhD/Code_Repositories/BioPsyKit/BioPsyKit", editable = true }
 
 [build-system]
 requires = ["hatchling"]
