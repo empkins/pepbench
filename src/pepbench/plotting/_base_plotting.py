@@ -947,9 +947,9 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
     if order is None:
         order = x_cat
     else:
-        assert len(order) == len(
-            x_cat
-        ), "Order must have the same number of elements as the number of levels in `within`."
+        assert len(order) == len(x_cat), (
+            "Order must have the same number of elements as the number of levels in `within`."
+        )
 
     # Substitute within by integer order of the ordered columns to allow for
     # changing the order of numeric withins.
