@@ -1,6 +1,6 @@
 [project]
 name = "pepbench"
-version = "0.1.1"
+version = "0.1.2"
 description = "A python package to benchmark different pre-ejection period (PEP) extraction algorithms."
 authors = [{ name = "Robert Richer", email = "robert.richer@fau.de" }]
 requires-python = ">=3.10,<4.0"
