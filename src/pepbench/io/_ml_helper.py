@@ -194,7 +194,6 @@ def impute_missing_values(
     pd.DataFrame
         Dataframe containing the training data with missing values imputed.
     """
-
     if mode == 'median':
         imputation_values = np.nanmedian(input_data, axis=1)
     elif mode == 'mean':
