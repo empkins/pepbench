@@ -13,6 +13,8 @@ from pepbench.data_handling._data_handling import (
     get_pep_for_algo,
     get_reference_data,
     get_reference_pep,
+    merge_result_metrics_from_multiple_annotators,
+    merge_results_per_sample_from_different_annotators,
     rr_interval_to_heart_rate,
 )
 
@@ -28,6 +30,8 @@ __all__ = [
     "get_pep_for_algo",
     "get_reference_data",
     "get_reference_pep",
+    "merge_result_metrics_from_multiple_annotators",
+    "merge_results_per_sample_from_different_annotators",
     "rr_interval_to_heart_rate",
     "utils",
 ]

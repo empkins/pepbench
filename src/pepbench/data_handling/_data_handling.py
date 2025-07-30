@@ -18,6 +18,8 @@ __all__ = [
     "get_pep_for_algo",
     "get_reference_data",
     "get_reference_pep",
+    "merge_result_metrics_from_multiple_annotators",
+    "merge_results_per_sample_from_different_annotators",
     "rr_interval_to_heart_rate",
 ]
 
@@ -312,7 +314,8 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
 
     """
     data = data.copy()
-    data = data.droplevel(axis=1, level=-1).rename(index=str)
+    if data.columns.nlevels > 1:
+        data = data.droplevel(axis=1, level=-1).rename(index=str)
     if algo_levels is None:
         algo_levels = _algo_levels
     if isinstance(algo_levels, str):
@@ -320,7 +323,8 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
 
     algo_levels = [s for s in data.index.names if s in algo_levels]
     data = data.reset_index(level=algo_levels)
-    id_concat = pd.Index(["_".join(i) for i in data.index], name="id_concat")
+    id_concat = pd.Index(["_".join([str(i) for i in idx]) for idx in data.index], name="id_concat")
+
     data = data.assign(id_concat=id_concat)
     data = data.set_index([*algo_levels, "id_concat"])
     return data
@@ -394,3 +398,41 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
     data = data.apply(pd.Series.value_counts, normalize=True) * 100
 
     return data
+
+
+def merge_result_metrics_from_multiple_annotators(
+    results: Sequence[pd.DataFrame], add_annotation_difference: bool = True
+) -> pd.DataFrame:
+    metrics_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
+    metrics_combined = metrics_combined.reindex(["Mean Absolute Error [ms]", "Mean Error [ms]"], level=1, axis=1)
+
+    if add_annotation_difference:
+        if len(results) != 2:
+            raise ValueError("Annotation difference can only be computed for two annotators.")
+
+        metrics_combined_diff = (
+            metrics_combined.reindex(["Mean Absolute Error [ms]"], level=1, axis=1)
+            .T.groupby(level=[1, 2])
+            .diff()
+            .dropna(how="all")
+        )
+        metrics_combined_diff = metrics_combined_diff.rename({"Annotator 2": "Annotator Difference"}).T
+
+        metrics_combined = pd.concat([metrics_combined, metrics_combined_diff], axis=1)
+
+    return metrics_combined
+
+
+def merge_results_per_sample_from_different_annotators(
+    results: Sequence[pd.DataFrame], selected_algorithm: tuple[str] | None = None
+) -> pd.DataFrame:
+    if selected_algorithm is None:
+        results_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
+    else:
+        results_combined = pd.concat(
+            {f"Annotator {i + 1}": result_df.loc[selected_algorithm] for i, result_df in enumerate(results)}, axis=1
+        )
+
+    results_combined = results_combined.sort_index()
+
+    return results_combined
