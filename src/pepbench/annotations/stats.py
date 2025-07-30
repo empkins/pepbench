@@ -1,3 +1,10 @@
+"""Functions for analyzing and processing annotation differences.
+
+The functions include utilities for computing descriptive statistics, binning annotation differences, calculating the
+Intraclass Correlation Coefficient (ICC), and integrating annotation agreement information into results dataframes.
+
+"""
+
 __all__ = [
     "add_annotation_agreement_to_results_dataframe",
     "bin_annotation_differences",
@@ -15,6 +22,24 @@ from pepbench.data_handling import add_unique_id_to_results_dataframe
 
 
 def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_absolute: bool = True) -> pd.DataFrame:
+    """Generate descriptive statistics for annotation differences.
+
+    This function computes descriptive statistics for the provided annotation differences dataframe.
+    Optionally, it can include the absolute values of the differences as an additional column.
+
+    Parameters
+    ----------
+    annotation_diffs : :class:`~pandas.DataFrame`
+        A dataframe containing annotation differences with a column named "difference_ms".
+    include_absolute : bool, optional
+        If True, includes the absolute values of the differences in the descriptive statistics.
+        Default is True.
+
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        A transposed dataframe containing descriptive statistics for the annotation differences.
+    """
     annotation_diffs_describe = annotation_diffs.copy()
     if include_absolute:
         annotation_diffs_describe = annotation_diffs_describe.assign(
@@ -26,6 +51,25 @@ def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_abso
 def bin_annotation_differences(
     annotation_diffs: pd.DataFrame, bins: Sequence[int] | None = None, labels: Sequence[str] | None = None
 ) -> pd.DataFrame:
+    """Bin annotation differences into specified categories.
+
+    This function categorizes annotation differences into bins and assigns labels to each bin.
+    If no bins are provided, default bins are used. The resulting bins are returned as a dataframe.
+
+    Parameters
+    ----------
+    annotation_diffs : :class:`~pandas.DataFrame`
+        A dataframe containing annotation differences to be binned.
+    bins : list of int, optional
+        A sequence of bin edges. If not provided, default bins [0, 4, 10] are used.
+    labels : list of str, optional
+        A sequence of labels corresponding to the bins. If not provided, no labels are assigned.
+
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        A dataframe with a single column named "annotation_bins" containing the binned annotation differences.
+    """
     if bins is None:
         bins = [0, 4, 10]
     annotation_bins = pd.cut(
@@ -37,7 +81,24 @@ def bin_annotation_differences(
     return annotation_bins.to_frame(name="annotation_bins")
 
 
-def compute_icc(annotation_diffs: pd.DataFrame, sampling_rate_hz) -> pd.DataFrame:
+def compute_icc(annotation_diffs: pd.DataFrame, sampling_rate_hz: float) -> pd.DataFrame:
+    """Compute the Intraclass Correlation Coefficient (ICC) for annotation differences.
+
+    This function normalizes annotation differences to the heartbeat start, adds unique IDs
+    for each rater, and calculates the ICC using the Pingouin library.
+
+    Parameters
+    ----------
+    annotation_diffs : :class:`~pandas.DataFrame`
+        A dataframe containing annotation differences.
+    sampling_rate_hz : float
+        The sampling rate in Hertz used to normalize annotation differences.
+
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        A dataframe containing the computed ICC values.
+    """
     annotation_diffs_normalized = normalize_annotations_to_heartbeat_start(
         annotation_diffs, sampling_rate_hz=sampling_rate_hz
     )
@@ -55,6 +116,26 @@ def compute_icc(annotation_diffs: pd.DataFrame, sampling_rate_hz) -> pd.DataFram
 def add_annotation_agreement_to_results_dataframe(
     results_per_sample: pd.DataFrame, annotations: pd.DataFrame, sampling_rate_hz: float
 ) -> pd.DataFrame:
+    """Add annotation agreement information to the results dataframe.
+
+    This function computes annotation differences, bins them into categories (e.g., high, medium, low),
+    and integrates this information into the provided results dataframe. The resulting dataframe
+    includes an additional index level for annotation agreement bins.
+
+    Parameters
+    ----------
+    results_per_sample : :class:`~pandas.DataFrame`
+        A dataframe containing results for each sample.
+    annotations : :class:`~pandas.DataFrame`
+        A dataframe containing annotation data to compute differences.
+    sampling_rate_hz : float
+        The sampling rate in Hertz used to normalize annotation differences.
+
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        A dataframe with the original results and added annotation agreement information.
+    """
     annotation_diffs = compute_annotation_differences(annotations, sampling_rate_hz=sampling_rate_hz)
     annotation_bins = bin_annotation_differences(annotation_diffs, labels=["high", "medium", "low"])
 
