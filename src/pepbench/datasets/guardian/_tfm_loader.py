@@ -20,7 +20,7 @@ class TFMLoader:
         "Valsalva",
         "HoldingBreath",
         "TiltUp",
-        "TiltDown",
+        "TiltLevel",
     ]
 
     ORIGINAL_NAMES: ClassVar[dict[str, str]] = {
@@ -29,7 +29,7 @@ class TFMLoader:
         "Valsalva": "Valsalva",
         "HoldingBreath": "AtmungAnhalten",
         "TiltUp": "TiltUp",
-        "TiltDown": "TiltDown",
+        "TiltLevel": "TiltDown",
     }
     _start_time_unix: pd.Timestamp
     _tz: str

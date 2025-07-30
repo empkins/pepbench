@@ -47,7 +47,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     use_cache: bool
 
     SAMPLING_RATES: ClassVar[dict[str, int]] = {"ecg_1": 500, "ecg_2": 500, "icg_der": 500}
-    PHASES: ClassVar[tuple[str, ...]] = ["Pause", "Valsalva", "HoldingBreath", "TiltUp", "TiltDown"]
+    PHASES: ClassVar[tuple[str, ...]] = ["Pause", "Valsalva", "HoldingBreath", "TiltUp", "TiltLevel"]
 
     GENDER_MAPPING: ClassVar[dict[str, str]] = {"M": "Male", "F": "Female"}
 
@@ -56,10 +56,10 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         ("GDN0009", "HoldingBreath"),
         ("GDN0010", "Valsalva"),
         ("GDN0017", "Pause"),
-        ("GDN0018", "TiltDown"),
+        ("GDN0018", "TiltLevel"),
         ("GDN0020", "TiltUp"),
         ("GDN0022", "TiltUp"),
-        ("GDN0024", "TiltDown"),
+        ("GDN0024", "TiltLevel"),
         ("GDN0025", "Valsalva"),
         ("GDN0028", "TiltUp"),
         ("GDN0030", "Pause"),
@@ -67,7 +67,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     )
     SUBSET_NOISY_DATA = (
         ("GDN0025", "TiltUp"),
-        ("GDN0025", "TiltDown"),
+        ("GDN0025", "TiltLevel"),
     )
 
     def __init__(
