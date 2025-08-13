@@ -3,9 +3,9 @@ import numpy as np
 from pepbench.utils._types import str_t
 
 __all__ = [
-    "rename_metrics",
-    "rename_algorithms",
     "get_nan_reason_mapping",
+    "rename_algorithms",
+    "rename_metrics",
 ]
 
 _ylabel_mapping = {
@@ -42,6 +42,8 @@ _algorithm_mapping = {
     "arbol2017-second-derivative": "Arb17SD",
     "arbol2017-third-derivative": "Arb17TD",
     "forouzanfar2018": "For18",
+    "miljkovic2022": "Mil22",
+    "pale2021": "Pal21",
     "drost2022": "Dro22",
     "linear-interpolation": "LinInt",
 }

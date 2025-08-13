@@ -84,6 +84,8 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
         b_point_samples = reference_pep[["b_point_sample", "nan_reason"]].copy()
         b_point_samples_tp = b_point_samples.loc[tp_matches["heartbeat_id_reference"]]
 
+        tp_matches = tp_matches.set_index("heartbeat_id")
+
         q_peak_samples_tp.index = tp_matches.index
         b_point_samples_tp.index = tp_matches.index
 

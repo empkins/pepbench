@@ -123,6 +123,7 @@ and install the dependencies:
 ```bash
 git clone https://github.com/empkins/pepbench.git
 uv tool install poethepoet
+cd pepbench
 uv sync --all-extras --dev
 ```
 

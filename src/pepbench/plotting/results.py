@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pingouin as pg
 import seaborn as sns
-from fau_colors import cmaps, colors_all
+from fau_colors.v2021 import cmaps, colors_all
 from matplotlib import pyplot as plt
 
 from pepbench.data_handling import get_data_for_algo
@@ -25,20 +25,22 @@ from pepbench.utils._rename_maps import (
 )
 
 __all__ = [
-    "boxplot_reference_pep",
-    "violinplot_reference_pep",
     "boxplot_algorithm_performance",
-    "violinplot_algorithm_performance",
-    "residual_plot_pep",
-    "residual_plot_pep_participant",
-    "residual_plot_pep_phase",
-    "residual_plot_pep_heart_rate",
+    "boxplot_reference_pep",
     "histplot_heart_rate",
-    "regplot_error_heart_rate",
-    "regplot_pep_heart_rate",
     "paired_plot_error_outlier_correction",
     "paired_plot_error_pep_pipeline",
     "plot_q_wave_detection_waveform_detailed_comparison",
+    "regplot_error_bmi",
+    "regplot_error_heart_rate",
+    "regplot_pep_heart_rate",
+    "residual_plot_pep",
+    "residual_plot_pep_bmi",
+    "residual_plot_pep_heart_rate",
+    "residual_plot_pep_participant",
+    "residual_plot_pep_phase",
+    "violinplot_algorithm_performance",
+    "violinplot_reference_pep",
 ]
 
 from pepbench.utils._types import str_t
@@ -367,16 +369,114 @@ def residual_plot_pep_heart_rate(
 
     histogram, bin_edges = np.histogram(data["heart_rate_bpm"].dropna(), bins=bins)
 
+    kwargs["num_groups"] = len(bin_edges) - 1
+
     # add category for heart rate
     data = data.assign(
         heart_rate_range=pd.cut(
             data[("heart_rate_bpm", "estimated")],
             bins=bin_edges,
-            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i+1])}" for i in range(len(bin_edges) - 1)],
+            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i + 1])}" for i in range(len(bin_edges) - 1)],
         )
     )
     data = data.set_index("heart_rate_range", append=True)
     return _residual_plot_error_detailed_helper(data, algorithm, "heart_rate_range", **kwargs)
+
+
+def residual_plot_pep_bmi(
+    data: pd.DataFrame, algorithm: Sequence[str], bins: int | str | Sequence[int] | None = 4, **kwargs: dict
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm, grouped by BMI bins.
+
+    Each BMI bin is represented by a different color. The name of the BMI column is assumed to be "BMI".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    bins : int or str
+        Number of bins to use for the heart rate histogram using :func:`~numpy.histogram`. If `bins` is an int,
+        it defines the number of equal-width bins in the given range (4, by default). If `bins` is a sequence, it
+        defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for
+        non-uniform bin widths. If `bins` is a string, it defines the method used to calculate the
+        optimal bin width, as defined by :func:`~numpy.histogram_bin_edges`.
+        See also :func:`~numpy.histogram` for more information.
+        Default: 4.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
+    kwargs.setdefault("rect", (0, 0, 0.85, 1))
+    kwargs.setdefault("base_color", "Spectral_r")
+
+    histogram, bin_edges = np.histogram(data["BMI"].dropna(), bins=bins)
+    kwargs["num_groups"] = len(bin_edges) - 1
+
+    # add category for heart rate
+    data = data.assign(
+        bmi_range=pd.cut(
+            data[("BMI", "estimated")],
+            bins=bin_edges,
+            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i + 1])}" for i in range(len(bin_edges) - 1)],
+        )
+    )
+    data = data.set_index("bmi_range", append=True)
+    return _residual_plot_error_detailed_helper(data, algorithm, "bmi_range", **kwargs)
+
+
+def residual_plot_pep_age(
+    data: pd.DataFrame, algorithm: Sequence[str], bins: int | str | Sequence[int] | None = 5, **kwargs: dict
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a residual plot of PEP values for a specific algorithm, grouped by age bins.
+
+    Each age bin is represented by a different color. The name of the age column is assumed to be "Age".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    bins : int or str
+        Number of bins to use for the age histogram using :func:`~numpy.histogram`. If `bins` is an int,
+        it defines the number of equal-width bins in the given range (5, by default). If `bins` is a sequence, it
+        defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for
+        non-uniform bin widths. If `bins` is a string, it defines the method used to calculate the
+        optimal bin width, as defined by :func:`~numpy.histogram_bin_edges`.
+        See also :func:`~numpy.histogram` for more information.
+        Default: 5.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
+    kwargs.setdefault("rect", (0, 0, 0.85, 1))
+    kwargs.setdefault("base_color", "Spectral_r")
+
+    histogram, bin_edges = np.histogram(data["Age"].dropna(), bins=bins)
+    kwargs["num_groups"] = len(bin_edges) - 1
+
+    # add category for age
+    data = data.assign(
+        age_range=pd.cut(
+            data[("Age", "estimated")],
+            bins=bin_edges,
+            labels=[f"{int(bin_edges[i])}-{int(bin_edges[i + 1])}" for i in range(len(bin_edges) - 1)],
+        )
+    )
+    data = data.set_index("age_range", append=True)
+    return _residual_plot_error_detailed_helper(data, algorithm, "age_range", **kwargs)
 
 
 def _residual_plot_error_detailed_helper(
@@ -384,8 +484,8 @@ def _residual_plot_error_detailed_helper(
 ) -> tuple[plt.Figure, plt.Axes]:
     kwargs.setdefault("alpha", 0.8)
     rect = kwargs.pop("rect", (0, 0, 0.90, 1))
-    # create new color palette based on the base color with the length of the number of participants
-    n_colors = data.index.get_level_values(grouper).nunique()
+    # create a new color palette based on the base color with the length of the number of groups
+    n_colors = kwargs.pop("num_groups", data.index.get_level_values(grouper).nunique())
     base_color = kwargs.pop("base_color", "Spectral")
     palette = sns.color_palette(base_color, n_colors=n_colors)
     show_upper_limit = kwargs.pop("show_upper_limit", False)
@@ -438,12 +538,20 @@ def _residual_plot_error_detailed_helper(
     return fig, ax
 
 
-def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes) -> None:
+def _add_corr_coeff(data: pd.DataFrame, x: str, y: str, ax: plt.Axes, **kwargs: dict) -> None:
+    kwargs.setdefault("x_coord", 0.95)
+    kwargs.setdefault("y_coord", 0.95)
+
     corr = pg.corr(data[x], data[y])
+    s = f"r = {corr['r'].iloc[0]:.2f}, p {_format_p_value(corr['p-val'].iloc[0])}"
+    prefix = kwargs.get("prefix")
+    if prefix:
+        s = f"{prefix}: " + s
+
     ax.text(
-        0.95,
-        0.95,
-        f"r = {corr['r'].iloc[0]:.2f}, p {_format_p_value(corr['p-val'].iloc[0])}",
+        x=kwargs["x_coord"],
+        y=kwargs["y_coord"],
+        s=s,
         transform=ax.transAxes,
         fontsize="medium",
         verticalalignment="top",
@@ -498,6 +606,7 @@ def regplot_pep_heart_rate(
     algorithm: str_t | None = None,
     use_reference: bool = False,
     add_corr_coeff: bool = False,
+    groupby: str | None = None,
     **kwargs: dict,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Plot a regression plot of PEP values against heart rate.
@@ -518,6 +627,11 @@ def regplot_pep_heart_rate(
         specified in ``algorithm``. Default: ``False``.
     add_corr_coeff : bool, optional
         ``True`` to add the correlation coefficient to the plot, ``False`` otherwise. Default: ``False``.
+    groupby : str, optional
+        Column name to group the data by. If specified, the data will be grouped by this column and a repeated-measures
+        regression plot will be created using :func:`~pingouin.plot_rm_corr`. ``None`` by default, which means that no
+        grouping is applied and a standard regression plot is created using :func:`~seaborn.regplot`.
+
     kwargs : Any
         Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.regplot` for more
         information.
@@ -533,9 +647,11 @@ def regplot_pep_heart_rate(
         Figure and axes of the plot
 
     """
-    kwargs.setdefault("color", cmaps.tech[0])
-    kwargs.setdefault("scatter_kws", {"alpha": 0.3})
-    kwargs.setdefault("line_kws", {"color": "black", "alpha": 0.8})
+    if groupby is None:
+        kwargs.setdefault("color", cmaps.tech[0])
+        kwargs.setdefault("line_kws", {"color": cmaps.tech_dark[0], "alpha": 0.8})
+
+    kwargs.setdefault("scatter_kws", {"alpha": 0.4})
     fig, ax = _get_fig_ax(kwargs)
 
     if use_reference:
@@ -558,10 +674,40 @@ def regplot_pep_heart_rate(
         + list(inspect.signature(plt.plot).parameters.keys())
     }
 
-    sns.regplot(data=data.reset_index(), x="heart_rate_bpm", y="pep_ms", ax=ax, **kwargs_regplot)
+    if groupby is not None:
+        palette = iter(kwargs.get("palette", cmaps.faculties_light))
+        palette_line = iter(kwargs.get("palette_line", cmaps.faculties_dark))
+        data.groupby(groupby, group_keys=False).apply(
+            lambda df: sns.regplot(
+                data=df.reset_index(),
+                x="heart_rate_bpm",
+                y="pep_ms",
+                ax=ax,
+                color=next(palette),
+                line_kws={"color": next(palette_line), "alpha": 0.8},
+                **kwargs_regplot,
+                label=df.name,
+            )
+        )
 
-    if add_corr_coeff:
-        _add_corr_coeff(data, x="heart_rate_bpm", y="pep_ms", ax=ax)
+        if add_corr_coeff:
+            handles, labels = ax.get_legend_handles_labels()
+            corr_vals = {}
+            for name, group in data.groupby(groupby):
+                corr = pg.corr(group["heart_rate_bpm"], group["pep_ms"])
+                corr_vals[name] = f"r = {corr['r'].iloc[0]:.2f}, p {_format_p_value(corr['p-val'].iloc[0])}"
+
+            labels = [f"{name}: {corr_vals[name]}" for name in labels]
+            fig.legend(
+                handles=handles,
+                labels=labels,
+                title=kwargs.get("legend_title", groupby.capitalize()),
+                loc=kwargs.get("legend_loc", "upper right"),
+            )
+    else:
+        sns.regplot(data=data.reset_index(), x="heart_rate_bpm", y="pep_ms", ax=ax, **kwargs_regplot)
+        if add_corr_coeff:
+            _add_corr_coeff(data, x="heart_rate_bpm", y="pep_ms", ax=ax)
 
     ax.set_xlabel("Heart Rate [bpm]")
     ax.set_ylabel("PEP [ms]")
@@ -569,7 +715,7 @@ def regplot_pep_heart_rate(
     title = "PEP Reference" if use_reference else "PEP Pipeline:\n" + _pep_pipeline_to_str(algorithm)
     ax.set_title(title, fontweight="bold")
 
-    fig.tight_layout()
+    fig.tight_layout(rect=kwargs.get("rect", (0, 0, 1, 1)))
 
     return fig, ax
 
@@ -626,6 +772,132 @@ def regplot_error_heart_rate(
         _add_corr_coeff(data, x="heart_rate_bpm", y=error_metric, ax=ax)
 
     ax.set_xlabel("Heart Rate [bpm]")
+    ax.set_ylabel(_ylabel_mapping[error_metric])
+
+    if len(algo_levels) == 1:
+        title = f"{_algo_level_mapping[algo_levels[0]]}: {_pep_pipeline_to_str(algorithm)}"
+    else:
+        title = f"PEP Pipeline:\n{_pep_pipeline_to_str(algorithm)}"
+    ax.set_title(title, fontweight="bold")
+
+    return fig, ax
+
+
+def regplot_error_bmi(
+    data: pd.DataFrame,
+    algorithm: str_t,
+    error_metric: str = "error_per_sample_ms",
+    add_corr_coeff: bool = False,
+    **kwargs: dict,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a regression plot of a PEP estimation *error* metric against BMI.
+
+    The error metric is assumed to be in the column specified by the parameter ``error_metric`` and the BMI values
+    are assumed to be in the column "BMI".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    error_metric : str, optional
+        Error metric to plot. Default: "error_per_sample_ms".
+    add_corr_coeff : bool, optional
+        ``True`` to add the correlation coefficient to the plot, ``False`` otherwise. Default: ``False``.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.regplot` for more
+        information.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
+    kwargs.setdefault("color", cmaps.tech[0])
+    kwargs.setdefault("scatter_kws", {"alpha": 0.3})
+    kwargs.setdefault("line_kws", {"color": cmaps.fau[0], "alpha": 0.8})
+    fig, ax = _get_fig_ax(kwargs)
+
+    if isinstance(algorithm, str):
+        algorithm = [algorithm]
+    algo_levels = [s for s in data.index.names if s in _algo_level_mapping]
+
+    data = get_data_for_algo(data, algorithm)
+
+    data = data.reindex(["estimated", "metric"], level=-1, axis=1)
+    data = data.droplevel(level=-1, axis=1)
+
+    sns.regplot(data=data.reset_index(), x="BMI", y=error_metric, ax=ax, **kwargs)
+
+    if add_corr_coeff:
+        _add_corr_coeff(data, x="BMI", y=error_metric, ax=ax)
+
+    ax.set_xlabel("BMI [kg/m²]")
+    ax.set_ylabel(_ylabel_mapping[error_metric])
+
+    if len(algo_levels) == 1:
+        title = f"{_algo_level_mapping[algo_levels[0]]}: {_pep_pipeline_to_str(algorithm)}"
+    else:
+        title = f"PEP Pipeline:\n{_pep_pipeline_to_str(algorithm)}"
+    ax.set_title(title, fontweight="bold")
+
+    return fig, ax
+
+
+def regplot_error_age(
+    data: pd.DataFrame,
+    algorithm: str_t,
+    error_metric: str = "error_per_sample_ms",
+    add_corr_coeff: bool = False,
+    **kwargs: dict,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a regression plot of a PEP estimation *error* metric against age.
+
+    The error metric is assumed to be in the column specified by the parameter ``error_metric`` and the age values
+    are assumed to be in the column "age".
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Dataframe containing the data to plot.
+    algorithm : str or list of str
+        Name of the algorithm (or list of algorithm names, if a pipeline is used) to plot.
+    error_metric : str, optional
+        Error metric to plot. Default: "error_per_sample_ms".
+    add_corr_coeff : bool, optional
+        ``True`` to add the correlation coefficient to the plot, ``False`` otherwise. Default: ``False``.
+    kwargs : Any
+        Additional keyword arguments to pass to the plotting function. See :func:`~seaborn.regplot` for more
+        information.
+
+    Returns
+    -------
+    :class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`
+        Figure and axes of the plot
+
+    """
+    kwargs.setdefault("color", cmaps.tech[0])
+    kwargs.setdefault("scatter_kws", {"alpha": 0.3})
+    kwargs.setdefault("line_kws", {"color": cmaps.fau[0], "alpha": 0.8})
+    fig, ax = _get_fig_ax(kwargs)
+
+    if isinstance(algorithm, str):
+        algorithm = [algorithm]
+    algo_levels = [s for s in data.index.names if s in _algo_level_mapping]
+
+    data = get_data_for_algo(data, algorithm)
+
+    data = data.reindex(["estimated", "metric"], level=-1, axis=1)
+    data = data.droplevel(level=-1, axis=1)
+
+    sns.regplot(data=data.reset_index(), x="Age", y=error_metric, ax=ax, **kwargs)
+
+    if add_corr_coeff:
+        _add_corr_coeff(data, x="Age", y=error_metric, ax=ax)
+
+    ax.set_xlabel("Age [years]")
     ax.set_ylabel(_ylabel_mapping[error_metric])
 
     if len(algo_levels) == 1:

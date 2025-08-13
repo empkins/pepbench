@@ -7,7 +7,7 @@ from typing import TypeVar
 import numpy as np
 import pandas as pd
 
-__all__ = ["path_t", "str_t", "arr_t", "check_file_exists"]
+__all__ = ["arr_t", "check_file_exists", "path_t", "str_t"]
 
 _Hashable = Hashable | str
 

@@ -9,7 +9,7 @@ from biopsykit.signals.icg.event_extraction import (
     BaseCPointExtraction,
     CPointExtractionScipyFindPeaks,
 )
-from biopsykit.signals.icg.outlier_correction import BaseOutlierCorrection, OutlierCorrectionDummy
+from biopsykit.signals.icg.outlier_correction import BaseBPointOutlierCorrection, OutlierCorrectionDummy
 from biopsykit.signals.pep import PepExtraction
 from biopsykit.signals.pep._pep_extraction import NEGATIVE_PEP_HANDLING
 from biopsykit.utils.dtypes import (
@@ -20,7 +20,7 @@ from biopsykit.utils.dtypes import (
     QPeakDataFrame,
     is_pep_result_dataframe,
 )
-from tpcp import Parameter, Pipeline
+from tpcp import CloneFactory, Parameter, Pipeline
 
 from pepbench._docutils import make_filldoc
 
@@ -113,7 +113,7 @@ class BasePepExtractionPipeline(Pipeline):
     q_peak_algo: Parameter[BaseEcgExtraction]
     b_point_algo: Parameter[BaseBPointExtraction]
     c_point_algo: Parameter[BaseCPointExtraction]
-    outlier_correction_algo: Parameter[BaseOutlierCorrection]
+    outlier_correction_algo: Parameter[BaseBPointOutlierCorrection]
     handle_negative_pep: NEGATIVE_PEP_HANDLING
     handle_missing_events: HANDLE_MISSING_EVENTS
 
@@ -130,8 +130,8 @@ class BasePepExtractionPipeline(Pipeline):
         heartbeat_segmentation_algo: BaseHeartbeatSegmentation,
         q_peak_algo: BaseEcgExtraction,
         b_point_algo: BaseBPointExtraction,
-        c_point_algo: BaseCPointExtraction | None = CPointExtractionScipyFindPeaks(),
-        outlier_correction_algo: BaseOutlierCorrection | None = None,
+        c_point_algo: BaseCPointExtraction = CloneFactory(CPointExtractionScipyFindPeaks()),
+        outlier_correction_algo: BaseBPointOutlierCorrection | None = None,
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:

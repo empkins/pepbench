@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-__all__ = ["error", "rel_error", "abs_error", "abs_rel_error"]
+__all__ = ["abs_error", "abs_rel_error", "error", "rel_error"]
 
 
 def error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:

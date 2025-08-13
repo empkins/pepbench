@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from fau_colors import cmaps
+from fau_colors.v2021 import cmaps
 from matplotlib import pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.transforms import Bbox
@@ -122,6 +122,8 @@ def _add_ecg_q_peaks(
     alpha = kwargs.get("q_peak_alpha", 0.7)
 
     q_peaks = q_peaks.astype(int)
+    if len(q_peaks) == 0:
+        return
 
     _base_add_scatter(
         x=ecg_data.index[q_peaks], y=ecg_data.iloc[q_peaks], color=color, label=label, marker=marker, ax=ax
@@ -172,6 +174,10 @@ def _add_icg_b_points(
     alpha = kwargs.get("b_point_alpha", 0.7)
 
     b_points = b_points.astype(int)
+    b_points = np.atleast_1d(b_points)
+
+    if len(b_points) == 0:
+        return
 
     if kwargs.get("b_point_plot_marker", True):
         _base_add_scatter(
@@ -411,8 +417,9 @@ def _handle_legend_two_axes(
         fig.legends[0].remove()
     if legend_outside:
         handles, labels = axs[0].get_legend_handles_labels()
-        handles += axs[1].get_legend_handles_labels()[0]
-        labels += axs[1].get_legend_handles_labels()[1]
+        for _i, ax in enumerate(axs[1:]):
+            handles += ax.get_legend_handles_labels()[0]
+            labels += ax.get_legend_handles_labels()[1]
         for ax in axs:
             ax.legend().remove()
 
@@ -455,22 +462,34 @@ def _get_data(
     ecg_data = datapoint.ecg
     icg_data = datapoint.icg
 
-    ecg_data.columns = ["ECG"]
-    icg_data.columns = ["ICG ($dZ/dt$)"]
+    if isinstance(ecg_data.index, pd.TimedeltaIndex):
+        ecg_data.index = ecg_data.index.total_seconds()
+    if isinstance(icg_data.index, pd.TimedeltaIndex):
+        icg_data.index = icg_data.index.total_seconds()
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
 
-    if heartbeat_subset is not None:
+    if heartbeat_subset is None:
         heartbeat_borders = datapoint.heartbeats
-        start = heartbeat_borders["start_sample"].iloc[heartbeat_subset[0]]
-        end = heartbeat_borders["end_sample"].iloc[heartbeat_subset[-1]]
+        heartbeat_subset = list(heartbeat_borders.index)
+    else:
+        heartbeat_borders = datapoint.heartbeats
 
-        ecg_data = ecg_data.iloc[start:end]
-        icg_data = icg_data.iloc[start:end]
+    start = heartbeat_borders["start_sample"].iloc[heartbeat_subset[0]]
+    end = heartbeat_borders["end_sample"].iloc[heartbeat_subset[-1]]
+
+    ecg_data = ecg_data.iloc[start:end]
+    icg_data = icg_data.iloc[start:end]
 
     if normalize_time:
-        ecg_data.index = (ecg_data.index - ecg_data.index[0]).total_seconds()
-        icg_data.index = (icg_data.index - icg_data.index[0]).total_seconds()
+        if isinstance(ecg_data.index, pd.TimedeltaIndex | pd.DatetimeIndex):
+            ecg_data.index = (ecg_data.index - ecg_data.index[0]).total_seconds()
+        else:
+            ecg_data.index -= ecg_data.index[0]
+        if isinstance(icg_data.index, pd.TimedeltaIndex | pd.DatetimeIndex):
+            icg_data.index = (icg_data.index - icg_data.index[0]).total_seconds()
+        else:
+            icg_data.index -= icg_data.index[0]
 
     return ecg_data, icg_data
 
@@ -616,3 +635,25 @@ def add_fancy_patch_around(
     fancy = FancyBboxPatch(bb.p0, bb.width, bb.height, **kwargs)
     ax.add_patch(fancy)
     return fancy
+
+
+def _get_heartbeats(
+    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
+) -> pd.DataFrame:
+    heartbeats = datapoint.heartbeats.drop(columns="start_time")
+    if heartbeat_subset is not None:
+        heartbeats = heartbeats.loc[heartbeat_subset][["start_sample", "end_sample", "r_peak_sample"]]
+        heartbeats = (heartbeats - heartbeats.iloc[0]["start_sample"]).astype(int)
+
+    if normalize:
+        heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
+        heartbeats -= heartbeats["start_sample"].iloc[0]
+    return heartbeats
+
+
+def _get_heartbeat_borders(data: pd.DataFrame, heartbeats: pd.DataFrame) -> pd.DataFrame:
+    start_samples = data.index[heartbeats["start_sample"]]
+    end_sample = data.index[heartbeats["end_sample"] - 1][-1]
+    # combine both into one array
+    heartbeat_borders = start_samples.append(pd.Index([end_sample]))
+    return heartbeat_borders

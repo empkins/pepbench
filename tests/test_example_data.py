@@ -11,6 +11,6 @@ def does_not_raise():
 
 
 class TestExampleData:
-    def test_get_example_data(self):
+    def test_get_example_data(self) -> None:
         dataset = get_example_dataset()
         assert isinstance(dataset, Dataset)

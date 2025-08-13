@@ -8,21 +8,23 @@ from pathlib import Path
 from pepbench.utils._types import str_t
 
 __all__ = [
-    "get_error_by_group",
-    "get_reference_data",
-    "get_reference_pep",
-    "get_pep_for_algo",
-    "get_data_for_algo",
-    "describe_pep_values",
-    "compute_pep_performance_metrics",
-    "rr_interval_to_heart_rate",
-    "correlation_reference_pep_heart_rate",
     "add_unique_id_to_results_dataframe",
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
     "build_ml_results_df",
     "merge_ml_result_dfs"
     "describe_ml_results_df"
+    "compute_pep_performance_metrics",
+    "correlation_reference_pep_heart_rate",
+    "describe_pep_values",
+    "get_data_for_algo",
+    "get_error_by_group",
+    "get_pep_for_algo",
+    "get_reference_data",
+    "get_reference_pep",
+    "merge_result_metrics_from_multiple_annotators",
+    "merge_results_per_sample_from_different_annotators",
+    "rr_interval_to_heart_rate",
 ]
 
 
@@ -254,13 +256,15 @@ def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data.join(heart_rate_bpm)
 
 
-def correlation_reference_pep_heart_rate(data: pd.DataFrame) -> dict[str, pd.DataFrame]:
+def correlation_reference_pep_heart_rate(data: pd.DataFrame, groupby: str | None = None) -> dict[str, pd.DataFrame]:
     """Compute the correlation between the reference PEP values and the heart rate.
 
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
         The data containing the reference PEP values and the heart rate.
+    groupby : str, optional
+        The column to group the data by. If None, no grouping is applied. Default: None.
 
     Returns
     -------
@@ -271,8 +275,14 @@ def correlation_reference_pep_heart_rate(data: pd.DataFrame) -> dict[str, pd.Dat
     data = get_reference_data(data)
 
     # compute a linear regression model
-    linreg = pg.linear_regression(X=data["heart_rate_bpm"], y=data["pep_ms"], remove_na=True)
-    corr = pg.corr(data["heart_rate_bpm"], data["pep_ms"], method="pearson")
+    if groupby is None:
+        linreg = pg.linear_regression(X=data["heart_rate_bpm"], y=data["pep_ms"], remove_na=True)
+        corr = pg.corr(data["heart_rate_bpm"], data["pep_ms"], method="pearson")
+    else:
+        linreg = data.groupby(groupby).apply(
+            lambda df: pg.linear_regression(X=df["heart_rate_bpm"], y=df["pep_ms"], remove_na=True)
+        )
+        corr = data.groupby(groupby).apply(lambda df: pg.corr(df["heart_rate_bpm"], df["pep_ms"], method="pearson"))
 
     return {"linear_regression": linreg, "correlation": corr}
 
@@ -333,7 +343,8 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
 
     """
     data = data.copy()
-    data = data.droplevel(axis=1, level=-1).rename(index=str)
+    if data.columns.nlevels > 1:
+        data = data.droplevel(axis=1, level=-1).rename(index=str)
     if algo_levels is None:
         algo_levels = _algo_levels
     if isinstance(algo_levels, str):
@@ -341,7 +352,8 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
 
     algo_levels = [s for s in data.index.names if s in algo_levels]
     data = data.reset_index(level=algo_levels)
-    id_concat = pd.Index(["_".join(i) for i in data.index], name="id_concat")
+    id_concat = pd.Index(["_".join([str(i) for i in idx]) for idx in data.index], name="id_concat")
+
     data = data.assign(id_concat=id_concat)
     data = data.set_index([*algo_levels, "id_concat"])
     return data

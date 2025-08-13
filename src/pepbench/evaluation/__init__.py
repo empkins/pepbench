@@ -15,4 +15,4 @@ scoring function can be customized, the default scoring function is provided in
 from pepbench.evaluation._evaluation import ChallengeResults, PepEvaluationChallenge
 from pepbench.evaluation._scoring import score_pep_evaluation
 
-__all__ = ["PepEvaluationChallenge", "ChallengeResults", "score_pep_evaluation"]
+__all__ = ["ChallengeResults", "PepEvaluationChallenge", "score_pep_evaluation"]

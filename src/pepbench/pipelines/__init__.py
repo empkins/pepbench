@@ -22,6 +22,6 @@ from pepbench.pipelines._pipeline_reference_q_peak import PepExtractionPipelineR
 __all__ = [
     "BasePepExtractionPipeline",
     "PepExtractionPipeline",
-    "PepExtractionPipelineReferenceQPeaks",
     "PepExtractionPipelineReferenceBPoints",
+    "PepExtractionPipelineReferenceQPeaks",
 ]

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from biopsykit.signals._base_extraction import BaseExtraction
-from biopsykit.signals.ecg.event_extraction import BaseEcgExtraction
+from biopsykit.signals.ecg.event_extraction import BaseEcgExtractionWithHeartbeats
 from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointExtractionScipyFindPeaks
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
@@ -25,6 +25,7 @@ from pepbench.plotting._utils import (
     _get_data,
     _get_fig_ax,
     _get_fig_axs,
+    _get_heartbeats,
     _get_labels_from_challenge_results,
     _get_legend_loc,
     _get_rect,
@@ -36,13 +37,13 @@ from pepbench.plotting._utils import (
 )
 
 __all__ = [
-    "plot_signals",
-    "plot_signals_with_reference_labels",
-    "plot_signals_from_challenge_results",
-    "plot_signals_with_reference_pep",
-    "plot_signals_with_algorithm_results",
-    "_plot_paired",
     "_plot_blandaltman",
+    "_plot_paired",
+    "plot_signals",
+    "plot_signals_from_challenge_results",
+    "plot_signals_with_algorithm_results",
+    "plot_signals_with_reference_labels",
+    "plot_signals_with_reference_pep",
 ]
 
 
@@ -88,7 +89,7 @@ def plot_signals(
     )
 
 
-def plot_signals_with_reference_labels(
+def plot_signals_with_reference_labels(  # noqa: C901
     datapoint: BasePepDatasetWithAnnotations,
     *,
     heartbeat_subset: Sequence[int] | None = None,
@@ -96,8 +97,11 @@ def plot_signals_with_reference_labels(
     normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
+    kwargs.setdefault("sharex", True)
     kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
+    plot_ecg = kwargs.get("plot_ecg", True)
+    plot_icg = kwargs.get("plot_icg", True)
     plot_artefacts = kwargs.get("plot_artefacts", False)
     rect = _get_rect(kwargs)
 
@@ -120,8 +124,10 @@ def plot_signals_with_reference_labels(
     # plot q-peak onsets and b-points
     if collapse:
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax, **kwargs)
-        _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
-        _add_icg_b_points(icg_data, b_points, ax, **kwargs)
+        if plot_ecg:
+            _add_ecg_q_peaks(ecg_data, q_peaks, ax, **kwargs)
+        if plot_icg:
+            _add_icg_b_points(icg_data, b_points, ax, **kwargs)
         if plot_artefacts:
             if not q_peak_artefacts.empty:
                 _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax, **kwargs)
@@ -132,8 +138,10 @@ def plot_signals_with_reference_labels(
     else:
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[0], **kwargs)
         _add_heartbeat_borders(ecg_data.index[list(heartbeats["start_sample"])], ax[1], **kwargs)
-        _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
-        _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
+        if plot_ecg:
+            _add_ecg_q_peaks(ecg_data, q_peaks, ax[0], **kwargs)
+        if plot_icg:
+            _add_icg_b_points(icg_data, b_points, ax[1], **kwargs)
         if plot_artefacts:
             if not q_peak_artefacts.empty:
                 _add_ecg_q_peak_artefacts(ecg_data, q_peak_artefacts, ax[0], **kwargs)
@@ -222,21 +230,18 @@ def plot_signals_with_algorithm_results(
         **kwargs,
     )
 
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    heartbeats = datapoint.heartbeats.loc[heartbeat_subset]
-    # heartbeat needs to be relative to the start of the signal after subset
-    heartbeats = heartbeats[["start_sample", "end_sample", "r_peak_sample"]]
-    heartbeats -= heartbeats["start_sample"].iloc[0]
+    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
 
-    if isinstance(algorithm, BaseEcgExtraction):
+    if isinstance(algorithm, BaseEcgExtractionWithHeartbeats):
         algorithm.extract(
             ecg=ecg_data,
             heartbeats=heartbeats,
             sampling_rate_hz=datapoint.sampling_rate_ecg,
         )
         q_peaks = algorithm.points_["q_peak_sample"]
-        q_peaks = q_peaks.loc[heartbeat_subset].dropna()
+        q_peaks = q_peaks.loc[heartbeats.index].dropna()
 
         if collapse:
             _add_ecg_q_peaks(
@@ -268,8 +273,7 @@ def plot_signals_with_algorithm_results(
             sampling_rate_hz=datapoint.sampling_rate_icg,
         )
         b_points = algorithm.points_["b_point_sample"]
-        print(b_points)
-        b_points = b_points.loc[heartbeat_subset].dropna()
+        b_points = b_points.loc[heartbeats.index].dropna()
         if collapse:
             _add_icg_b_points(
                 icg_data,
@@ -321,6 +325,9 @@ def plot_signals_from_challenge_results(
     ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
     labels_from_challenge = _get_labels_from_challenge_results(pep_results_per_sample, heartbeat_subset)
+
+    print(ecg_data)
+    print(labels_from_challenge["heartbeats_start"])
 
     heartbeats_start = ecg_data.index[labels_from_challenge["heartbeats_start"]]
     heartbeats_end = ecg_data.index[labels_from_challenge["heartbeats_end"] - 1]
@@ -452,21 +459,30 @@ def _plot_signals_one_axis(
     fig, ax = _get_fig_ax(kwargs)
     kwargs.pop("ax", None)
 
+    x_label = "Time [hh:mm:ss]"
+
     if datapoint is not None:
         ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
 
         if plot_ecg:
+            ecg_data.columns = ["ECG"]
             ecg_data.plot(ax=ax)
             ax.legend()
         if plot_icg:
+            icg_data.columns = ["ICG ($dZ/dt$)"]
             icg_data.plot(ax=ax)
-    else:
-        df.plot(ax=ax, color=color)
 
-    if normalize_time:
-        ax.set_xlabel("Time [s]")
+        if normalize_time or not all(isinstance(data.index, pd.DatetimeIndex) for data in [ecg_data, icg_data]):
+            x_label = "Time [s]"
     else:
-        ax.set_xlabel("Time [hh:mm:ss]")
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
+        df.columns = kwargs.get("columns", df.columns)
+        df.plot(ax=ax, color=color)
+        if normalize_time or not isinstance(df.index, pd.DatetimeIndex):
+            x_label = "Time [s]"
+
+    ax.set_xlabel(x_label)
     ax.set_ylabel("Amplitude [a.u.]")
 
     _handle_legend_one_axis(fig, ax, **kwargs)
@@ -495,13 +511,16 @@ def _plot_signals_two_axes(
     colors = iter(cmaps.faculties)
 
     ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    ecg_data.columns = ["ECG"]
+    icg_data.columns = ["ICG ($dZ/dt$)"]
+
     ecg_data.plot(ax=axs[0], color=next(colors), title="Electrocardiogram (ECG)")
     icg_data.plot(ax=axs[1], color=next(colors), title="Impedance Cardiogram (ICG)")
 
     _handle_legend_two_axes(fig, axs, **kwargs)
 
     for ax in axs:
-        if normalize_time:
+        if normalize_time or not all(isinstance(data.index, pd.DatetimeIndex) for data in [ecg_data, icg_data]):
             ax.set_xlabel("Time [s]")
         else:
             ax.set_xlabel("Time [hh:mm:ss]")
@@ -928,9 +947,9 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
     if order is None:
         order = x_cat
     else:
-        assert len(order) == len(
-            x_cat
-        ), "Order must have the same number of elements as the number of levels in `within`."
+        assert len(order) == len(x_cat), (
+            "Order must have the same number of elements as the number of levels in `within`."
+        )
 
     # Substitute within by integer order of the ordered columns to allow for
     # changing the order of numeric withins.

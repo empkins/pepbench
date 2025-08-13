@@ -34,7 +34,7 @@ URL = "https://github.com/empkins/pepbench"
 
 # -- Project information -----------------------------------------------------
 
-# Info from poetry config:
+# Info from uv config:
 info = toml.load("../pyproject.toml")["project"]
 
 project = info["name"]
@@ -118,7 +118,7 @@ if os.environ.get("NO_MATHJAX"):
     mathjax_path = ""
 else:
     extensions.append("sphinx.ext.mathjax")
-    mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/" "tex-chtml.js"
+    mathjax_path = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
 
 # this is needed for some reason...
 # see https://github.com/numpy/numpydoc/issues/69
