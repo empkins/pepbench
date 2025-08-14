@@ -37,7 +37,7 @@ print(f"Input data dtype: {X_b_point.dtype}")
 print(f"y_b_point isnan: {np.isnan(y_b_point).any()}")
 
 model_dict_b_point = {
-    #"scaler": {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler()},
+    "scaler": {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler()},
     "clf": {
         "DecisionTreeRegressor": DecisionTreeRegressor(),
         "RandomForestRegressor": RandomForestRegressor(),
@@ -45,21 +45,21 @@ model_dict_b_point = {
 }
 
 params_dict_b_point = {
-    #"StandardScaler": None,
-    #"MinMaxScaler": None,
+    "StandardScaler": None,
+    "MinMaxScaler": None,
     "DecisionTreeRegressor": {
         "criterion": ["squared_error", "friedman_mse"],
         "splitter": ["best"],
         "max_depth": [4, 8, 16, 32, None],
         "min_samples_leaf": [2, *list(np.arange(10, 100, 10))],
         "min_samples_split": [2, *list(np.arange(10, 100, 10))],
-        #"max_features": [*list(np.arange(0.1, 1.0, 0.2)), "log2", "sqrt", None],
+        "max_features": [*list(np.arange(0.1, 1.0, 0.2)), "log2", "sqrt", None],
     },
     "RandomForestRegressor": {
         "bootstrap": [True],  # Disabling bootstrap often doesn't help much in regression
         "criterion": ["squared_error", "friedman_mse"],
         "max_depth": [*list(np.arange(10, 100, 10)), None],  # Reducing unnecessary fine granularity
-        #"max_features": ["sqrt", "log2", 0.2, 0.5, 0.8],  # Balanced choices
+        "max_features": ["sqrt", "log2", 0.2, 0.5, 0.8],  # Balanced choices
         "min_samples_leaf": [1, 5, 10, 20, 50],  # More practical ranges
         "min_samples_split": [2, 5, 10, 20, 50],  # Logarithmic scaling
         "min_weight_fraction_leaf": [0.0, 0.01, 0.05],  # Only necessary values
