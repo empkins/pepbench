@@ -42,12 +42,12 @@ _pep_number_map = {
 }
 
 _ml_b_point_algo_data_map = {
-    "Without-RR-Interval": "without-rr-interval/train_data_b_point",
-    "Without-RR-Interval-Include-Nan": "without-rr-interval/train_data_b_point_include_nan",
-    "Without-RR-Interval-Median-Imputed": "without-rr-interval/train_data_b_point_median_imputed",
-    "RR-Interval": "rr-interval/train_data_b_point_rr_interval",
-    "RR-Interval-Include-Nan": "rr-interval/train_data_b_point_rr_interval_include_nan",
-    "RR-Interval-Median-Imputed": "rr-interval/train_data_b_point_rr_interval_median_imputed",
+    "Without-RR-Interval": "without-rr-interval/rater_01/train_data_b_point",
+    "Without-RR-Interval-Include-Nan": "without-rr-interval/rater_01/train_data_b_point_include_nan",
+    "Without-RR-Interval-Median-Imputed": "without-rr-interval/rater_01/train_data_b_point_median_imputed",
+    "RR-Interval": "rr-interval/rater_01/train_data_b_point_rr_interval",
+    "RR-Interval-Include-Nan": "rr-interval/rater_01/train_data_b_point_rr_interval_include_nan",
+    "RR-Interval-Median-Imputed": "rr-interval/rater_01/train_data_b_point_rr_interval_median_imputed",
 }
 
 _ml_q_peak_algo_data_map = {
@@ -428,6 +428,43 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
 
     return data
 
+def merge_result_metrics_from_multiple_annotators(
+    results: Sequence[pd.DataFrame], add_annotation_difference: bool = True
+) -> pd.DataFrame:
+    metrics_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
+    metrics_combined = metrics_combined.reindex(["Mean Absolute Error [ms]", "Mean Error [ms]"], level=1, axis=1)
+
+    if add_annotation_difference:
+        if len(results) != 2:
+            raise ValueError("Annotation difference can only be computed for two annotators.")
+
+        metrics_combined_diff = (
+            metrics_combined.reindex(["Mean Absolute Error [ms]"], level=1, axis=1)
+            .T.groupby(level=[1, 2])
+            .diff()
+            .dropna(how="all")
+        )
+        metrics_combined_diff = metrics_combined_diff.rename({"Annotator 2": "Annotator Difference"}).T
+
+        metrics_combined = pd.concat([metrics_combined, metrics_combined_diff], axis=1)
+
+    return metrics_combined
+
+
+def merge_results_per_sample_from_different_annotators(
+    results: Sequence[pd.DataFrame], selected_algorithm: tuple[str] | None = None
+) -> pd.DataFrame:
+    if selected_algorithm is None:
+        results_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
+    else:
+        results_combined = pd.concat(
+            {f"Annotator {i + 1}": result_df.loc[selected_algorithm] for i, result_df in enumerate(results)}, axis=1
+        )
+
+    results_combined = results_combined.sort_index()
+
+    return results_combined
+
 def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
     """Add the predictions of the ML-Estimators to the corresponding training data.
 
@@ -454,7 +491,7 @@ def build_ml_results_df(data_path: Path, permuter_path: Path, event:str):
     else:
         raise(KeyError("event must be 'b_point' or 'q_peak'"))
 
-    merged_permuter = pd.read_json(permuter_path.joinpath(f"merged_{event}_permuter.json"), orient="records",
+    merged_permuter = pd.read_json(permuter_path.joinpath(f"merged_{event}_permuter_paper.json"), orient="records",
                                    lines=True).set_index(['pipeline_scaler', 'pipeline_reduce_dim', 'pipeline_clf'])
 
     for key, value in algo_dict.items():
@@ -492,8 +529,8 @@ def merge_ml_result_dfs(data_path: Path, master_df: pd.DataFrame, event:str):
         raise(KeyError("event must be 'b_point' or 'q_peak'"))
 
     old_b_point_algos = ["arbol2017-isoelectric-crossings", "arbol2017-second-derivative", "arbol2017-third-derivative",
-                         "debski1993-second-derivative", "drost2022", "forounzafar2018", "lozano2007-linear-regression",
-                         "lozano2007-quadratic-regression", "sherwood1990", "stern1985"]
+                         "debski1993-second-derivative", "drost2022", "forouzanfar2018", "lozano2007-linear-regression",
+                         "lozano2007-quadratic-regression", "sherwood1990", "stern1985", 'pale2021', 'miljkovic2022']
     old_q_peak_algos = ["forounzafar2018", "martinez2004", "vanlien2013-32-ms",
                         "vanlien2013-34-ms", "vanlien2013-36-ms", "vanlien2013-38-ms", "vanlien2013-40-ms",
                         "vanlien2013-42-ms"]
