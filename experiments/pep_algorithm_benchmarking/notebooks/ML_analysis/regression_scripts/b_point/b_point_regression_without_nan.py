@@ -37,7 +37,7 @@ rater = "rater_01"
 
 # Train Regression model for B-Point detection
 
-input_data_b_point = pd.read_csv(data_path.joinpath(f"b-point/rr-interval/{rater}/train_data_b_point_rr_interval.csv"), index_col=[0,1,2,3,4,5])
+input_data_b_point = pd.read_csv(data_path.joinpath(f"b-point/without-rr-interval/{rater}/train_data_b_point_median_imputed.csv"), index_col=[0,1,2,3,4,5])
 
 X_b_point, y_b_point, groups_b_point, group_keys_b_point = bp.classification.utils.prepare_df_sklearn(data=input_data_b_point, label_col="b_point_sample_reference", subject_col="participant", print_summary=False)
 
@@ -114,7 +114,7 @@ hyper_search_dict = {
     "RandomForestRegressor": {"search_method": "random", "n_iter": 4000},
 }
 
-input_file_path_b_point = models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}.pkl")
+input_file_path_b_point = models_path.joinpath(f"b-point/without-rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}.pkl")
 if input_file_path_b_point.exists():
     print(f"Loading pre-fitted pipeline permuter from {input_file_path_b_point}")
     pipeline_permuter_b_point = SklearnPipelinePermuter.from_pickle(input_file_path_b_point)
@@ -123,10 +123,12 @@ else:
 
 outer_cv = GroupKFold(n_splits=5)
 inner_cv = GroupKFold(n_splits=5)
+model_name = f"b_point_{file_name}_hpc_{job_id}_baseline_result_median_imputed_{rater}.pkl"
+print(f"Model name: {model_name}")
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
-    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_{rater}.pkl"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
+    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/without-rr-interval/{rater}/{model_name}"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
 
 
-pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_{rater}.pkl"))
-print("Generated pickle file!")
+pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/without-rr-interval/{rater}/{model_name}"))
+print(f"Generated pickle file: {model_name}")

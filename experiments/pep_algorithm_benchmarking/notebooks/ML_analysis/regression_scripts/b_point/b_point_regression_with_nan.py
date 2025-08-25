@@ -84,10 +84,12 @@ else:
 
 outer_cv = GroupKFold(n_splits=5)
 inner_cv = GroupKFold(n_splits=5)
+model_name = f"b_point_{file_name}_hpc_{job_id}_baseline_result_rr_include_nan_{rater}.pkl"
+print(f"Model name: {model_name}")
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
-    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_include_nan_{rater}.pkl"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
+    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/{model_name}"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
 
 
-pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_include_nan_{rater}.pkl"))
-print("Generated pickle file!")
+pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/rr-interval/{rater}/{model_name}"))
+print(f"Generated pickle file: {model_name}")

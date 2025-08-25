@@ -5,18 +5,26 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import biopsykit as bp
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
 from sklearn.linear_model._cd_fast import ConvergenceWarning
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
+
+#Feature Selection
+from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
+from sklearn.feature_selection import SelectFromModel
+
 
 # Regression
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import SVR
+from sklearn.linear_model import Lasso
 
 # Cross-Validation
 from sklearn.model_selection import GroupKFold
 
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
-import sklearn
 
 
 # Set the working directory to the script's directory to ensure expected behavior of the relative paths
@@ -25,31 +33,44 @@ file_name = Path(__file__).with_suffix("").name
 
 data_path = Path("../../results/data")
 models_path = Path("../../results/models")
-rater = "rater_01"
+rater = "rater_02"
 
-print(sklearn.__version__)
 # Train Regression model for B-Point detection
 
-input_data_b_point = pd.read_csv(data_path.joinpath(f"b-point/rr-interval/{rater}/train_data_b_point_rr_interval_include_nan.csv"), index_col=[0,1,2,3,4,5]).astype(float)
+input_data_b_point = pd.read_csv(data_path.joinpath(f"b-point/without-rr-interval/{rater}/train_data_b_point.csv"), index_col=[0,1,2,3,4,5])
 
 X_b_point, y_b_point, groups_b_point, group_keys_b_point = bp.classification.utils.prepare_df_sklearn(data=input_data_b_point, label_col="b_point_sample_reference", subject_col="participant", print_summary=False)
-print(f"Input data dtype: {X_b_point.dtype}")
-print(f"y_b_point isnan: {np.isnan(y_b_point).any()}")
 
 model_dict_b_point = {
     "scaler": {"StandardScaler": StandardScaler(), "MinMaxScaler": MinMaxScaler()},
+    "reduce_dim": {
+        "SelectFromModel": SelectFromModel(estimator=RandomForestRegressor(n_estimators=100, random_state=0)),
+        "SelectKBest": SelectKBest(),
+    },
     "clf": {
         "DecisionTreeRegressor": DecisionTreeRegressor(),
         "RandomForestRegressor": RandomForestRegressor(),
+        "SVR": SVR(),
+        "KNeighborsRegressor": KNeighborsRegressor(),
     },
 }
 
 params_dict_b_point = {
     "StandardScaler": None,
     "MinMaxScaler": None,
+    "SelectFromModel": {
+        "estimator": [
+            RandomForestRegressor(n_estimators=100, random_state=0),
+        ],
+        "threshold": ["mean", "median", "0.5*mean", "0.25*mean", "0.75*mean", "1.25*mean"],
+    },
+    "SelectKBest": {
+        "score_func": [f_regression, mutual_info_regression],
+        "k": [2, 4, 6, 8, 10, "all"],
+    },
     "DecisionTreeRegressor": {
-        "criterion": ["squared_error", "friedman_mse"],
-        "splitter": ["best"],
+        "criterion": ["squared_error", "friedman_mse", "absolute_error"],
+        "splitter": ["best", "random"],
         "max_depth": [4, 8, 16, 32, None],
         "min_samples_leaf": [2, *list(np.arange(10, 100, 10))],
         "min_samples_split": [2, *list(np.arange(10, 100, 10))],
@@ -68,6 +89,24 @@ params_dict_b_point = {
         "n_estimators": [50, 100, 150, 200, 250, 400],  # Avoiding excessive values
         "ccp_alpha": [0.0, 0.001, 0.01, 0.05, 0.1],  # Small regularization values
     },
+    "SVR": [
+        {
+            "kernel": ["linear"],
+            "C": np.logspace(-1, 2, 4),  # [0.1, 1, 10, 100]
+            "epsilon": np.logspace(-2, 0, 3),  # [0.01, 0.1, 1]
+        },
+        {
+            "kernel": ["rbf"],
+            "C": np.logspace(-1, 2, 4),  # [0.1, 1, 10, 100]
+            "gamma": np.logspace(-3, 0, 4),  # [0.001, 0.01, 0.1, 1] (avoid extreme values)
+            "epsilon": np.logspace(-2, 0, 3),
+        },
+    ],
+    "KNeighborsRegressor": {
+        "n_neighbors": np.arange(2, 40, 2),
+        "weights": ["uniform", "distance"],
+        "p": [1, 2],
+    },
 }
 
 hyper_search_dict = {
@@ -75,7 +114,7 @@ hyper_search_dict = {
     "RandomForestRegressor": {"search_method": "random", "n_iter": 4000},
 }
 
-input_file_path_b_point = models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}.pkl")
+input_file_path_b_point = models_path.joinpath(f"b-point/without-rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}.pkl")
 if input_file_path_b_point.exists():
     print(f"Loading pre-fitted pipeline permuter from {input_file_path_b_point}")
     pipeline_permuter_b_point = SklearnPipelinePermuter.from_pickle(input_file_path_b_point)
@@ -84,10 +123,12 @@ else:
 
 outer_cv = GroupKFold(n_splits=5)
 inner_cv = GroupKFold(n_splits=5)
+model_name = f"b_point_{file_name}_hpc_{job_id}_baseline_result_{rater}.pkl"
+print(f"Model name: {model_name}")
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
-    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_include_nan_{rater}.pkl"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
+    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/without-rr-interval/{rater}/{model_name}"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
 
 
-pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/rr-interval/{rater}/b_point_{file_name}_hpc_{job_id}_baseline_result_rr_include_nan_{rater}.pkl"))
-print("Generated pickle file!")
+pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/without-rr-interval/{rater}/{model_name}"))
+print(f"Generated pickle file: {model_name}")
