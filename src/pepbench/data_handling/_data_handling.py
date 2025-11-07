@@ -42,10 +42,10 @@ _pep_number_map = {
 }
 
 _ml_b_point_algo_data_map = {
-    "Without-RR-Interval": "without-rr-interval/rater_01/train_data_b_point",
-    "Without-RR-Interval-Include-Nan": "without-rr-interval/rater_01/train_data_b_point_include_nan",
-    "Without-RR-Interval-Median-Imputed": "without-rr-interval/rater_01/train_data_b_point_median_imputed",
-    "RR-Interval": "rr-interval/rater_01/train_data_b_point_rr_interval",
+    #"Without-RR-Interval": "without-rr-interval/rater_01/train_data_b_point",
+    #"Without-RR-Interval-Include-Nan": "without-rr-interval/rater_01/train_data_b_point_include_nan",
+    #"Without-RR-Interval-Median-Imputed": "without-rr-interval/rater_01/train_data_b_point_median_imputed",
+    #"RR-Interval": "rr-interval/rater_01/train_data_b_point_rr_interval",
     "RR-Interval-Include-Nan": "rr-interval/rater_01/train_data_b_point_rr_interval_include_nan",
     "RR-Interval-Median-Imputed": "rr-interval/rater_01/train_data_b_point_rr_interval_median_imputed",
 }

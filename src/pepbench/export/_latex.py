@@ -139,7 +139,7 @@ def create_ml_algo_performance_table(
             columns.append(f"{level2} std")
     table.columns = columns
 
-    table = table.round(1)
+    table = table.round(2)
     if ascending:
         table = table.sort_values(by='MAE', ascending=True)
     else:
