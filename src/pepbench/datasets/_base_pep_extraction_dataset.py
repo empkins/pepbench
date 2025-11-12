@@ -1,4 +1,6 @@
-"""Base classes for PEP extraction datasets.
+"""
+.. _custom_dataset_basics:
+Base classes for PEP extraction datasets.
 
 Provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data.
 
