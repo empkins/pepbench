@@ -161,7 +161,12 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         self.base_path = Path(self.base_path)
 
     def create_index(self) -> pd.DataFrame:
-        """Create the dataset index DataFrame."""
+        """Create the dataset index DataFrame.
+        Returns
+        -------
+        pd.DataFrame
+            Dataset index with columns "participant" and "phase".
+        """
         self._sanitize_params()
         overview_df = pd.read_csv(self.base_path.joinpath("metadata/dataset_overview.csv"), sep=";")
         pids = list(overview_df["participant"])
@@ -174,7 +179,12 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return index
 
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
-        """Find participant/phase combinations to exclude based on the exclusion flags."""
+        """Find participant/phase combinations to exclude based on the exclusion flags.
+        Returns
+        -------
+        sequence of tuple
+            List of participant/phase tuples to exclude.
+        """
         data_to_exclude = []
         if self.exclude_no_recorded_data:
             data_to_exclude.extend(self.SUBSET_NO_RECORDED_DATA)
@@ -427,7 +437,16 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return reference_heartbeats
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
-        """Load reference labels for a given channel and the current selection."""
+        """Load reference labels for a given channel and the current selection.
+        Parameters
+        ----------
+        channel : str
+            Channel for which to load reference labels. Either "ECG" or "ICG".
+        Returns
+        -------
+        :class:`~pandas.DataFrame` or dict
+            If a single phase is selected, returns a :class:`~pandas.DataFrame`
+        """
         participant = self.index["participant"][0]
         phases = self.index["phase"]
 
@@ -472,7 +491,12 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @staticmethod
     def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrame) -> pd.DataFrame:
-        """Cut data to the provided labeling borders."""
+        """Cut data to the provided labeling borders.
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Cut data as a pandas DataFrame.
+        """
         start = borders.index[0]
         end = borders.index[-1]
         data = data.loc[start:end]
