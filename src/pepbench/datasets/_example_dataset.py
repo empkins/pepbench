@@ -1,3 +1,8 @@
+"""Example Dataset for Pepbench
+
+Provides access to ECG and ICG signals, reference labels and reference heartbeats
+for evaluation purposes.
+"""
 import zipfile
 from collections.abc import Sequence
 from pathlib import Path
@@ -17,6 +22,28 @@ EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
 
 
 class ExampleDataset(BasePepDatasetWithAnnotations):
+    """Example Dataset for Pepbench.
+
+    This dataset serves as an example implementation of a dataset for the `pepbench` package.
+    It provides access to ECG and ICG signals, along with reference labels and heartbeats for
+    evaluation purposes.
+
+    Parameters
+    ----------
+    example_file_path : str or Path
+        Path to the example dataset zip file.
+    groupby_cols : Sequence[str], optional
+        Columns to group the dataset by. Default is None.
+    subset_index : Sequence[str], optional
+        Subset of the dataset index to use. Default is None.
+    return_clean : bool, optional
+        Whether to return cleaned signals. Default is True.
+
+    Attributes
+    ----------
+    example_file_path : str or Path
+        Path to the example dataset zip file.
+    """
     example_file_path: path_t
 
     def __init__(
@@ -27,6 +54,18 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         *,
         return_clean: bool = True,
     ) -> None:
+        """Initialize the ExampleDataset.
+        Parameters
+        ----------
+        example_file_path : str or Path
+            Path to the example dataset zip file.
+        groupby_cols : Sequence[str], optional
+            Columns to group the dataset by. Default is None.
+        subset_index : Sequence[str], optional
+            Subset of the dataset index to use. Default is None.
+        return_clean : bool, optional
+            Whether to return cleaned signals. Default is True.
+        """
         self.example_file_path = example_file_path
         # unzip the example dataset
         with zipfile.ZipFile(str(self.example_file_path)) as zf:
@@ -34,6 +73,15 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
     def create_index(self) -> pd.DataFrame:
+        """Create the dataset index.
+
+        The index contains one row per participant.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Dataset index as a pandas DataFrame
+        """
         participant_ids = [
             participant_dir.name for participant_dir in get_subject_dirs(EXAMPLE_DATA_PATH, "VP_[0-9]{3}")
         ]
@@ -43,14 +91,43 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def sampling_rate_ecg(self) -> int:
+        """Sampling rate of the ECG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate in Hz.
+        """
         return 500
 
     @property
     def sampling_rate_icg(self) -> int:
+        """Sampling rate of the ICG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate in Hz.
+        """
         return 500
 
     @property
     def ecg(self) -> EcgRawDataFrame:
+        """Access the ECG signal data.
+
+        The property returns ECG data for a single participant and a single phase.
+        If ``return_clean`` is True, the signal is cleaned before being returned.
+
+        Returns
+        -------
+        EcgRawDataFrame
+            ECG signal data or cleaned ECG signal.
+
+        Raises
+        ------
+        ValueError
+            If accessed for multiple participants or phases.
+        """
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("ecg")
@@ -62,6 +139,21 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def icg(self) -> IcgRawDataFrame:
+        """Access the ICG signal data.
+
+        The property returns ICG data for a single participant and a single phase.
+        If ``return_clean`` is True, the signal is cleaned before being returned.
+
+        Returns
+        -------
+        IcgRawDataFrame
+            ICG signal data or cleaned ICG signal.
+
+        Raises
+        ------
+        ValueError
+            If accessed for multiple participants or phases.
+        """
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("icg")
@@ -72,6 +164,18 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return data
 
     def _load_data(self, data_type: str) -> pd.DataFrame:
+        """Load the data for the given data type.
+
+        Parameters
+        ----------
+        data_type : str
+            Either ``'ecg'`` or ``'icg'``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Time-indexed signal data with a ``DatetimeIndex``.
+        """
         p_id = self.index["participant"][0]
         data = pd.read_csv(
             EXAMPLE_DATA_PATH.joinpath(f"{p_id}/{p_id.lower()}_{data_type}_data.csv"),
@@ -82,29 +186,45 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Return the reference labels for the ECG signal.
+        """Reference labels for the ECG signal.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference labels for the ECG signal as a pandas DataFrame
-
+        pandas.DataFrame
+            Reference labels for the ECG signal.
         """
         return self._load_reference_labels("ECG")
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
-        """Return the reference labels for the ICG signal.
+        """Reference labels for the ICG signal.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference labels for the ICG signal as a pandas DataFrame
-
+        pandas.DataFrame
+            Reference labels for the ICG signal.
         """
         return self._load_reference_labels("ICG")
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
+        """Load reference labels for the specified channel.
+
+        Parameters
+        ----------
+        channel : str
+            Channel for which to load the reference labels. Either ``'ECG'`` or ``'ICG'``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Reference labels indexed by (heartbeat_id, channel, label). Contains
+            both ``sample_relative`` and ``sample_absolute`` columns.
+
+        Raises
+        ------
+        ValueError
+            If the dataset is not a single participant.
+        """
         participant = self.index["participant"][0]
 
         if not (self.is_single(None)):
@@ -121,17 +241,26 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Return the reference heartbeats.
+        """Reference heartbeats computed from reference ECG labels.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference heartbeats as a pandas DataFrame
-
+        pandas.DataFrame
+            Reference heartbeats as a pandas DataFrame.
         """
         return self._load_reference_heartbeats()
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
+        """Compute and return reference heartbeats.
+
+        The method extracts heartbeat entries from ECG reference labels and computes
+        aggregated heartbeat information.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Reference heartbeats.
+        """
         reference_ecg = self.reference_labels_ecg
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
