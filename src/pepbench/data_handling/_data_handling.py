@@ -1,3 +1,4 @@
+# Module for handling PEP benchmark data.s
 from collections.abc import Sequence
 
 import numpy as np

@@ -1,3 +1,4 @@
+# Module for handling and comparing annotations from different raters or datasets.
 import pandas as pd
 from tqdm.auto import tqdm
 
