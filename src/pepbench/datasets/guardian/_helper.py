@@ -1,3 +1,19 @@
+"""Helper functions for Guardian datasets.
+
+Utilities for loading and converting Guardian-specific dataset artifacts used by the
+Guardian dataset implementation.
+
+Functions
+---------
+_load_tfm_data
+    Load TFM data for a given date and return a dictionary of :class:`~pandas.DataFrame`
+    objects indexed by local datetime.
+
+Notes
+-----
+- The function relies on :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`.
+- Returned DataFrames use the ``local_datetime`` index.
+"""
 import pandas as pd
 
 from pepbench.datasets.guardian._tfm_loader import TFMLoader

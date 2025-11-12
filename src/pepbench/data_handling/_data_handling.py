@@ -1,4 +1,58 @@
-# Module for handling PEP benchmark data.
+"""Module for handling PEP benchmark data.
+
+Provides utility functions to extract reference PEP values, compute performance metrics,
+aggregate and compare results across algorithms and annotators, and compute derived
+signals used throughout the PEP benchmark evaluation pipeline.
+
+Functions
+---------
+get_reference_data
+    Extract the reference columns from a results-per-sample :class:`~pandas.DataFrame`.
+get_reference_pep
+    Return the ``pep_ms`` reference column from results.
+get_data_for_algo
+    Select data for a specific algorithm combination from a results frame.
+get_pep_for_algo
+    Select estimated PEP values for a specified algorithm combination.
+describe_pep_values
+    Compute descriptive statistics for PEP values using :meth:`pandas.DataFrame.describe`.
+compute_pep_performance_metrics
+    Aggregate performance metrics (e.g., mean, std) across algorithm combinations.
+get_performance_metric
+    Extract a single performance metric column from a results frame.
+rr_interval_to_heart_rate
+    Convert ``rr_interval_ms`` to ``heart_rate_bpm`` and join to the input frame.
+correlation_reference_pep_heart_rate
+    Compute linear regression and Pearson correlation between reference PEP and heart rate.
+get_error_by_group
+    Aggregate error metrics by specified grouping columns (mean and std).
+add_unique_id_to_results_dataframe
+    Add a unique concatenated identifier to the results index for sample-level merging.
+compute_improvement_outlier_correction
+    Compute the percentage of samples that improved, deteriorated, or remained unchanged after outlier correction.
+compute_improvement_pipeline
+    Compute percentage of samples showing sign changes in the error metric between two pipelines.
+merge_result_metrics_from_multiple_annotators
+    Combine metric tables from multiple annotators and optionally compute annotation differences.
+merge_results_per_sample_from_different_annotators
+    Concatenate per-sample results from multiple annotators into a single frame.
+
+Notes
+-----
+- Many functions expect or return :class:`~pandas.DataFrame` objects using the project\'
+  conventions: MultiIndex columns/indices with algorithm-level names
+  ``q_peak_algorithm``, ``b_point_algorithm``, and ``outlier_correction_algorithm``.
+- Columns commonly referenced include ``pep_ms``, ``absolute_error_per_sample_ms``,
+  and ``rr_interval_ms``; heartbeat/algorithm indexing is assumed for per-sample frames.
+- Correlation and regression helpers rely on :mod:`pingouin` for statistics.
+- Functions preserve dtypes and index names where possible to facilitate downstream
+  grouping and joining operations.
+
+See Also
+--------
+:mod:`pepbench.pipelines`
+    Pipeline helpers and end-to-end execution utilities for PEP extraction.
+"""
 from collections.abc import Sequence
 
 import numpy as np
