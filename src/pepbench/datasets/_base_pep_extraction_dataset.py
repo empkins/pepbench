@@ -1,5 +1,20 @@
 """Base classes for PEP extraction datasets.
-This module provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data."""
+
+Provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data.
+
+Classes
+-------
+BasePepDataset
+    Interface for datasets used for PEP extraction by the :class:`~pepbench.pipelines.PepExtractionPipeline`.
+MetadataMixin
+    Mixin for datasets that provide demographic metadata (age, gender, BMI).
+PepLabelMixin
+    Mixin for datasets that contain manually labeled PEP data and reference labels.
+BasePepDatasetWithAnnotations
+    Combines :class:`BasePepDataset` and :class:`PepLabelMixin` to provide a unified
+    interface for evaluation datasets with annotations.
+
+"""
 import pandas as pd
 from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from tpcp import Dataset
@@ -46,12 +61,20 @@ base_pep_extraction_docfiller = make_filldoc(
 
 @base_pep_extraction_docfiller
 class BasePepDataset(Dataset):
-    """Interface for all datasets for PEP extraction from ICG and ECG data.
+    """Interface for datasets for PEP extraction from ICG and ECG data.
 
     This class defines the interface for datasets that are used for PEP extraction using the
-    :class:`~pepbench.pipelines.PepExtractionPipeline`. It provides the necessary properties and methods to access the
-    data and metadata required for PEP extraction. It is not intended to be used directly, but rather as a base class
-    for other datasets.
+    :class:`~pepbench.pipelines.PepExtractionPipeline`. It provides the necessary properties and methods to access
+    the data and metadata required for PEP extraction. It is intended to be subclassed.
+
+    Parameters
+    ----------
+    groupby_cols : list[str] or str or None, optional
+        Columns used to group the dataset, by default None.
+    subset_index : pandas.DataFrame or None, optional
+        Subset index for the dataset, by default None.
+    return_clean : bool, optional
+        Whether to return cleaned data by default, by default True
 
     Attributes
     ----------
@@ -67,67 +90,97 @@ class BasePepDataset(Dataset):
         subset_index: pd.DataFrame | None = None,
         return_clean: bool = True,
     ) -> None:
-        """Initialize the BasePepDataset."""
+        """Initialize the BasePepDataset.
+
+        Parameters
+        ----------
+        groupby_cols : list[str] or str or None, optional
+            Columns used to group the dataset, by default None.
+        subset_index : pandas.DataFrame or None, optional
+            Subset index for the dataset, by default None.
+        return_clean : bool, optional
+            Whether to return cleaned data by default, by default True
+        """
         self.return_clean = return_clean
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
 
     @property
     def icg(self) -> IcgRawDataFrame:
-        """The raw ICG data.
+        """Raw ICG data.
 
         Returns
         -------
         :class:`~biopsykit.utils.dtypes.IcgRawDataFrame`
             The raw ICG data.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def ecg(self) -> EcgRawDataFrame:
-        """The raw ECG data.
+        """Raw ECG data.
 
         Returns
         -------
         :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
             The raw ECG data.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """The sampling rate of the ECG data in Hz.
+        """Sampling rate of the ECG signal in Hz.
 
         Returns
         -------
         int
             The sampling rate of the ECG data in Hz.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def sampling_rate_icg(self) -> int:
-        """The sampling rate of the ICG data in Hz.
+        """Sampling rate of the ICG signal in Hz.
 
         Returns
         -------
         int
             The sampling rate of the ICG data in Hz.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def heartbeats(self) -> HeartbeatSegmentationDataFrame:
-        """The heartbeats extracted from the ECG data.
+        """Heartbeat segmentation extracted from ECG.
 
         Returns
         -------
         :class:`~biopsykit.utils.dtypes.HeartbeatSegmentationDataFrame`
             The heartbeats extracted from the ECG data.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass!
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
@@ -150,22 +203,61 @@ class MetadataMixin(Dataset):
 
     @property
     def base_demographics(self) -> pd.DataFrame:
-        """The base demographics of the participants."""
+        """The base demographics of the participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            The base demographics DataFrame including gender, age, and BMI.
+        """
         return pd.concat([self.gender, self.age, self.bmi], axis=1)
 
     @property
     def age(self) -> pd.DataFrame:
-        """The age of the participants."""
+        """The age of the participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            The age column(s) indexed by the dataset index.
+
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
+        """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def gender(self) -> pd.DataFrame:
-        """The gender of the participants."""
+        """The gender of the participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            The gender column(s) indexed by the dataset index.
+
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
+        """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def bmi(self) -> pd.DataFrame:
-        """The BMI of the participants."""
+        """The BMI of the participants.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            The BMI column(s) indexed by the dataset index.
+
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
+        """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
 
@@ -193,6 +285,10 @@ class PepLabelMixin(Dataset):
         :class:`~pandas.DataFrame`
             The reference heartbeats.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
@@ -202,9 +298,13 @@ class PepLabelMixin(Dataset):
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            The reference labels for the ECG data.
+        :class:`~pandas.DataFrame` or dict
+            The reference labels for ECG, possibly split by label types.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
@@ -214,9 +314,13 @@ class PepLabelMixin(Dataset):
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            The reference labels for the ICG data.
+        :class:`~pandas.DataFrame` or dict
+            The reference labels for ICG, possibly split by label types.
 
+        Raises
+        ------
+        NotImplementedError
+            If not implemented in the subclass.
         """
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
@@ -245,6 +349,19 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
         return_clean: bool = True,
         only_labeled: bool = False,
     ) -> None:
+        """Initialize the BasePepDatasetWithAnnotations.
+
+        Parameters
+        ----------
+        groupby_cols : list[str] or str or None, optional
+            Columns used to group the dataset, by default None.
+        subset_index : pandas.DataFrame or None, optional
+            Subset index for the dataset, by default None.
+        return_clean : bool, optional
+            Whether to return cleaned data by default, by default True
+        only_labeled : bool, optional
+            Whether to use only labeled data points, by default False.
+        """
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
         self.only_labeled = only_labeled
 

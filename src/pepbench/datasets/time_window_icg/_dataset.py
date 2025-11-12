@@ -1,3 +1,26 @@
+"""Dataset loader for the TimeWindow ICG dataset.
+
+This module provides the :class:`TimeWindowIcgDataset` which implements
+data accessors and helpers for the TimeWindow ICG dataset used by
+the `pepbench` project. The dataset contains synchronous ECG and ICG
+signals stored as plain text, reference heartbeat borders and manual
+ICG annotation points.
+
+Files and layout
+----------------
+Expected layout under ``base_path``:
+
+- ``signals/IDN<number>.txt`` : raw signal files (ECG, ICG derivatives) sampled at ``SAMPLING_RATE``.
+- ``annotations/IDN<number>.csv`` : manual ICG annotations (B points).
+- ``reference_heartbeats/IDN<number>.csv`` : precomputed heartbeat borders.
+
+Notes
+-----
+- Signals are time-indexed using a ``Timedelta`` index in seconds.
+- Dataset phases are split at 120 seconds: ``Baseline`` (0--120s) and
+  ``EmotionInduction`` (120s--end).
+"""
+
 import re
 from collections.abc import Sequence
 from functools import lru_cache
@@ -24,6 +47,55 @@ __all__ = ["TimeWindowIcgDataset"]
 
 @base_pep_extraction_docfiller
 class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
+    """
+        Dataset accessor for TimeWindow ICG data.
+
+        The dataset exposes methods and properties to load raw and cleaned ECG/ICG
+        data, compute and return heartbeat borders, and load reference labels
+        for ECG and ICG channels.
+
+        Parameters
+        ----------
+        base_path : str or pathlib.Path
+            Path to the dataset root directory containing ``signals``,
+            ``annotations`` and ``reference_heartbeats`` subfolders.
+        groupby_cols : sequence of str or None, optional
+            Columns to group the dataset by when creating indices. Default is
+            ``None`` (no grouping).
+        subset_index : sequence of tuple or None, optional
+            Explicit subset of the dataset index to work with. Default is ``None``.
+        return_clean : bool, optional
+            If ``True`` (default), return cleaned signals for ``ecg`` and ``icg``
+            properties; otherwise return raw signals.
+        use_cache : bool, optional
+            If ``True`` (default), cache parsed ``.txt`` files to speed up repeated
+            loads.
+        exclude_r_peak_detection_errors : bool, optional
+            If ``True`` (default), exclude known participants with R-peak
+            detection issues (see ``SUBSET_R_PEAK_DETECTION_ERRORS``).
+        only_labeled : bool, optional
+            If ``True``, restrict the dataset to entries that have labels.
+
+        Class attributes
+        ----------------
+        SAMPLING_RATE : int
+            Sampling rate of raw signals in Hz (default: 2000).
+        PHASES : sequence of str
+            Known experiment phases (default: ``["Baseline", "EmotionInduction"]``).
+        SUBSET_R_PEAK_DETECTION_ERRORS : sequence of str
+            Participant-phase pairs to exclude by default due to R-peak detection errors.
+
+        Attributes
+        ----------
+        base_path : pathlib.Path
+            Normalized dataset base path.
+        use_cache : bool
+            Whether to use cached parsing for text files.
+        exclude_r_peak_detection_errors : bool
+            Whether to exclude problematic recordings.
+        data_to_exclude : sequence of tuple
+            List of participant-phase pairs that should be dropped from the index.
+        """
     base_path: Path
     use_cache: bool
 
@@ -36,16 +108,26 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     SUBSET_R_PEAK_DETECTION_ERRORS: ClassVar[Sequence[str]] = ["IDN_17"]
 
     def __init__(
-        self,
-        base_path: path_t,
-        groupby_cols: Sequence[str] | None = None,
-        subset_index: Sequence[str] | None = None,
-        *,
-        return_clean: bool = True,
-        use_cache: bool = True,
-        exclude_r_peak_detection_errors: bool = True,
-        only_labeled: bool = False,
+            self,
+            base_path: path_t,
+            groupby_cols: Sequence[str] | None = None,
+            subset_index: Sequence[str] | None = None,
+            *,
+            return_clean: bool = True,
+            use_cache: bool = True,
+            exclude_r_peak_detection_errors: bool = True,
+            only_labeled: bool = False,
     ) -> None:
+        """Initialize the dataset.
+
+        See class-level documentation for parameter meanings.
+
+        Raises
+        ------
+        OSError
+            If the provided ``base_path`` does not exist or required folders are missing
+            (implementation-specific checks may raise other errors).
+        """
         self.base_path = base_path
         self.use_cache = use_cache
         self.exclude_r_peak_detection_errors = exclude_r_peak_detection_errors
@@ -55,10 +137,27 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         )
 
     def _sanitize_params(self) -> None:
+        """Normalize and validate initialization parameters.
+
+        Ensures ``base_path`` is a :class:`pathlib.Path` and performs any other
+        light validation required before index creation.
+        """
         # ensure pathlib
         self.base_path = Path(self.base_path)
 
     def create_index(self) -> pd.DataFrame:
+        """Create a dataset index of participant/phase rows.
+
+        The index contains one row per combination of participant and phase
+        (``PHASES``). Participant identifiers are derived from file names in
+        the ``signals`` folder and normalized to the form ``IDN_XX``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with columns ``participant`` and ``phase`` and a default
+            integer index. Rows present in ``data_to_exclude`` are dropped.
+        """
         self._sanitize_params()
 
         file_list = sorted(self.base_path.joinpath("signals").glob("*.txt"))
@@ -74,6 +173,13 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         return index
 
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
+        """Determine participant-phase entries to exclude.
+
+        Returns
+        -------
+        sequence of tuple
+            Sequence of ``(participant, phase)`` entries to drop from the index.
+        """
         data_to_exclude = []
         if self.exclude_r_peak_detection_errors:
             data_to_exclude.extend(self.SUBSET_R_PEAK_DETECTION_ERRORS)
@@ -82,14 +188,48 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def sampling_rate_ecg(self) -> int:
+        """Sampling rate used for ECG processing.
+
+        Returns
+        -------
+        int
+            Sampling rate in Hz (same as ``SAMPLING_RATE``).
+        """
         return self.SAMPLING_RATE
 
     @property
     def sampling_rate_icg(self) -> int:
+        """Sampling rate used for ICG processing.
+
+        Returns
+        -------
+        int
+            Sampling rate in Hz (same as ``SAMPLING_RATE``).
+        """
         return self.SAMPLING_RATE
 
     @property
     def data(self) -> pd.DataFrame:
+        """Load raw signal data for the selected participant (and phase).
+
+        The returned DataFrame contains numeric columns (including ``ecg`` and
+        ``icg_der``) and uses a :class:`pandas.TimedeltaIndex` named ``t``
+        representing seconds.
+
+        If the dataset is restricted to a single phase, the data is sliced at
+        120 seconds: ``Baseline`` returns 0--120s, ``EmotionInduction`` returns
+        120s--end.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Time-indexed signal data.
+
+        Raises
+        ------
+        ValueError
+            If called when the dataset is not restricted to a single participant.
+        """
         if not self.is_single("participant"):
             raise ValueError("Data can only be loaded for a single participant.")
 
@@ -113,13 +253,15 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def ecg(self) -> EcgRawDataFrame:
-        """Return the ECG data.
+        """Return ECG data for the active subset.
+
+        If ``return_clean`` was set to ``True`` during initialization, the ECG
+        is cleaned using :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit`.
 
         Returns
         -------
-        :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
-            If `return_clean` is `True`, the cleaned ECG data, otherwise the raw ECG data.
-
+        EcgRawDataFrame
+            ECG signals (cleaned or raw) as expected by downstream algorithms.
         """
         ecg = self.data[["ecg"]]
         if self.return_clean:
@@ -130,13 +272,16 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def icg(self) -> IcgRawDataFrame:
-        """Return the ICG data.
+        """Return ICG data for the active subset.
+
+        If ``return_clean`` was set to ``True`` during initialization, the ICG
+        derivative channel is cleaned using
+        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass`.
 
         Returns
         -------
-        :class:`~biopsykit.utils.dtypes.IcgRawDataFrame`
-            If `return_clean` is `True`, the cleaned ICG data, otherwise the raw ICG data.
-
+        IcgRawDataFrame
+            ICG signals (cleaned or raw).
         """
         icg = self.data[["icg_der"]]
         if self.return_clean:
@@ -147,13 +292,15 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def heartbeats(self) -> pd.DataFrame:
-        """Segment heartbeats from the ECG data and return the heartbeat borders.
+        """Segment ECG into heartbeat borders.
+
+        Uses :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationNeurokit`
+        to compute heartbeat borders and returns the algorithm's heartbeat list.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Heartbeats as a pandas DataFrame.
-
+        pandas.DataFrame
+            Heartbeat borders and related metadata (one row per heartbeat).
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
         heartbeat_algo.extract(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
@@ -162,14 +309,23 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
-        """Return the labeling borders for a selected participant and phase.
+        """
+        Return the labeling borders for the currently selected participant/phase.
+
+        The returned DataFrame contains one row with columns ``start_sample`` and
+        ``end_sample`` (inclusive indices) describing the available sample range.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Labeling borders as :class:`~pandas.DataFrame`.
+        pandas.DataFrame
+            Single-row DataFrame with labeling borders.
 
+        Raises
+        ------
+        ValueError
+            If called when the dataset is not restricted to a single participant.
         """
+
         if not self.is_single("participant"):
             raise ValueError("Labeling borders can only be loaded for a single participant.")
 
@@ -179,6 +335,26 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
+        """
+        Load reference heartbeat borders.
+
+        Reference heartbeats are read from ``reference_heartbeats/IDN<id>.csv``
+        and indexed by ``heartbeat_id``. When a single phase is selected, borders
+        are filtered and (for ``EmotionInduction``) shifted to start at zero.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Reference heartbeat borders with integer sample columns:
+            ``start_sample``, ``end_sample``, ``r_peak_sample``, ``rr_interval_sample``,
+            and time column ``start_time`` (float seconds).
+
+        Raises
+        ------
+        ValueError
+            If reference heartbeat folder is missing or when called for multiple
+            participants.
+        """
         if not self.is_single("participant"):
             raise ValueError("Reference heartbeats can only be loaded for a single participant.")
 
@@ -223,6 +399,24 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
+        """Load reference ICG labels and align them to heartbeat IDs.
+
+        The method loads raw B-point annotations from the ``annotations`` folder,
+        adjusts them for the selected phase (slicing and shifting) and matches
+        B-points to heartbeat IDs using available reference heartbeat borders.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Multi\-indexed DataFrame indexed by (``heartbeat_id``, ``channel``, ``label``)
+            with a single column ``sample_relative`` containing the sample index of
+            the annotated point relative to the phase start.
+
+        Raises
+        ------
+        ValueError
+            If called for multiple participants.
+        """
         if not self.is_single("participant"):
             raise ValueError("Reference labels can only be loaded for a single participant.")
 
@@ -266,13 +460,23 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Return the reference labels for the ECG data.
+        """Compute reference ECG labels (Q-peaks) from ECG and reference heartbeats.
+
+        Q-peak extraction is performed by :class:`~biopsykit.signals.ecg.event_extraction.QPeakExtractionVanLien2013`
+        and results are returned as a multi-indexed DataFrame consistent with
+        other datasets in the project.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference labels for the ECG data as a pandas DataFrame
+        pandas.DataFrame
+            Multi\-indexed DataFrame indexed by (``heartbeat_id``, ``channel``, ``label``)
+            with a single column ``sample_relative``.
 
+        Raises
+        ------
+        ValueError
+            If called for multiple participants (since ECG and heartbeats must come
+            from a single recording).
         """
         ecg = self.ecg
         q_peak_algo = QPeakExtractionVanLien2013(time_interval_ms=32)
@@ -291,6 +495,22 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @staticmethod
     def _load_reference_labels(file_path: path_t) -> pd.DataFrame:
+        """Helper to read simple reference label CSV files.
+
+        The implementation expects a CSV with a column ``B`` containing sample
+        indices and returns a DataFrame with index ``heartbeat_id`` and column
+        ``sample_relative``.
+
+        Parameters
+        ----------
+        file_path : str or pathlib.Path
+            Path to the annotation CSV file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Table of label sample indices keyed by ``heartbeat_id``.
+        """
         data = pd.read_csv(file_path)
         data = data[["B"]]
         data.columns = ["sample_relative"]
