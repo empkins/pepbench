@@ -1,4 +1,22 @@
 # Module for handling and comparing annotations from different raters or datasets.
+
+"""Utilities for loading, matching and comparing annotations.
+
+This module provides functions to load annotations from two datasets, match
+heartbeats between two annotation sets, compute pointwise annotation
+differences and normalize annotations relative to heartbeat start.
+
+Functions
+---------
+load_annotations_from_dataset
+    Load and align annotations from two datasets per-signal (ECG, ICG).
+match_annotations
+    Match annotations between two raters/datasets and return paired annotations.
+compute_annotation_differences
+    Compute pointwise differences between two raters' annotations.
+normalize_annotations_to_heartbeat_start
+    Normalize annotation times to the heartbeat start for each rater.
+"""
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -14,8 +32,35 @@ __all__ = [
 
 
 def load_annotations_from_dataset(
-    dataset_01: BasePepDatasetWithAnnotations, dataset_02: BasePepDatasetWithAnnotations
+        dataset_01: BasePepDatasetWithAnnotations, dataset_02: BasePepDatasetWithAnnotations
 ) -> pd.DataFrame:
+    """Load and align annotations from two datasets.
+
+    This function iterates over matching subsets (groups) of the two datasets,
+    matches annotations per-signal (ECG and ICG) using ``match_annotations``,
+    and concatenates the results into a single DataFrame with a top-level column
+    index ``signal`` containing ``ECG`` and ``ICG``.
+
+    Parameters
+    ----------
+    dataset_01 : BasePepDatasetWithAnnotations
+        Reference dataset providing ``reference_labels_ecg`` and
+        ``reference_labels_icg``, and ``group_labels``.
+    dataset_02 : BasePepDatasetWithAnnotations
+        Dataset to compare against ``dataset_01``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Concatenated DataFrame of matched annotations for ECG and ICG with a
+        MultiIndex column where the top level is ``signal`` and lower levels
+        represent ``rater`` and ``sample`` (as produced by ``match_annotations``).
+
+    Notes
+    -----
+    Iteration uses ``dataset.groupby(None)`` and expects group labels to be
+    compatible between datasets.
+    """
     labels_ecg_dict = {}
     labels_icg_dict = {}
     for subset_01, subset_02 in tqdm(list(zip(dataset_01.groupby(None), dataset_02.groupby(None), strict=False))):
@@ -39,8 +84,39 @@ def load_annotations_from_dataset(
 
 
 def match_annotations(
-    annotations_01: pd.DataFrame, annotations_02: pd.DataFrame, sampling_rate_hz: float
+        annotations_01: pd.DataFrame, annotations_02: pd.DataFrame, sampling_rate_hz: float
 ) -> pd.DataFrame:
+    """Match annotations between two raters/datasets and return paired annotations.
+
+        Extract heartbeat start/end sample indices from each annotation DataFrame,
+        use ``match_heartbeat_lists`` to find matching heartbeats (true positives),
+        and return the matched annotations aligned by heartbeat.
+
+        Parameters
+        ----------
+        annotations_01 : pandas.DataFrame
+            Annotation table for reference rater/dataset. Must contain a
+            ``sample_relative`` column and a ``label`` level with ``start`` and ``end``.
+        annotations_02 : pandas.DataFrame
+            Annotation table for the other rater/dataset (same structure as
+            ``annotations_01``).
+        sampling_rate_hz : float
+            Sampling rate used when matching heartbeats (passed to
+            ``match_heartbeat_lists``).
+
+        Returns
+        -------
+        pandas.DataFrame
+            Concatenated annotations for matched heartbeats with MultiIndex columns
+            ``rater`` (``rater_01`` and ``rater_02``) and ``sample`` (annotation fields).
+            Only matched (true positive) heartbeats are included.
+
+        Raises
+        ------
+        KeyError, IndexError
+            If expected index/column levels (``label``, ``sample_relative``, ``channel``)
+            are missing.
+        """
     heartbeats_01 = annotations_01.unstack("label")["sample_relative"][["start", "end"]].dropna()
     # heartbeats_01 = annotations_01.reindex(["start", "end"], level="label")["sample_relative"].unstack()
     heartbeats_01 = heartbeats_01.droplevel(-1)
@@ -80,7 +156,34 @@ def match_annotations(
 
 
 def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: float | None = None) -> pd.DataFrame:
-    """Compute the difference in samples between the two raters."""
+    """Compute pointwise differences between two raters' annotations.
+
+    For matched annotations (as produced by ``match_annotations``) this function
+    computes the difference between ``rater_01`` and ``rater_02`` for the
+    ``sample_relative`` values (or direct values if columns are single-leveled).
+    The result is returned as a single-column DataFrame containing either
+    ``difference_ms`` (if ``sampling_rate_hz`` is provided) or
+    ``difference_samples``.
+
+    Parameters
+    ----------
+    annotations : pandas.DataFrame
+        Annotations DataFrame with rater columns (``rater_01``, ``rater_02``) and
+        sample values under ``sample_relative`` or as single-level columns.
+    sampling_rate_hz : float or None
+        If provided, convert sample differences to milliseconds using this rate.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Single-column DataFrame with the computed differences. Index preserves
+        heartbeat/sample identifiers after dropping label/channel where appropriate.
+
+    Notes
+    -----
+    The function drops entries labeled ``Artefact`` and removes ``label`` and
+    ``channel`` levels from the index before returning.
+    """
     if annotations.columns.nlevels == 1:
         annotations = annotations["rater_01"] - annotations["rater_02"]
     else:
@@ -99,9 +202,32 @@ def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: 
 
 
 def normalize_annotations_to_heartbeat_start(
-    annotations: pd.DataFrame, sampling_rate_hz: float | None = None
+        annotations: pd.DataFrame, sampling_rate_hz: float | None = None
 ) -> pd.DataFrame:
-    """Normalize the annotations to the start of the heartbeat."""
+    """Normalize annotation times to the heartbeat start for each rater.
+
+    Remove ``end`` and ``Artefact`` labels, collapse the ``channel`` level,
+    unstack so that ``sample`` becomes columns, compute per-rater differences
+    relative to the first annotation (``groupby('rater').diff()``), and return
+    the differences either in samples or milliseconds.
+
+    Parameters
+    ----------
+    annotations : pandas.DataFrame
+        Annotation DataFrame with ``label`` and ``channel`` levels and rater columns.
+    sampling_rate_hz : float or None
+        If provided, convert sample-based differences to milliseconds.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame of differences normalized to heartbeat start, with a single
+        column named ``difference_ms`` or ``difference_samples`` depending on input.
+
+    Notes
+    -----
+    Rows that become all-NaN after differencing are dropped.
+    """
     annotations = annotations.drop("end", level="label").drop("Artefact", level="label")
     annotations = annotations.droplevel("channel").unstack()
     annotations = annotations.T.groupby("rater").diff().dropna(how="all")
