@@ -1,3 +1,19 @@
+"""Guardian dataset utilities and dataset class.
+
+This module provides the GuardianDataset class for loading and accessing Task
+Force Monitor (TFM) recordings (ECG, ICG), timelogs, reference annotations, and
+participant metadata. The class follows the pepbench dataset API and provides
+convenience features like optional preprocessing, caching, exclusion filters,
+and selection by participant and phase.
+
+Notes
+-----
+Data layout expectations
+- Raw TFM files are expected under `data_raw/{participant}/tfm_data`.
+- Reference labels and labeling borders are expected under
+  `data_raw/{participant}/tfm_data/reference_labels`.
+- Demographics and recording timestamps are expected under `metadata/`.
+"""
 from collections.abc import Sequence
 from functools import lru_cache
 from itertools import product
@@ -28,19 +44,42 @@ _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
 @base_pep_extraction_docfiller
 class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     """Dataset class for the Guardian Dataset.
+    Provides access to Task Force Monitor ECG/ICG signals, preprocessed signals,
+    timelogs describing experimental phases, reference annotations, and participant
+    metadata.
 
-    This class is the ``tpcp`` dataset class for the Guardian dataset. It provides access to the Task Force Monitor
-    (TFM) data (for ECG and ICG), the reference annotations for the ECG and ICG annotations, as well as metadata
-    like age, gender, and BMI.
+    Parameters
+    ----------
+    base_path : path-like
+        Path to the root directory of the Guardian dataset.
+    groupby_cols : sequence of str, optional
+        Columns to group the dataset index by.
+    subset_index : sequence of str, optional
+        Subset of the dataset index to operate on.
+    return_clean : bool, optional
+        If True, return preprocessed/cleaned ECG and ICG signals. Default is True.
+    exclude_no_recorded_data : bool, optional
+        If True, exclude known participant/phase combinations with no recorded data.
+        Default is True.
+    exclude_noisy_data : bool, optional
+        If True, exclude known noisy participant/phase combinations. Default is True.
+    use_cache : bool, optional
+        If True, cache loading of TFM files. Default is True.
+    only_labeled : bool, optional
+        If True, return only labeled sections (cut to labeling borders). Default is False.
+    label_type : {'rater_01', 'rater_02', 'average'}, optional
+        Which label set to use for reference annotations. Default is 'rater_01'.
 
     Attributes
     ----------
-    %(base_attributes_pep)s
-    %(base_attributes_pep_label)s
-    %(base_attributes_metadata)s
-    timelog : :class:`~pandas.DataFrame`
-        Timelog data, indicating the start and end of each experimental phase, as a pandas DataFrame.
-
+    SAMPLING_RATES : dict
+        Per-channel sampling rates in Hz.
+    PHASES : sequence
+        Ordered list of experimental phases.
+    GENDER_MAPPING : dict
+        Mapping to recode gender values from the source.
+    SUBSET_NO_RECORDED_DATA, SUBSET_NOISY_DATA : sequence
+        Known participant/phase tuples to optionally exclude.
     """
 
     base_path: Path
@@ -72,7 +111,8 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     def __init__(
         self,
-        base_path: path_t,
+        base_path:
+        path_t,
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,
@@ -116,10 +156,12 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         )
 
     def _sanitize_params(self) -> None:
+        """Sanitize and validate input parameters."""
         # ensure pathlib
         self.base_path = Path(self.base_path)
 
     def create_index(self) -> pd.DataFrame:
+        """Create the dataset index DataFrame."""
         self._sanitize_params()
         overview_df = pd.read_csv(self.base_path.joinpath("metadata/dataset_overview.csv"), sep=";")
         pids = list(overview_df["participant"])
@@ -132,6 +174,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return index
 
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
+        """Find participant/phase combinations to exclude based on the exclusion flags."""
         data_to_exclude = []
         if self.exclude_no_recorded_data:
             data_to_exclude.extend(self.SUBSET_NO_RECORDED_DATA)
@@ -142,7 +185,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rates(self) -> dict[str, int]:
-        """Return the sampling rates of the ECG and ICG signals.
+        """Sampling rates of the ECG and ICG signals.
 
         Returns
         -------
@@ -154,7 +197,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """Return the sampling rate of the ECG signal.
+        """Sampling rate of the ECG signal.
 
         Returns
         -------
@@ -166,7 +209,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_icg(self) -> int:
-        """Return the sampling rate of the ICG signal.
+        """Sampling rate of the ICG signal.
 
         Returns
         -------
@@ -178,15 +221,19 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def date(self) -> pd.Series | pd.Timestamp:
-        """Return the recording date of the participant(s).
+        """ Recording date(s) for the selected participant(s).
 
         Returns
         -------
         pd.Series or pd.Timestamp
-            Recording date of the participant(s). If only a single participant is selected, a single timestamp is
-            returned. If multiple participants are selected, a :class:`~pandas.Series` with the recording dates for
-            each participant is returned.
+            If a single participant is selected a single :class:`~pandas.Timestamp` is
+            returned. If multiple participants are selected a :class:`~pandas.Series`
+            indexed by participant id is returned.
 
+        Raises
+        ------
+        FileNotFoundError
+            If the expected `metadata/recording_timestamps.xlsx` file is missing.
         """
         metadata_path = self.base_path.joinpath("metadata/recording_timestamps.xlsx")
         metadata = pd.read_excel(metadata_path)
@@ -197,23 +244,23 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def tfm_data(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
-        """Return the Task Force Monitor (TFM) data.
+        """Task Force Monitor (TFM) data for the current selection.
 
-        The data is loaded from the raw TFM data files and returned as :class:`~pandas.DataFrame`. The data can only be
-        accessed for a single participant and a single phase or for a single participant and all phases.
-
+        The property loads raw TFM data files for a single participant. It supports
+        accessing either a single phase or all phases for that participant. When
+        `only_labeled` is True, returned signals are cut to the labeling borders.
 
         Returns
         -------
-        :class:`~pandas.DataFrame` or dict
-            TFM data as :class:`~pandas.DataFrame` or dictionary of :class:`~pandas.DataFrame` if multiple phases are
-            selected.
+        pd.DataFrame or dict
+            If a single phase is selected, a :class:`~pandas.DataFrame` of channel
+            signals is returned. If all phases are selected, a dict mapping phase names
+            to DataFrames is returned.
 
         Raises
         ------
         ValueError
-            If the data is accessed for multiple participants or multiple phases (that are not all phases).
-
+            If accessed for multiple participants or unsupported multi\-phase selections.
         """
         participant = self.index["participant"][0]
         phases = self.index["phase"]
@@ -249,16 +296,21 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def icg(self) -> pd.DataFrame:
-        """Return the ICG signal.
+        """
+        ICG channel for the current selection.
 
-        If ``return_clean`` is set to ``True`` in the ``__init__``, the ICG signal is preprocessed and cleaned using
-        the :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass` algorithm before returning it.
+        If `return_clean` is True the ICG is preprocessed using
+        :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass`.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            ICG signal as :class:`~pandas.DataFrame`.
+        pd.DataFrame
+            ICG signal (cleaned or raw) for the selected participant/phase.
 
+        Raises
+        ------
+        ValueError
+            If not operating on a single participant and phase.
         """
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
@@ -271,16 +323,20 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def ecg(self) -> pd.DataFrame:
-        """Return the ECG signal.
+        """ECG channel for the current selection.
 
-        If ``return_clean`` is set to ``True`` in the ``__init__``, the ECG signal is preprocessed and cleaned using the
-        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` algorithm before returning it.
+        If `return_clean` is True the ECG is preprocessed using
+        :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit`.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            ECG signal as :class:`~pandas.DataFrame`.
+        pd.DataFrame
+            ECG signal (cleaned or raw) for the selected participant/phase.
 
+        Raises
+        ------
+        ValueError
+            If not operating on a single participant and phase.
         """
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
@@ -295,13 +351,20 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
-        """Return the labeling borders for a selected participant and phase(s).
+        """
+        Labeling borders describing annotated segments for a participant.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Labeling borders as :class:`~pandas.DataFrame`.
+        pd.DataFrame
+            Labeling borders with columns including `sample_absolute` and `description`.
 
+        Raises
+        ------
+        ValueError
+            If not operating on a single participant.
+        FileNotFoundError
+            If the expected labeling borders CSV is missing for the participant.
         """
         participant = self.index["participant"][0]
 
@@ -321,24 +384,25 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Return the reference heartbeats.
+        """Computed reference heartbeat markers derived from ECG reference labels.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference heartbeats as a pandas DataFrame
-
+        pd.DataFrame
+            Heartbeat segmentation/reference table derived from ECG reference labels.
         """
         return self._load_reference_heartbeats()
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Return the reference labels for the ECG signal.
+        """Reference labels for a given channel and the current selection.
 
         Returns
         -------
-        :class:`~pandas.DataFrame`
-            Reference labels for the ECG signal as a pandas DataFrame
+        pd.DataFrame or dict
+        If a single phase is selected, returns a :class:`~pandas.DataFrame` for that
+        phase. If all phases are selected, returns a concatenated DataFrame indexed
+        by phase.
 
         """
         return self._load_reference_labels("ECG")
@@ -356,12 +420,14 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return self._load_reference_labels("ICG")
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
+        """Load and compute reference heartbeats from ECG reference labels."""
         reference_ecg = self.reference_labels_ecg
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
         return reference_heartbeats
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
+        """Load reference labels for a given channel and the current selection."""
         participant = self.index["participant"][0]
         phases = self.index["phase"]
 
@@ -406,6 +472,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @staticmethod
     def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrame) -> pd.DataFrame:
+        """Cut data to the provided labeling borders."""
         start = borders.index[0]
         end = borders.index[-1]
         data = data.loc[start:end]
