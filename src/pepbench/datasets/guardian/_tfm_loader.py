@@ -1,3 +1,8 @@
+"""Module for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
+
+This module provides the TFMLoader class, which can load TFM data from .mat files, downsample the data to a common sampling rate,
+and organize the data into a structured format for further analysis.
+"""
 from typing import ClassVar
 
 import numpy as np
@@ -9,7 +14,26 @@ from pepbench.utils._types import path_t
 
 
 class TFMLoader:
-    """Class for loading and processing Task Force Monitor (TFM) data from the Guardian Study."""
+    """Class for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
+    Parameters
+    ----------
+    data_dict : dict
+        Dictionary containing TFM data. Keys are channel names, values are dataframes with the TFM data.
+    tz : str, optional
+        Timezone of the data. Default: None
+
+    Attributes
+    ----------
+    SAMPLING_RATES_IN : dict
+        Dictionary containing the original sampling rates of the TFM channels.
+    SAMPLING_RATE_OUT : float
+        The target sampling rate for all channels after downsampling.
+    CHANNEL_MAPPING : dict
+        Dictionary mapping original channel names to standardized names.
+    PHASES : list
+        List of experimental phases in the TFM data.
+
+    """
 
     SAMPLING_RATES_IN: ClassVar[dict[str, float]] = {"ecg_1": 1000, "ecg_2": 1000, "icg_der": 500}
     SAMPLING_RATE_OUT = 500
@@ -69,6 +93,22 @@ class TFMLoader:
         date: str | pd.Timestamp,
         tz: str | None = "Europe/Berlin",
     ) -> "TFMLoader":
+        """Load TFM data from a .mat file.
+        Parameters
+        ----------
+        file_path : path_t
+            Path to the .mat file.
+        date : str | pd.Timestamp
+            Date of the recording.
+        tz : str, optional
+            Timezone of the data. Default: "Europe/Berlin"
+
+        Returns
+        -------
+        TFMLoader
+            An instance of the TFMLoader class containing the loaded data.
+
+        """
         data = loadmat(file_path, struct_as_record=False, squeeze_me=True)
 
         data_raw = data["RAW_SIGNALS"]
@@ -149,12 +189,52 @@ class TFMLoader:
         return self._tz
 
     def data_as_dict(self, index: str | None = None) -> dict[str, pd.DataFrame]:
+        """Get the TFM data as a dictionary of dataframes.
+        Parameters
+        ----------
+        index : str, optional
+            Type of index to add. Options are:
+            - None: simple integer index representing sample number
+            - "time": time in seconds since start of recording
+            - "utc": UTC timestamps
+            - "utc_datetime": UTC datetime index
+            - "local_datetime": Local datetime index in the dataset's timezone
+            Default: None
+
+        Returns
+        -------
+        dict[str, pd.DataFrame]
+            Dictionary containing the TFM data with the specified index.
+
+        """
         return {
             key: self._add_index(val, index=index, start_time=start_time)
             for (key, val), start_time in zip(self._data.items(), self._start_time_dict.values(), strict=False)
         }
 
     def _add_index(self, data: pd.DataFrame, index: str, start_time: pd.Timestamp | None = None) -> pd.DataFrame:
+        """Add a specific index to the dataframe.
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Dataframe to add the index to.
+        index : str
+            Type of index to add. Options are:
+            - None: simple integer index representing sample number
+            - "time": time in seconds since start of recording
+            - "utc": UTC timestamps
+            - "utc_datetime": UTC datetime index
+            - "local_datetime": Local datetime index in the dataset's timezone
+        start_time : pd.Timestamp, optional
+            Start time of the recording. Required for "utc", "utc_datetime", and "local
+            _datetime" index types. Default: None
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataframe with the specified index.
+
+        """
         index_names = {
             None: "n_samples",
             "time": "t",
