@@ -4,6 +4,7 @@ The functions include utilities for computing descriptive statistics, binning an
 Intraclass Correlation Coefficient (ICC), and integrating annotation agreement information into results dataframes.
 
 """
+# TODO: docu not consistent with algorithm files
 
 __all__ = [
     "add_annotation_agreement_to_results_dataframe",
