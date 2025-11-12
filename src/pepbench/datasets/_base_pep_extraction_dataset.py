@@ -1,3 +1,5 @@
+"""Base classes for PEP extraction datasets.
+This module provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data."""
 import pandas as pd
 from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from tpcp import Dataset
@@ -65,6 +67,7 @@ class BasePepDataset(Dataset):
         subset_index: pd.DataFrame | None = None,
         return_clean: bool = True,
     ) -> None:
+        """Initialize the BasePepDataset."""
         self.return_clean = return_clean
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index)
 
@@ -147,18 +150,22 @@ class MetadataMixin(Dataset):
 
     @property
     def base_demographics(self) -> pd.DataFrame:
+        """The base demographics of the participants."""
         return pd.concat([self.gender, self.age, self.bmi], axis=1)
 
     @property
     def age(self) -> pd.DataFrame:
+        """The age of the participants."""
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def gender(self) -> pd.DataFrame:
+        """The gender of the participants."""
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
     @property
     def bmi(self) -> pd.DataFrame:
+        """The BMI of the participants."""
         raise NotImplementedError("This property needs to be implemented in the subclass!")
 
 
@@ -243,14 +250,6 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
 
     @property
     def reference_pep(self) -> pd.DataFrame:
-        """Return the reference PEP values.
-
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Reference PEP values as a pandas DataFrame
-
-        """
         """Compute the reference PEP values between the reference Q-peak and B-point labels.
 
             Parameters
@@ -314,6 +313,18 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
 
     @staticmethod
     def _fill_unlabeled_artefacts(points: pd.DataFrame, reference_data: pd.DataFrame) -> pd.DataFrame:
+        """Fill unlabeled artefacts in the reference labels.
+        Parameters
+        ----------
+        points : :class:`pandas.DataFrame`
+            DataFrame containing the reference labels (either Q-peaks or B-points).
+        reference_data : :class:`pandas.DataFrame`
+            DataFrame containing the reference heartbeat segmentation data.
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            DataFrame with filled unlabeled artefacts.
+        """
         # get the indices of reference_icg that are not in b_points.index => they are artefacts but were not labeled
         heartbeat_ids = reference_data.index.get_level_values("heartbeat_id").unique()
         # insert "Artefact" label for artefacts that were not labeled to b_points,
