@@ -50,7 +50,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     Parameters
     ----------
-    base_path : path-like
+    base_path : :class:`~pathlib.Path`
         Path to the root directory of the Guardian dataset.
     groupby_cols : sequence of str, optional
         Columns to group the dataset index by.
@@ -164,7 +164,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         """Create the dataset index DataFrame.
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             Dataset index with columns "participant" and "phase".
         """
         self._sanitize_params()
@@ -235,7 +235,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.Series or pd.Timestamp
+        :class:`~pandas.Series` or :class:`~pandas.Timestamp`
             If a single participant is selected a single :class:`~pandas.Timestamp` is
             returned. If multiple participants are selected a :class:`~pandas.Series`
             indexed by participant id is returned.
@@ -262,7 +262,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame or dict
+        :class:`~pandas.DataFrame` or dict
             If a single phase is selected, a :class:`~pandas.DataFrame` of channel
             signals is returned. If all phases are selected, a dict mapping phase names
             to DataFrames is returned.
@@ -314,7 +314,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             ICG signal (cleaned or raw) for the selected participant/phase.
 
         Raises
@@ -340,7 +340,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             ECG signal (cleaned or raw) for the selected participant/phase.
 
         Raises
@@ -366,7 +366,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             Labeling borders with columns including `sample_absolute` and `description`.
 
         Raises
@@ -398,7 +398,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             Heartbeat segmentation/reference table derived from ECG reference labels.
         """
         return self._load_reference_heartbeats()
@@ -409,7 +409,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame or dict
+        :class:`~pandas.DataFrame` or dict
         If a single phase is selected, returns a :class:`~pandas.DataFrame` for that
         phase. If all phases are selected, returns a concatenated DataFrame indexed
         by phase.

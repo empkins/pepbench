@@ -51,7 +51,7 @@ def load_annotations_from_dataset(
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         Concatenated DataFrame of matched annotations for ECG and ICG with a
         MultiIndex column where the top level is ``signal`` and lower levels
         represent ``rater`` and ``sample`` (as produced by ``match_annotations``).
@@ -94,10 +94,10 @@ def match_annotations(
 
         Parameters
         ----------
-        annotations_01 : pandas.DataFrame
+        annotations_01 : :class:`~pandas.DataFrame`
             Annotation table for reference rater/dataset. Must contain a
             ``sample_relative`` column and a ``label`` level with ``start`` and ``end``.
-        annotations_02 : pandas.DataFrame
+        annotations_02 : :class:`~pandas.DataFrame`
             Annotation table for the other rater/dataset (same structure as
             ``annotations_01``).
         sampling_rate_hz : float
@@ -106,7 +106,7 @@ def match_annotations(
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Concatenated annotations for matched heartbeats with MultiIndex columns
             ``rater`` (``rater_01`` and ``rater_02``) and ``sample`` (annotation fields).
             Only matched (true positive) heartbeats are included.
@@ -167,7 +167,7 @@ def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: 
 
     Parameters
     ----------
-    annotations : pandas.DataFrame
+    annotations : :class:`~pandas.DataFrame`
         Annotations DataFrame with rater columns (``rater_01``, ``rater_02``) and
         sample values under ``sample_relative`` or as single-level columns.
     sampling_rate_hz : float or None
@@ -175,7 +175,7 @@ def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: 
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         Single-column DataFrame with the computed differences. Index preserves
         heartbeat/sample identifiers after dropping label/channel where appropriate.
 
@@ -213,14 +213,14 @@ def normalize_annotations_to_heartbeat_start(
 
     Parameters
     ----------
-    annotations : pandas.DataFrame
+    annotations : :class:`~pandas.DataFrame`
         Annotation DataFrame with ``label`` and ``channel`` levels and rater columns.
     sampling_rate_hz : float or None
         If provided, convert sample-based differences to milliseconds.
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         DataFrame of differences normalized to heartbeat start, with a single
         column named ``difference_ms`` or ``difference_samples`` depending on input.
 

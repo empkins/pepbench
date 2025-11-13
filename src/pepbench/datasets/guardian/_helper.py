@@ -26,8 +26,10 @@ def _load_tfm_data(base_path: path_t, date: pd.Timestamp) -> dict[str, pd.DataFr
 
     Parameters
     ----------
-    base_path
-    date
+    base_path : path_t
+        The base path where TFM data files are stored.
+    date : :class:`~pandas.Timestamp`
+        The date for which to load TFM data.
 
     Returns
     -------
