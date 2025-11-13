@@ -458,6 +458,21 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
 def merge_result_metrics_from_multiple_annotators(
     results: Sequence[pd.DataFrame], add_annotation_difference: bool = True
 ) -> pd.DataFrame:
+    """Merge the result metrics from multiple annotators into a single dataframe.
+
+    Parameters
+    ----------
+    results : list of :class:`pandas.DataFrame`
+        List of result metrics dataframes from different annotators.
+    add_annotation_difference : bool, optional
+        Whether to compute and add the difference between annotators. Default: True.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        The merged result metrics dataframe.
+
+    """
     metrics_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
     metrics_combined = metrics_combined.reindex(["Mean Absolute Error [ms]", "Mean Error [ms]"], level=1, axis=1)
 
@@ -481,6 +496,22 @@ def merge_result_metrics_from_multiple_annotators(
 def merge_results_per_sample_from_different_annotators(
     results: Sequence[pd.DataFrame], selected_algorithm: tuple[str] | None = None
 ) -> pd.DataFrame:
+    """Merge the results-per-sample from multiple annotators into a single dataframe.
+
+    Parameters
+    ----------
+    results : list of :class:`pandas.DataFrame`
+        List of results-per-sample dataframes from different annotators.
+    selected_algorithm : tuple of str, optional
+        The algorithm combination to select from each annotator's results. If None, all algorithms are included.
+        Default: None.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        The merged results-per-sample dataframe.
+
+    """
     if selected_algorithm is None:
         results_combined = pd.concat({f"Annotator {i + 1}": result_df for i, result_df in enumerate(results)}, axis=1)
     else:

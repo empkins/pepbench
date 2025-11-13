@@ -34,7 +34,7 @@ def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> 
 
     Returns
     -------
-    pathlib.Path
+    :class:`~pathlib.Path`
         Path to `data_per_subject/{participant_id}/{condition}`.
 
     Raises
@@ -57,7 +57,7 @@ def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) ->
 
     Parameters
     ----------
-    base_path : path-like
+    base_path : :class:`~pathlib.Path`
         Root path of the EmpkinS dataset.
     participant_id : str
         Participant identifier.
@@ -66,7 +66,7 @@ def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) ->
 
     Returns
     -------
-    tuple[pd.DataFrame, int]
+    tuple[:class:`~pandas.DataFrame`, int]
         Tuple of `(biopac_df, sampling_rate)` where `biopac_df` is the Biopac
         channels as a DataFrame indexed by `local_datetime` and `sampling_rate` is
         the per-channel sampling rate (Hz) (one representative value is returned).
@@ -102,7 +102,7 @@ def _load_timelog(base_path: path_t, participant_id: str, condition: str, phase:
 
     Parameters
     ----------
-    base_path : path-like
+    base_path : :class:`~pathlib.Path`
         Root path of the EmpkinS dataset.
     participant_id : str
         Participant identifier.
@@ -114,7 +114,7 @@ def _load_timelog(base_path: path_t, participant_id: str, condition: str, phase:
 
     Returns
     -------
-    pd.DataFrame
+    :class:`~pandas.DataFrame`
         Timelog rows/columns for the requested phase or a coarse timelog when
         `phase == "all"`.
 

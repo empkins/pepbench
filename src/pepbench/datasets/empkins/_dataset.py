@@ -118,11 +118,18 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         )
 
     def _sanitize_params(self) -> None:
+        """Sanitize input parameters."""
         # ensure pathlib
         self.base_path = Path(self.base_path)
 
     def create_index(self) -> pd.DataFrame:
-        """"Create the dataset index."""
+        """Create the dataset index.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            DataFrame containing all combinations of participant IDs, conditions, and phases.
+        """
         self._sanitize_params()
         # data is located in a folder named "Data" and data per participant is located in folders named "VP_xx"
         participant_ids = [
@@ -182,7 +189,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame or dict
+        :class:`~pandas.DataFrame` or dict
             If a single participant+condition+phase is selected, returns a DataFrame
             containing the Biopac channels. If a single participant+condition but all
             phases are selected and `only_labeled` is True, returns a dict mapping phase
@@ -319,7 +326,22 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         raise ValueError("Timelog can only be accessed for a single participant and a single condition at once!")
 
     def _get_biopac_data(self, participant_id: str, condition: str, phase: str) -> tuple[pd.DataFrame, int]:
-        """Load biopac data for the given participant, condition, and phase."""
+        """Load biopac data for the given participant, condition, and phase.
+
+        Parameters
+        ----------
+        participant_id : str
+            Participant identifier.
+        condition : str
+            Experimental condition.
+        phase : str
+            Experimental phase.
+
+        Returns
+        -------
+        tuple[:class:`~pandas.DataFrame`, int]
+            Tuple containing the biopac data DataFrame and the sampling frequency in Hz.
+        """
         if self.use_cache:
             data, fs = _cached_get_biopac_data(self.base_path, participant_id, condition)
         else:
@@ -335,11 +357,32 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return data, fs
 
     def _get_timelog(self, participant_id: str, condition: str, phase: str) -> pd.DataFrame:
-        """Load timelog data for the given participant, condition, and phase."""
+        """Load timelog data for the given participant, condition, and phase.
+
+        Parameters
+        ----------
+        participant_id : str
+            Participant identifier.
+        condition : str
+            Experimental condition.
+        phase : str
+            Experimental phase.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Timelog data for the specified participant, condition, and phase.
+        """
         return _load_timelog(self.base_path, participant_id, condition, phase)
 
     def _all_phases_selected(self) -> bool:
-        """Check if all phases are selected in the current index."""
+        """Check if all phases are selected in the current index.
+
+        Returns
+        -------
+        bool
+            True if all phases are selected, False otherwise.
+        """
         # check if all phases are selected
         return len(self.index["phase"]) == len(self.PHASES)
 
@@ -380,7 +423,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame`
             Heartbeat segmentation/reference table derived from ECG reference labels.
         """
         return self._load_reference_heartbeats()
@@ -391,7 +434,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame or dict
+        :class:`~pandas.DataFrame` or dict
             If a single phase is selected, returns a DataFrame of reference labels for
             that phase. If all phases are selected, returns a concatenated DataFrame
             indexed by phase.
@@ -409,7 +452,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
         Returns
         -------
-        pd.DataFrame or dict
+        :class:`~pandas.DataFrame` or dict
             If a single phase is selected, returns a DataFrame of reference labels for
             that phase. If all phases are selected, returns a concatenated DataFrame
             indexed by phase.
@@ -422,14 +465,33 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         return self._load_reference_labels("ICG")
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
-        """Load and compute reference heartbeats from ECG reference labels."""
+        """Load and compute reference heartbeats from ECG reference labels.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            DataFrame containing computed heartbeat segmentation from reference ECG labels.
+        """
         reference_ecg = self.reference_labels_ecg
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
         return reference_heartbeats
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
-        """Load reference labels for the given channel and current selection."""
+        """Load reference labels for the given channel and current selection.
+
+        Parameters
+        ----------
+        channel : str
+            Channel for which to load reference labels ("ECG" or "ICG").
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame` or dict
+            If a single phase is selected, returns a DataFrame of reference labels for
+            that phase. If all phases are selected, returns a concatenated DataFrame
+            indexed by phase.
+        """
         participant = self.index["participant"][0]
         condition = self.index["condition"][0]
         phases = self.index["phase"]
@@ -504,7 +566,6 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         -------
         :class:`~pandas.DataFrame`
             DataFrame with the `Age` column for the selected participants.
-
         """
         return self.metadata[["Age"]]
 
@@ -516,7 +577,6 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         -------
         :class:`~pandas.DataFrame`
             Gender as a pandas DataFrame, recoded as {1: "Female", 2: "Male"}
-
         """
         return self.metadata[["Gender"]].replace(self.GENDER_MAPPING)
 
@@ -528,6 +588,5 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         -------
         :class:`~pandas.DataFrame`
             Computed BMI (using demographics `Weight` and `Height`) for the selected participants.
-
         """
         return bmi(self.metadata[["Weight", "Height"]])
