@@ -8,9 +8,9 @@ from hpc_helper import build_job_submit_slurm, check_interpreter
 # print path of python interpreter
 print(sys.executable)
 
-#deploy_type = sys.argv[1]
+# deploy_type = sys.argv[1]
 
-#check_interpreter(deploy_type)
+# check_interpreter(deploy_type)
 
 job_list = [
     {
