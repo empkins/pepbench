@@ -183,12 +183,12 @@ class TFMLoader:
 
     @property
     def start_time_unix(self) -> pd.Timestamp | None:
-        """Start time of the recording in UTC time."""
+        """Return start time of the recording in UTC time."""
         return self._start_time_unix
 
     @property
     def timezone(self) -> str:
-        """Timezone the dataset was recorded in."""
+        """Return timezone the dataset was recorded in."""
         return self._tz
 
     def data_as_dict(self, index: str | None = None) -> dict[str, pd.DataFrame]:

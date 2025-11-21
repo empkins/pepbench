@@ -109,7 +109,7 @@ class BasePepDataset(Dataset):
 
     @property
     def icg(self) -> IcgRawDataFrame:
-        """Raw ICG data.
+        """Return raw ICG data.
 
         Returns
         -------
@@ -125,7 +125,7 @@ class BasePepDataset(Dataset):
 
     @property
     def ecg(self) -> EcgRawDataFrame:
-        """Raw ECG data.
+        """Return raw ECG data.
 
         Returns
         -------
@@ -141,7 +141,7 @@ class BasePepDataset(Dataset):
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """Sampling rate of the ECG signal in Hz.
+        """Return sampling rate of the ECG signal in Hz.
 
         Returns
         -------
@@ -157,7 +157,7 @@ class BasePepDataset(Dataset):
 
     @property
     def sampling_rate_icg(self) -> int:
-        """Sampling rate of the ICG signal in Hz.
+        """Return sampling rate of the ICG signal in Hz.
 
         Returns
         -------
@@ -173,7 +173,7 @@ class BasePepDataset(Dataset):
 
     @property
     def heartbeats(self) -> HeartbeatSegmentationDataFrame:
-        """Heartbeat segmentation extracted from ECG.
+        """Return heartbeat segmentation extracted from ECG.
 
         Returns
         -------
@@ -206,7 +206,7 @@ class MetadataMixin(Dataset):
 
     @property
     def base_demographics(self) -> pd.DataFrame:
-        """The base demographics of the participants.
+        """Return base demographics of the participants.
 
         Returns
         -------
@@ -217,7 +217,7 @@ class MetadataMixin(Dataset):
 
     @property
     def age(self) -> pd.DataFrame:
-        """The age of the participants.
+        """Return age of the participants.
 
         Returns
         -------
@@ -233,7 +233,7 @@ class MetadataMixin(Dataset):
 
     @property
     def gender(self) -> pd.DataFrame:
-        """The gender of the participants.
+        """Return gender of the participants.
 
         Returns
         -------
@@ -249,7 +249,7 @@ class MetadataMixin(Dataset):
 
     @property
     def bmi(self) -> pd.DataFrame:
-        """The BMI of the participants.
+        """Return BMI of the participants.
 
         Returns
         -------
@@ -281,7 +281,7 @@ class PepLabelMixin(Dataset):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """The reference heartbeats.
+        """Return reference heartbeats.
 
         Returns
         -------
@@ -297,7 +297,7 @@ class PepLabelMixin(Dataset):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
-        """The reference labels for the ECG data.
+        """Return reference labels for the ECG data.
 
         Returns
         -------
@@ -313,7 +313,7 @@ class PepLabelMixin(Dataset):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
-        """The reference labels for the ICG data.
+        """Return reference labels for the ICG data.
 
         Returns
         -------

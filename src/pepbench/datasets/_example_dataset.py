@@ -254,7 +254,8 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Return the reference heartbeats computed from the reference ECG labels.
+        """
+        Return the reference heartbeats computed from the reference ECG labels.
 
         Returns
         -------

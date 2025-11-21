@@ -234,8 +234,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def data(self) -> pd.DataFrame:
-        """
-        Load raw or filtered ECG and ICG data for the current single selection.
+        """Load raw or filtered ECG and ICG data for the current single selection.
 
         Returns
         -------
