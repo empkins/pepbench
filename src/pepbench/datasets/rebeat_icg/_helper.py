@@ -11,10 +11,63 @@ from pepbench.utils._types import path_t
 
 
 def _load_mat_data(file_path: path_t) -> dict[str, np.ndarray]:
+    """Load a MATLAB `.mat` file and return its contents.
+
+    Parameters
+    ----------
+    file_path : path_t
+        Path to the `.mat` file.
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        Dictionary containing the variables stored in the `.mat` file. Arrays are squeezed.
+
+    Notes
+    -----
+    Uses `scipy.io.loadmat` with `squeeze_me=True` to remove singleton dimensions.
+        """
     return loadmat(file_path, squeeze_me=True)
 
 
 def generate_labeling_and_heartbeat_borders(base_path: path_t) -> None:
+    """
+    Generate heartbeat segmentation and labeling border CSV files for all expert annotations.
+
+    Parameters
+    ----------
+    base_path : path_t
+        Base project directory containing the subfolders:
+        `01_RawData`, `03_ExpertAnnotations`, and output folder `04_LabelingAndHeartBeatBorders`.
+
+    Returns
+    -------
+    None
+        Writes heartbeat and labeling border CSV files to disk.
+
+    Processing Steps
+    ----------------
+    1. Iterate over annotation `.mat` files.
+    2. Extract subject id and task phase from filename.
+    3. Load raw ECG/ICG signals and sampling frequency.
+    4. Run heartbeat segmentation (`HeartbeatSegmentationNeurokit`).
+    5. Associate B-point annotations with detected heartbeats.
+    6. Group contiguous B-points into labeled regions (gap threshold: `5 * fs`).
+    7. Compute extended labeling borders with a 0.5 s margin.
+    8. Export per-region heartbeat CSV and labeling border CSV files.
+
+    Files Written
+    -------------
+    Heartbeats\_Subject\_<id>\_task\_<phase>\_label\_<region>.csv
+        Per-heartbeat samples (start, end, R-peak, RR interval).
+    LabelingBorders\_Subject\_<id>\_task\_<phase>\_label\_<region>.csv
+        Start/end sample (Int64) of each labeled region.
+
+    Notes
+    -----
+    Heartbeat IDs are reindexed starting at zero within each labeling region.
+    FutureWarnings from pandas grouping are suppressed.
+    """
     data_folder = base_path.joinpath("01_RawData")
     annotation_folder = base_path.joinpath("03_ExpertAnnotations")
     labeling_border_folder = base_path.joinpath("04_LabelingAndHeartBeatBorders")
@@ -88,6 +141,27 @@ def generate_labeling_and_heartbeat_borders(base_path: path_t) -> None:
 
 
 def _load_b_point_annotations(file_path: path_t, load_func: Callable | None = None) -> pd.DataFrame:
+    """
+    Load B-point annotations from a MATLAB annotation file.
+
+    Parameters
+    ----------
+    file_path : path_t
+        Path to the annotation `.mat` file containing `annotPoints`.
+    load_func : Callable, optional
+        Custom load function returning a dict-like structure. Defaults to internal `_load_mat_data`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with a single column `sample_relative` (Int64-like) sorted ascending.
+        Index is `heartbeat_id` starting at 0.
+
+    Notes
+    -----
+    Assumes the source `.mat` contains an `annotPoints` array with columns `[B, C, X, Other]`.
+    Only the B-point column is retained.
+    """
     if load_func is None:
         load_func = _load_mat_data
     annotations = load_func(file_path)

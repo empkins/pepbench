@@ -93,7 +93,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """Sampling rate of the ECG signal.
+        """Return sampling rate of the ECG signal.
 
         Returns
         -------
@@ -104,7 +104,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def sampling_rate_icg(self) -> int:
-        """Sampling rate of the ICG signal.
+        """Return sampling rate of the ICG signal.
 
         Returns
         -------
@@ -115,7 +115,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def ecg(self) -> EcgRawDataFrame:
-        """Access the ECG signal data.
+        """Return ECG signal data.
 
         The property returns ECG data for a single participant and a single phase.
         If ``return_clean`` is True, the signal is cleaned before being returned.
@@ -141,7 +141,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def icg(self) -> IcgRawDataFrame:
-        """Access the ICG signal data.
+        """Return ICG signal data.
 
         The property returns ICG data for a single participant and a single phase.
         If ``return_clean`` is True, the signal is cleaned before being returned.
@@ -188,7 +188,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Reference labels for the ECG signal.
+        """Return reference labels for the ECG signal.
 
         Returns
         -------
@@ -199,7 +199,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
-        """Reference labels for the ICG signal.
+        """Return reference labels for the ICG signal.
 
         Returns
         -------
@@ -243,7 +243,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Reference heartbeats computed from reference ECG labels.
+        """Return reference heartbeats computed from reference ECG labels.
 
         Returns
         -------
