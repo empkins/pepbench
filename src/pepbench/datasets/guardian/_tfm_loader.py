@@ -1,6 +1,7 @@
 """Module for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
 
-This module provides the TFMLoader class, which can load TFM data from .mat files, downsample the data to a common sampling rate,
+This module provides the TFMLoader class, which can load TFM data from .mat files,
+downsample the data to a common sampling rate,
 and organize the data into a structured format for further analysis.
 """
 from typing import ClassVar
@@ -15,6 +16,7 @@ from pepbench.utils._types import path_t
 
 class TFMLoader:
     """Class for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
+
     Parameters
     ----------
     data_dict : dict
@@ -94,6 +96,7 @@ class TFMLoader:
         tz: str | None = "Europe/Berlin",
     ) -> "TFMLoader":
         """Load TFM data from a .mat file.
+
         Parameters
         ----------
         file_path : path_t
@@ -190,6 +193,7 @@ class TFMLoader:
 
     def data_as_dict(self, index: str | None = None) -> dict[str, pd.DataFrame]:
         """Get the TFM data as a dictionary of dataframes.
+
         Parameters
         ----------
         index : str, optional
@@ -214,6 +218,7 @@ class TFMLoader:
 
     def _add_index(self, data: pd.DataFrame, index: str, start_time: pd.Timestamp | None = None) -> pd.DataFrame:
         """Add a specific index to the dataframe.
+
         Parameters
         ----------
         data : pd.DataFrame

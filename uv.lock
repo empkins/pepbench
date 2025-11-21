@@ -80,7 +80,7 @@ wheels = [
 [[package]]
 name = "biopsykit"
 version = "0.13.1"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main#da9054bb15bc73ded8b64b3857042b6b7c19300e" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
@@ -102,10 +102,6 @@ dependencies = [
     { name = "ts2vg" },
     { name = "xlrd" },
     { name = "xlsxwriter" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/86/21/7070e5912e1fa83ccfb082b4cfc54445f1632fc4f972ec874df6ec88b779/biopsykit-0.13.1.tar.gz", hash = "sha256:f295ead17b77c1708abc8c7a6039868e63435e8995c3be6e422a086d49aa9fc3", size = 273144, upload-time = "2025-06-24T12:06:28.02Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/22/c03d9528308d72e23ad3d2beaf401f69c7c7fe584fab6c590448413707d9/biopsykit-0.13.1-py3-none-any.whl", hash = "sha256:1b8ea4f07a1196d0628d1437b6938e0541558bc4810cd59e46c83a04013276a7", size = 366425, upload-time = "2025-06-24T12:06:26.21Z" },
 ]
 
 [[package]]
@@ -1398,7 +1394,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "biopsykit", specifier = ">=0.13.1" },
+    { name = "biopsykit", git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "pywavelets", specifier = ">=1.8.0" },

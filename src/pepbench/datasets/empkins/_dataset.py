@@ -149,7 +149,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate(self) -> dict[str, float]:
-        """Sampling rates of the ECG and ICG signals.
+        """Return sampling rates of the ECG and ICG signals.
 
         Returns
         -------
@@ -161,7 +161,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """Sampling rate of the ECG signal.
+        """Return sampling rate of the ECG signal.
 
         Returns
         -------
@@ -173,7 +173,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_icg(self) -> int:
-        """Sampling rate of the ICG signal.
+        """Return sampling rate of the ICG signal.
 
         Returns
         -------
@@ -185,7 +185,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @cached_property
     def biopac(self) -> pd.DataFrame:
-        """Biopac data for the current subset.
+        """Return biopac data for the current subset.
 
         Returns
         -------
@@ -266,7 +266,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def ecg(self) -> EcgRawDataFrame:
-        """Returns the ECG channel from the biopac data.
+        """Return the ECG channel from the biopac data.
 
         If ``return_clean`` is set to ``True`` in the ``__init__``, the ECG signal is preprocessed and cleaned using the
         :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit` algorithm before returning it.
@@ -275,6 +275,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         -------
         :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
             ECG data as a pandas DataFrame.
+
         Raises
         ------
         ValueError
@@ -419,7 +420,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Computed reference heartbeat markers derived from ECG reference labels.
+        """Return computed reference heartbeat markers derived from ECG reference labels.
 
         Returns
         -------
@@ -430,7 +431,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
-        """Reference labels for a given channel and the current selection.
+        """Return reference labels for a given channel and the current selection.
 
         Returns
         -------
@@ -545,7 +546,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def metadata(self) -> pd.DataFrame:
-        """Participant metadata
+        """Return participant metadata.
 
         Returns
         -------
@@ -560,7 +561,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def age(self) -> pd.DataFrame:
-        """Age of selected participants
+        """Return age of selected participants.
 
         Returns
         -------
@@ -571,7 +572,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def gender(self) -> pd.DataFrame:
-        """Gender of selected participants.
+        """Return gender of selected participants.
 
         Returns
         -------
@@ -582,7 +583,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def bmi(self) -> pd.DataFrame:
-        """Body-mass index (BMI) for selected participants.
+        """Return body-mass index (BMI) for selected participants.
 
         Returns
         -------

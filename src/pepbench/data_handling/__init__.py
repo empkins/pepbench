@@ -2,7 +2,7 @@
 
 This package provides helpers for:
 - Adding a unique identifier column to results dataframes to track samples across datasets and enable reliable merging.
-- Computing improvement metrics and orchestrating an improvement evaluation pipeline, including optional outlier detection and correction.
+- Computing improvement metrics and running the evaluation pipeline with optional outlier handling.
 - Producing performance summaries tailored to PEP estimation tasks for evaluation and reporting.
 - Assessing and quantifying the relationship between reference PEP measurements and heart rate signals.
 - Generating descriptive statistics and diagnostic summaries for PEP values across datasets or cohorts.

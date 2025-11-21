@@ -1,4 +1,4 @@
-"""Module for handling PEP benchmark data.
+r"""Module for handling PEP benchmark data.
 
 Provides utility functions to extract reference PEP values, compute performance metrics,
 aggregate and compare results across algorithms and annotators, and compute derived

@@ -48,54 +48,55 @@ __all__ = ["TimeWindowIcgDataset"]
 @base_pep_extraction_docfiller
 class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     """
-        Dataset accessor for TimeWindow ICG data.
+    Dataset accessor for TimeWindow ICG data.
 
-        The dataset exposes methods and properties to load raw and cleaned ECG/ICG
-        data, compute and return heartbeat borders, and load reference labels
-        for ECG and ICG channels.
+    The dataset exposes methods and properties to load raw and cleaned ECG/ICG
+    data, compute and return heartbeat borders, and load reference labels
+    for ECG and ICG channels.
 
-        Parameters
-        ----------
-        base_path : str or pathlib.Path
-            Path to the dataset root directory containing ``signals``,
-            ``annotations`` and ``reference_heartbeats`` subfolders.
-        groupby_cols : sequence of str or None, optional
-            Columns to group the dataset by when creating indices. Default is
-            ``None`` (no grouping).
-        subset_index : sequence of tuple or None, optional
-            Explicit subset of the dataset index to work with. Default is ``None``.
-        return_clean : bool, optional
-            If ``True`` (default), return cleaned signals for ``ecg`` and ``icg``
-            properties; otherwise return raw signals.
-        use_cache : bool, optional
-            If ``True`` (default), cache parsed ``.txt`` files to speed up repeated
-            loads.
-        exclude_r_peak_detection_errors : bool, optional
-            If ``True`` (default), exclude known participants with R-peak
-            detection issues (see ``SUBSET_R_PEAK_DETECTION_ERRORS``).
-        only_labeled : bool, optional
-            If ``True``, restrict the dataset to entries that have labels.
+    Parameters
+    ----------
+    base_path : str or pathlib.Path
+        Path to the dataset root directory containing ``signals``,
+        ``annotations`` and ``reference_heartbeats`` subfolders.
+    groupby_cols : sequence of str or None, optional
+        Columns to group the dataset by when creating indices. Default is
+        ``None`` (no grouping).
+    subset_index : sequence of tuple or None, optional
+        Explicit subset of the dataset index to work with. Default is ``None``.
+    return_clean : bool, optional
+        If ``True`` (default), return cleaned signals for ``ecg`` and ``icg``
+        properties; otherwise return raw signals.
+    use_cache : bool, optional
+        If ``True`` (default), cache parsed ``.txt`` files to speed up repeated
+        loads.
+    exclude_r_peak_detection_errors : bool, optional
+        If ``True`` (default), exclude known participants with R-peak
+        detection issues (see ``SUBSET_R_PEAK_DETECTION_ERRORS``).
+    only_labeled : bool, optional
+        If ``True``, restrict the dataset to entries that have labels.
 
-        Class attributes
-        ----------------
-        SAMPLING_RATE : int
-            Sampling rate of raw signals in Hz (default: 2000).
-        PHASES : sequence of str
-            Known experiment phases (default: ``["Baseline", "EmotionInduction"]``).
-        SUBSET_R_PEAK_DETECTION_ERRORS : sequence of str
-            Participant-phase pairs to exclude by default due to R-peak detection errors.
+    Class attributes
+    ----------------
+    SAMPLING_RATE : int
+        Sampling rate of raw signals in Hz (default: 2000).
+    PHASES : sequence of str
+        Known experiment phases (default: ``["Baseline", "EmotionInduction"]``).
+    SUBSET_R_PEAK_DETECTION_ERRORS : sequence of str
+        Participant-phase pairs to exclude by default due to R-peak detection errors.
 
-        Attributes
-        ----------
-        base_path : pathlib.Path
-            Normalized dataset base path.
-        use_cache : bool
-            Whether to use cached parsing for text files.
-        exclude_r_peak_detection_errors : bool
-            Whether to exclude problematic recordings.
-        data_to_exclude : sequence of tuple
-            List of participant-phase pairs that should be dropped from the index.
-        """
+    Attributes
+    ----------
+    base_path : pathlib.Path
+        Normalized dataset base path.
+    use_cache : bool
+        Whether to use cached parsing for text files.
+    exclude_r_peak_detection_errors : bool
+        Whether to exclude problematic recordings.
+    data_to_exclude : sequence of tuple
+        List of participant-phase pairs that should be dropped from the index.
+    """
+
     base_path: Path
     use_cache: bool
 
@@ -325,7 +326,6 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
         ValueError
             If called when the dataset is not restricted to a single participant.
         """
-
         if not self.is_single("participant"):
             raise ValueError("Labeling borders can only be loaded for a single participant.")
 
@@ -399,7 +399,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
-        """Load reference ICG labels and align them to heartbeat IDs.
+        r"""Load reference ICG labels and align them to heartbeat IDs.
 
         The method loads raw B-point annotations from the ``annotations`` folder,
         adjusts them for the selected phase (slicing and shifting) and matches
@@ -460,7 +460,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Compute reference ECG labels (Q-peaks) from ECG and reference heartbeats.
+        r"""Compute reference ECG labels (Q-peaks) from ECG and reference heartbeats.
 
         Q-peak extraction is performed by :class:`~biopsykit.signals.ecg.event_extraction.QPeakExtractionVanLien2013`
         and results are returned as a multi-indexed DataFrame consistent with

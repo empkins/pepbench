@@ -1,4 +1,4 @@
-"""Example Dataset for Pepbench
+"""Example Dataset for Pepbench.
 
 Provides access to ECG and ICG signals, reference labels and reference heartbeats
 for evaluation purposes.
@@ -44,6 +44,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
     example_file_path : str or Path
         Path to the example dataset zip file.
     """
+
     example_file_path: path_t
 
     def __init__(
@@ -55,6 +56,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return_clean: bool = True,
     ) -> None:
         """Initialize the ExampleDataset.
+
         Parameters
         ----------
         example_file_path : str or Path
