@@ -495,7 +495,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
     @staticmethod
     def _load_reference_labels(file_path: path_t) -> pd.DataFrame:
-        """Helper to read simple reference label CSV files.
+        """Load and read simple reference label CSV files.
 
         The implementation expects a CSV with a column ``B`` containing sample
         indices and returns a DataFrame with index ``heartbeat_id`` and column
