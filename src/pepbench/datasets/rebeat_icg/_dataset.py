@@ -76,6 +76,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
     SUBSET_ANNOTATION_ERRORS : sequence
         Known participant/phase tuples to optionally exclude due to annotation errors.
     """
+
     base_path: Path
     use_cache: bool
 
@@ -326,6 +327,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
     @property
     def heartbeats(self) -> pd.DataFrame:
         """Segment heartbeats from the ECG data and return the heartbeat borders.
+
         Uses `biopsykit.signals.ecg.segmentation.HeartbeatSegmentationNeurokit`.
 
         Returns
@@ -348,6 +350,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         :class:`~pandas.DataFrame`
             Labeling borders as a pandas DataFrame with integer sample columns such as
             `start_sample` and `end_sample`.
+
         Raises
         ------
         ValueError

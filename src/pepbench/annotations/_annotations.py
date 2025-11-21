@@ -88,35 +88,35 @@ def match_annotations(
 ) -> pd.DataFrame:
     """Match annotations between two raters/datasets and return paired annotations.
 
-        Extract heartbeat start/end sample indices from each annotation DataFrame,
-        use ``match_heartbeat_lists`` to find matching heartbeats (true positives),
-        and return the matched annotations aligned by heartbeat.
+    Extract heartbeat start/end sample indices from each annotation DataFrame,
+    use ``match_heartbeat_lists`` to find matching heartbeats (true positives),
+    and return the matched annotations aligned by heartbeat.
 
-        Parameters
-        ----------
-        annotations_01 : :class:`~pandas.DataFrame`
-            Annotation table for reference rater/dataset. Must contain a
-            ``sample_relative`` column and a ``label`` level with ``start`` and ``end``.
-        annotations_02 : :class:`~pandas.DataFrame`
-            Annotation table for the other rater/dataset (same structure as
-            ``annotations_01``).
-        sampling_rate_hz : float
-            Sampling rate used when matching heartbeats (passed to
-            ``match_heartbeat_lists``).
+    Parameters
+    ----------
+    annotations_01 : :class:`~pandas.DataFrame`
+        Annotation table for reference rater/dataset. Must contain a
+        ``sample_relative`` column and a ``label`` level with ``start`` and ``end``.
+    annotations_02 : :class:`~pandas.DataFrame`
+        Annotation table for the other rater/dataset (same structure as
+        ``annotations_01``).
+    sampling_rate_hz : float
+        Sampling rate used when matching heartbeats (passed to
+        ``match_heartbeat_lists``).
 
-        Returns
-        -------
-        :class:`~pandas.DataFrame`
-            Concatenated annotations for matched heartbeats with MultiIndex columns
-            ``rater`` (``rater_01`` and ``rater_02``) and ``sample`` (annotation fields).
-            Only matched (true positive) heartbeats are included.
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        Concatenated annotations for matched heartbeats with MultiIndex columns
+        ``rater`` (``rater_01`` and ``rater_02``) and ``sample`` (annotation fields).
+        Only matched (true positive) heartbeats are included.
 
-        Raises
-        ------
-        KeyError, IndexError
-            If expected index/column levels (``label``, ``sample_relative``, ``channel``)
-            are missing.
-        """
+    Raises
+    ------
+    KeyError, IndexError
+        If expected index/column levels (``label``, ``sample_relative``, ``channel``)
+        are missing.
+    """
     heartbeats_01 = annotations_01.unstack("label")["sample_relative"][["start", "end"]].dropna()
     # heartbeats_01 = annotations_01.reindex(["start", "end"], level="label")["sample_relative"].unstack()
     heartbeats_01 = heartbeats_01.droplevel(-1)

@@ -44,6 +44,7 @@ _cached_get_tfm_data = lru_cache(maxsize=4)(_load_tfm_data)
 @base_pep_extraction_docfiller
 class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     """Dataset class for the Guardian Dataset.
+
     Provides access to Task Force Monitor ECG/ICG signals, preprocessed signals,
     timelogs describing experimental phases, reference annotations, and participant
     metadata.
@@ -162,6 +163,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     def create_index(self) -> pd.DataFrame:
         """Create the dataset index DataFrame.
+
         Returns
         -------
         :class:`~pandas.DataFrame`
@@ -180,6 +182,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
         """Find participant/phase combinations to exclude based on the exclusion flags.
+
         Returns
         -------
         sequence of tuple
@@ -195,7 +198,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rates(self) -> dict[str, int]:
-        """Sampling rates of the ECG and ICG signals.
+        """Return sampling rates of the ECG and ICG signals.
 
         Returns
         -------
@@ -207,7 +210,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_ecg(self) -> int:
-        """Sampling rate of the ECG signal.
+        """Return sampling rate of the ECG signal.
 
         Returns
         -------
@@ -219,7 +222,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def sampling_rate_icg(self) -> int:
-        """Sampling rate of the ICG signal.
+        """Return sampling rate of the ICG signal.
 
         Returns
         -------
@@ -231,7 +234,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def date(self) -> pd.Series | pd.Timestamp:
-        """ Recording date(s) for the selected participant(s).
+        """Return recording date(s) for the selected participant(s).
 
         Returns
         -------
@@ -254,7 +257,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def tfm_data(self) -> pd.DataFrame | dict[str, pd.DataFrame]:
-        """Task Force Monitor (TFM) data for the current selection.
+        r"""Task Force Monitor (TFM) data for the current selection.
 
         The property loads raw TFM data files for a single participant. It supports
         accessing either a single phase or all phases for that participant. When
@@ -306,8 +309,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def icg(self) -> pd.DataFrame:
-        """
-        ICG channel for the current selection.
+        """Return ICG channel for the current selection.
 
         If `return_clean` is True the ICG is preprocessed using
         :class:`~biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass`.
@@ -333,7 +335,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def ecg(self) -> pd.DataFrame:
-        """ECG channel for the current selection.
+        """Return ECG channel for the current selection.
 
         If `return_clean` is True the ECG is preprocessed using
         :class:`~biopsykit.signals.ecg.preprocessing.EcgPreprocessingNeurokit`.
@@ -361,8 +363,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def labeling_borders(self) -> pd.DataFrame:
-        """
-        Labeling borders describing annotated segments for a participant.
+        """Return labeling borders describing annotated segments for a participant.
 
         Returns
         -------
@@ -394,7 +395,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Computed reference heartbeat markers derived from ECG reference labels.
+        """Return computed reference heartbeat markers derived from ECG reference labels.
 
         Returns
         -------
@@ -405,7 +406,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Reference labels for a given channel and the current selection.
+        """Return reference labels for a given channel and the current selection.
 
         Returns
         -------
@@ -438,10 +439,12 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
         """Load reference labels for a given channel and the current selection.
+
         Parameters
         ----------
         channel : str
             Channel for which to load reference labels. Either "ECG" or "ICG".
+
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
@@ -492,6 +495,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     @staticmethod
     def _cut_to_labeling_borders(data: pd.DataFrame, borders: pd.DataFrame) -> pd.DataFrame:
         """Cut data to the provided labeling borders.
+
         Returns
         -------
         :class:`~pandas.DataFrame`

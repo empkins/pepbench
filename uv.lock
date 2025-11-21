@@ -80,7 +80,7 @@ wheels = [
 [[package]]
 name = "biopsykit"
 version = "0.13.1"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main#da9054bb15bc73ded8b64b3857042b6b7c19300e" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
@@ -1400,8 +1400,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "biopsykit", specifier = ">=0.13.1" },
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "biopsykit", git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "pywavelets", specifier = ">=1.8.0" },

@@ -1,5 +1,6 @@
 """
 .. _custom_dataset_basics:
+
 Base classes for PEP extraction datasets.
 
 Provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data.
@@ -371,17 +372,17 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
     def reference_pep(self) -> pd.DataFrame:
         """Compute the reference PEP values between the reference Q-peak and B-point labels.
 
-            Parameters
-            ----------
-            subset : :class:`pepbench.datasets.BasePepDatasetWithAnnotations`
-                Subset of a dataset containing the reference labels.
+        Parameters
+        ----------
+        subset : :class:`pepbench.datasets.BasePepDatasetWithAnnotations`
+            Subset of a dataset containing the reference labels.
 
-            Returns
-            -------
-            :class:`pandas.DataFrame`
-                DataFrame containing the computed PEP values.
+        Returns
+        -------
+        :class:`pandas.DataFrame`
+            DataFrame containing the computed PEP values.
 
-            """
+        """
         heartbeats = self.reference_heartbeats
         reference_icg = self.reference_labels_icg
         reference_ecg = self.reference_labels_ecg
@@ -433,12 +434,14 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
     @staticmethod
     def _fill_unlabeled_artefacts(points: pd.DataFrame, reference_data: pd.DataFrame) -> pd.DataFrame:
         """Fill unlabeled artefacts in the reference labels.
+
         Parameters
         ----------
         points : :class:`pandas.DataFrame`
             DataFrame containing the reference labels (either Q-peaks or B-points).
         reference_data : :class:`pandas.DataFrame`
             DataFrame containing the reference heartbeat segmentation data.
+
         Returns
         -------
         :class:`pandas.DataFrame`
