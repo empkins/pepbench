@@ -51,6 +51,7 @@ class PerSampleAggregator(Aggregator[np.ndarray]):
     {'mean': 2.0, 'std': 0.816496580927726}
 
     """
+
     def __init__(
         self,
         func: Callable[[Sequence[np.ndarray]], float | dict[str, float]],
