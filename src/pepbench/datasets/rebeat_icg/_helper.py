@@ -26,12 +26,12 @@ def _load_mat_data(file_path: path_t) -> dict[str, np.ndarray]:
     Notes
     -----
     Uses `scipy.io.loadmat` with `squeeze_me=True` to remove singleton dimensions.
-        """
+    """
     return loadmat(file_path, squeeze_me=True)
 
 
 def generate_labeling_and_heartbeat_borders(base_path: path_t) -> None:
-    """
+    r"""
     Generate heartbeat segmentation and labeling border CSV files for all expert annotations.
 
     Parameters

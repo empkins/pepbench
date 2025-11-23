@@ -1,3 +1,26 @@
+r"""Error metrics for evaluating estimated values against reference values.
+
+Provides vectorized helper functions operating on :class:`pandas.Series` objects to compute
+signed error, relative error, and their absolute variants. Relative metrics
+normalize division by zero (infinite results) to ``pd.NA``.
+
+Functions
+---------
+error
+    Signed error ``ref - est``.
+rel_error
+    Relative signed error ``(ref - est) / ref``.
+abs_error
+    Absolute error ``abs(ref - est)``.
+abs_rel_error
+    Absolute relative error ``abs((ref - est) / ref)``.
+
+Notes
+-----
+- All functions are elementwise and expect index-aligned input series.
+- Relative error is undefined for reference values equal to zero; those positions are reported as ``pd.NA``.
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -12,7 +35,7 @@ def error(ref_data: pd.Series, est_data: pd.Series) -> pd.Series:
     ref_data: :class:`pandas.Series`
         The reference values.
     est_data : :class:`pandas.Series`
-        The estimated values.
+        The estimated values. Must be index-aligned with ``ref_data``.
 
     Returns
     -------
