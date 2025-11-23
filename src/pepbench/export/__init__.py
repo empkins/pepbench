@@ -1,6 +1,5 @@
-"""
-Top-level utilities for converting PEPBench result DataFrames to presentation-ready
-tables and LaTeX output.
+r"""
+Top-level utilities for converting PEPBench result to presentation-ready tables and LaTeX output.
 
 This package exposes helpers that take analysis output (pandas DataFrames produced
 by the PEPBench pipeline) and produce nicely formatted DataFrames or LaTeX code
@@ -20,7 +19,8 @@ create_algorithm_result_table(data: pandas.DataFrame, collapse_algo_levels: bool
     algorithm identifiers for presentation. Optionally collapse multi-level
     algorithm indices into a single column.
 
-create_nan_reason_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None, use_short_names: bool = True) -> pandas.DataFrame
+create_nan_reason_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None,
+    use_short_names: bool = True) -> pandas.DataFrame
     Build a table of counts per reason for NaN / invalid PEPs per algorithm and
     outlier-correction algorithm. Columns may be renamed to short or long reason
     labels and missing outlier algorithm rows can be reindexed.

@@ -1,4 +1,4 @@
-"""
+r"""
 Utilities for producing publication-ready tables and LaTeX from PEPBench results.
 
 This module provides helpers to convert pipeline results (pandas DataFrames)
@@ -31,7 +31,8 @@ create_algorithm_result_table(data: pandas.DataFrame, collapse_algo_levels: bool
     True, multi-level algorithm indices are collapsed into a single string
     column.
 
-create_nan_reason_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None, use_short_names: bool = True) -> pandas.DataFrame
+create_nan_reason_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None,
+    use_short_names: bool = True) -> pandas.DataFrame
     Build a table of counts per reason for NaN/invalid PEPs grouped by
     baseline (`b_point_algorithm`) and `outlier_correction_algorithm`. Returns
     integer counts with columns renamed to short or long reason labels. Missing
@@ -156,7 +157,7 @@ def create_reference_pep_table(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool = False) -> pd.DataFrame:
-    """Produce a presentation-ready table of algorithm-level results.
+    r"""Produce a presentation-ready table of algorithm-level results.
 
     Formats common numeric metrics by combining mean and standard deviation
     into ``mean \pm std`` strings, computes a human-readable "Invalid PEPs"
@@ -317,7 +318,7 @@ def create_nan_reason_table(
 def convert_to_latex(
     data: pd.DataFrame | Styler, collapse_index_columns: bool = False, **kwargs: dict[str, Any]
 ) -> str:
-    """
+    r"""
     Convert a DataFrame or Styler to a LaTeX table string with sensible defaults.
 
     Applies module default options for LaTeX rendering (siunitx, hrules,
