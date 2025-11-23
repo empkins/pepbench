@@ -1,3 +1,23 @@
+"""Evaluation utilities for PEP extraction pipelines.
+
+Provides a ``tpcp`` Algorithm implementation to evaluate PEP extraction pipelines on datasets.
+The module exposes a namedtuple for packaging results and the ``PepEvaluationChallenge`` class
+that runs the evaluation, aggregates results and saves them to disk.
+
+Components
+----------
+ChallengeResults
+    Named tuple with fields ``agg_mean_std``, ``agg_total``, ``single``, ``per_sample``.
+PepEvaluationChallenge
+    The main challenge class that runs and aggregates evaluations.
+
+Notes
+-----
+- Uses :class:`tpcp.validate.Scorer` together with :class:`tpcp.validate.FloatAggregator`.
+- Results are stored as pandas DataFrames on the challenge instance with attribute names ending
+  in an underscore (``_``).
+"""
+
 import json
 import warnings
 from collections import namedtuple
@@ -26,7 +46,33 @@ class PepEvaluationChallenge(Algorithm):
     """Evaluation challenge for PEP extraction pipelines.
 
     This is the ``tpcp`` implementation of the evaluation challenge for PEP extraction pipelines.
-    It is used to evaluate the performance of a PEP extraction pipeline on a given dataset.
+    It evaluates a given PEP extraction pipeline on a dataset and produces aggregated and per-sample
+    evaluation results stored as pandas DataFrames on the challenge instance.
+
+    Parameters
+    ----------
+    dataset : BasePepDatasetWithAnnotations
+        The dataset to evaluate. The dataset must implement the unified interface required by the
+        evaluation utilities.
+    scoring : Callable, optional
+        The scoring function to use for evaluation. The scoring function should accept the pipeline and a
+        datapoint and return a dictionary with evaluation outputs. Default is
+        :func:`pepbench.evaluation._scoring.score_pep_evaluation`.
+    validate_kwargs : dict, optional
+        Additional keyword arguments passed to :class:`tpcp.validate.Scorer`.
+
+    Attributes
+    ----------
+    results_ : dict
+        Raw results returned by :func:`tpcp.validate.validate`.
+    results_agg_mean_std_ : :class:`pandas.DataFrame`
+        Mean and standard deviation aggregated results.
+    results_agg_total_ : :class:`pandas.DataFrame`
+        Total counts aggregated results.
+    results_single_ : :class:`pandas.DataFrame`
+        Single (non-aggregated) results for each datapoint.
+    results_per_sample_ : :class:`pandas.DataFrame`
+        Per-sample flattened results.
 
     """
 
@@ -81,6 +127,9 @@ class PepEvaluationChallenge(Algorithm):
     def run(self, pipeline: BasePepExtractionPipeline) -> Self:
         """Run the evaluation challenge for a given pipeline.
 
+        Executes validation using :func:`tpcp.validate.validate` with a :class:`tpcp.validate.Scorer`
+        and aggregates timing information.
+
         Parameters
         ----------
         pipeline : BasePepExtractionPipeline
@@ -90,7 +139,7 @@ class PepEvaluationChallenge(Algorithm):
         Returns
         -------
         Self
-
+        The challenge instance with results stored as attributes (see class docstring).
         """
         with measure_time() as timing_results, warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)  # better specify the RuntimeWarning using regex
@@ -106,12 +155,15 @@ class PepEvaluationChallenge(Algorithm):
     def save_results(self, folder_path: path_t, filename_stub: str) -> None:
         """Save the results of the evaluation to disk.
 
+        Saves timing information as JSON and DataFrame results as CSV files using the provided filename stub.
+
         Parameters
         ----------
-        folder_path : :class:``pathlib.Path`` or str
-            The folder path to save the results to.
+        folder_path : :class:`pathlib.Path` or str
+            Folder path to save the results to.
         filename_stub : str
-            The filename stub to use for the results file.
+            Filename stub to prefix saved files.
+
 
         """
         timing_information_path = folder_path.joinpath(f"{filename_stub}_timing_information.json")
@@ -137,28 +189,31 @@ class PepEvaluationChallenge(Algorithm):
     def _set_attrs_from_dict(self, attr_dict: dict[str, Any]) -> None:
         """Set attributes of an object from a dictionary.
 
+        Each key in ``attr_dict`` is appended with an underscore and set as an attribute on the instance.
+
         Parameters
         ----------
         obj
             The object to set the attributes on.
         attr_dict
-            The dictionary with the attributes to set.
+            Dictionary of attribute names (keys) and values to set on the instance.
         """
         for key, value in attr_dict.items():
             setattr(self, f"{key}_", value)
 
     def results_as_df(self) -> Self:
-        """Convert the results to pandas DataFrames.
+        """Convert the raw validation results to pandas DataFrames and attach them to the instance.
 
-        The results are stored as attributes on the object. The following results are created:
-            * ``results_agg_mean_std_``: The mean and standard deviation of the aggregated results.
-            * ``results_agg_total_``: The total number of valid and invalid PEPs.
-            * ``results_single_``: The single (non-aggregated) results for each datapoint.
-            * ``results_per_sample_``: The per-sample results for each datapoint.
+        The method builds the following DataFrames and stores them as instance attributes:
+            * ``results_agg_mean_std_``: Mean and standard deviation of aggregated metrics.
+            * ``results_agg_total_``: Total counts (e.g. total/valid/invalid PEPs).
+            * ``results_single_``: Single (non-aggregated) results per datapoint.
+            * ``results_per_sample_``: Per-sample flattened results with multiindex columns.
 
         Returns
         -------
         Self
+            The challenge instance with DataFrame attributes populated.
 
         """
         results = self.results_.copy()

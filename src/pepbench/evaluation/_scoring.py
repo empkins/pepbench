@@ -1,3 +1,29 @@
+"""Scoring utilities for PEP evaluation.
+
+This module implements the per-datapoint scoring logic and helper utilities used when
+validating PEP extraction pipelines.
+
+Provided functions
+------------------
+score_pep_evaluation
+    Run a PEP extraction pipeline on a single datapoint and compute a dictionary of
+    evaluation metrics (per-datapoint aggregates, direct per-sample aggregates and
+    values passed through for later aggregation).
+mean_and_std
+    Aggregator that computes a dictionary with ``mean`` and ``std`` from a sequence of
+    numerical values.
+_merge_extracted_and_reference_pep
+    Merge estimated and reference PEP DataFrames into a single DataFrame with
+    consistent MultiIndex columns for estimated/reference metrics.
+
+Notes
+-----
+- Uses :func:`pepbench.evaluation._error_metrics.error`, :func:`pepbench.evaluation._error_metrics.abs_error`
+  and :func:`pepbench.evaluation._error_metrics.abs_rel_error` for metric computation.
+- The returned structures are designed to be consumed by :mod:`tpcp.validate` aggregators
+  (e.g. :class:`tpcp.validate.FloatAggregator`, custom per-sample aggregators).
+"""
+
 from collections.abc import Sequence
 
 import numpy as np
@@ -16,60 +42,61 @@ __all__ = ["mean_and_std", "score_pep_evaluation"]
 def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePepDatasetWithAnnotations) -> dict:
     """Run a PEP extraction pipeline on a single datapoint and compute evaluation metrics.
 
-    # *first* averaged over single datapoint and *then* aggregated (mean, std) on total dataset
+    The function executes the pipeline on ``datapoint`` and matches detected heartbeats to the
+    reference. It computes a set of metrics that are either:
+      - first averaged on the single datapoint and later aggregated across the dataset
+        (returned as scalar floats),
+      - passed through as single values per datapoint (to be aggregated later via a
+        summation aggregator), or
+      - returned as per-sample results (unaggregated) for downstream per-sample aggregation.
 
-    The following evaluation metrics are *first* averaged over a single datapoint and *then* aggregated (mean, std)
-    on the total dataset:
+    The following metrics are computed and returned (grouped by treatment):
 
-        * ``pep_reference_ms``: The mean reference PEP in milliseconds.
-        * ``pep_estimated_ms``: The mean estimated PEP in milliseconds.
-        * ``error_ms``: The mean error between reference and estimated PEP in milliseconds.
-        * ``absolute_error_ms``: The mean absolute error between reference and estimated PEP in milliseconds.
-        * ``absolute_relative_error_percent``: The mean absolute relative error (relative to the reference PEP)
-          between reference and estimated PEP in percent.
+    First averaged over the datapoint and then aggregated (mean, std) on the total dataset
+    -------------------------------------------------------------------------------
+    * ``pep_reference_ms``: Mean reference PEP in milliseconds.
+    * ``pep_estimated_ms``: Mean estimated PEP in milliseconds.
+    * ``error_ms``: Mean signed error (reference - estimated) in milliseconds.
+    * ``absolute_error_ms``: Mean absolute error in milliseconds.
+    * ``absolute_relative_error_percent``: Mean absolute relative error in percent.
 
+    Passed on as single values per datapoint (aggregated by summation across dataset)
+    ---------------------------------------------------------------------------------
+    * ``num_pep_total``: Total number of PEPs in this datapoint.
+    * ``num_pep_valid``: Number of valid (non-NaN) estimated PEPs.
+    * ``num_pep_invalid``: Number of invalid (NaN) estimated PEPs.
 
-    The following evaluation metrics are passed on (since they are single values per datapoint) and then aggregated
-    by summing them up (using the `sum_aggregator`):
+    Passed through without aggregation (per-datapoint scalar)
+    --------------------------------------------------------
+    * ``pearson_r``: Pearson correlation coefficient between reference and estimated PEPs
+      for matched heartbeats (NaNs excluded).
 
-        * ``num_pep_total``: The total number of PEPs in this datapoint.
-        * ``num_pep_valid``: The number of valid PEPs in this datapoint.
-        * ``num_pep_invalid``: The number of invalid PEPs in this datapoint.
+    Passed as per-sample values (no aggregation here)
+    -------------------------------------------------
+    * ``pep_estimation_per_sample``: The merged per-sample DataFrame with estimated and
+      reference values for each matched heartbeat.
 
-
-    The following evaluation metrics are not aggregated but passed on as they are:
-
-        * ``pearson_r``: The Pearson correlation coefficient between the reference and estimated PEP values of all
-          matched heartbeats for a single datapoint (excluding NaN values).
-
-    The following evaluation metrics are not aggregated but passed as per-sample values:
-
-        * ``pep_estimation_per_sample``: The estimated and reference PEPs per sample.
-
-
-    The following evaluation metrics are directly aggregated (mean, std) over *all* samples *without* intermediate
-    aggregation on single datapoint:
-
-        * ``error_per_sample_ms``: The mean error between reference and estimated PEP per sample in milliseconds.
-        * ``absolute_error_per_sample_ms``: The mean absolute error between reference and estimated PEP per sample
-          in milliseconds.
-        * ``absolute_relative_error_per_sample_percent``: The mean absolute relative error (relative to the reference
-          PEP) between reference and estimated PEP per sample in percent.
-
+    Direct per-sample aggregations (aggregated across *all* samples without intermediate
+    per-datapoint averaging)
+    -------------------------------------------------------------------------------
+    * ``error_per_sample_ms``: Mean error per sample (aggregated directly across samples).
+    * ``absolute_error_per_sample_ms``: Mean absolute error per sample.
+    * ``absolute_relative_error_per_sample_percent``: Mean absolute relative error per sample.
 
     Parameters
     ----------
     pipeline : :class:`pepbench.pipelines.BasePepExtractionPipeline`
-        A PEP extraction pipeline. The pipeline must be a subclass of
-        :class:`pepbench.pipelines.BasePepExtractionPipeline`.
+        A PEP extraction pipeline instance. The pipeline will be run using its
+        :meth:`pepbench.pipelines.BasePepExtractionPipeline.safe_run` method.
     datapoint : :class:`pepbench.datasets.BasePepDatasetWithAnnotations`
-        A single datapoint from the dataset. The datapoint must be a subclass of
-        :class:`pepbench.datasets.BasePepDatasetWithAnnotations`.
+        A single datapoint providing reference PEPs, reference heartbeats and sampling rate.
 
     Returns
     -------
     dict
-        A dictionary containing the evaluation metrics.
+        Dictionary containing the evaluation metrics. Some values are scalar floats,
+        some are structures returned via :func:`tpcp.validate.no_agg` and some are the result
+        of per-sample aggregators.
 
     """
     # not necessary anymore
@@ -149,12 +176,58 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePep
 
 
 def mean_and_std(vals: Sequence[float]) -> dict:
+    """Compute mean and standard deviation for a sequence of numerical values.
+
+    Parameters
+    ----------
+    vals : Sequence[float]
+        Sequence (list, array, etc.) of numerical values. NaNs are ignored using NumPy
+        nan-aware statistics.
+
+    Returns
+    -------
+    dict
+        Dictionary with keys ``mean`` and ``std`` containing ``float`` values.
+
+    """
     return {"mean": float(np.nanmean(vals)), "std": float(np.nanstd(vals))}
 
 
 def _merge_extracted_and_reference_pep(
     extracted: pd.DataFrame, reference: pd.DataFrame, tp_matches: pd.DataFrame | None = None
 ) -> pd.DataFrame:
+    """Merge extracted and reference PEP DataFrames into a unified MultiIndex-column DataFrame.
+
+    The function aligns the two input DataFrames on their heartbeat index (optionally using
+    the index of ``tp_matches``), keeps only common columns between the two frames, and
+    produces a DataFrame where the top level of the columns indicates the metric name
+    and the second level indicates ``estimated`` or ``reference``. Additional extracted-only
+    columns (``rr_interval_ms`` and ``heart_rate_bpm``) are appended to the result.
+
+    Parameters
+    ----------
+    extracted : :class:`pandas.DataFrame`
+        DataFrame with extracted heartbeat metrics. May contain an index level named
+        ``heartbeat_id``.
+    reference : :class:`pandas.DataFrame`
+        DataFrame with reference heartbeat metrics. May contain an index level named
+        ``heartbeat_id``.
+    tp_matches : :class:`pandas.DataFrame` or None, optional
+        Optional matches DataFrame used to align indices. If provided, the function will
+        set the index of both input frames to ``tp_matches.index`` before merging.
+
+    Returns
+    -------
+    :class:`pandas.DataFrame`
+        Merged DataFrame with MultiIndex columns. Column levels are (metric, source)
+        where ``source`` is one of ``estimated`` or ``reference``.
+
+    Raises
+    ------
+    ValueError
+        If no common columns are found between ``extracted`` and ``reference``.
+
+    """
     extracted_original = extracted.copy()
     # if heartbeat_id in index, add it as a column to preserve it in the combined DataFrame
     if "heartbeat_id" in extracted.index.names and "heartbeat_id" in reference.index.names:
