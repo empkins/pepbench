@@ -6,35 +6,35 @@ signals used throughout the PEP benchmark evaluation pipeline.
 
 Functions
 ---------
-get_reference_data
+:func:`~pepbench.data_handling._data_handling.get_reference_data`
     Extract the reference columns from a results-per-sample :class:`~pandas.DataFrame`.
-get_reference_pep
+:func:`~pepbench.data_handling._data_handling.get_reference_pep`
     Return the ``pep_ms`` reference column from results.
-get_data_for_algo
+:func:`~pepbench.data_handling._data_handling.get_data_for_algo`
     Select data for a specific algorithm combination from a results frame.
-get_pep_for_algo
+:func:`~pepbench.data_handling._data_handling.get_pep_for_algo`
     Select estimated PEP values for a specified algorithm combination.
-describe_pep_values
+:func:`~pepbench.data_handling._data_handling.describe_pep_values`
     Compute descriptive statistics for PEP values using :meth:`pandas.DataFrame.describe`.
-compute_pep_performance_metrics
+:func:`~pepbench.data_handling._data_handling.compute_pep_performance_metrics`
     Aggregate performance metrics (e.g., mean, std) across algorithm combinations.
-get_performance_metric
+:func:`~pepbench.data_handling._data_handling.get_performance_metric`
     Extract a single performance metric column from a results frame.
-rr_interval_to_heart_rate
+:func:`~pepbench.data_handling._data_handling.rr_interval_to_heart_rate`
     Convert ``rr_interval_ms`` to ``heart_rate_bpm`` and join to the input frame.
-correlation_reference_pep_heart_rate
+:func:`~pepbench.data_handling._data_handling.correlation_reference_pep_heart_rate`
     Compute linear regression and Pearson correlation between reference PEP and heart rate.
-get_error_by_group
+:func:`~pepbench.data_handling._data_handling.get_error_by_group`
     Aggregate error metrics by specified grouping columns (mean and std).
-add_unique_id_to_results_dataframe
+:func:`~pepbench.data_handling._data_handling.add_unique_id_to_results_dataframe`
     Add a unique concatenated identifier to the results index for sample-level merging.
-compute_improvement_outlier_correction
+:func:`~pepbench.data_handling._data_handling.compute_improvement_outlier_correction`
     Compute the percentage of samples that improved, deteriorated, or remained unchanged after outlier correction.
-compute_improvement_pipeline
+:func:`~pepbench.data_handling._data_handling.compute_improvement_pipeline`
     Compute percentage of samples showing sign changes in the error metric between two pipelines.
-merge_result_metrics_from_multiple_annotators
+:func:`~pepbench.data_handling._data_handling.merge_result_metrics_from_multiple_annotators`
     Combine metric tables from multiple annotators and optionally compute annotation differences.
-merge_results_per_sample_from_different_annotators
+:func:`~pepbench.data_handling._data_handling.merge_results_per_sample_from_different_annotators`
     Concatenate per-sample results from multiple annotators into a single frame.
 
 Notes

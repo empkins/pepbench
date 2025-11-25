@@ -8,13 +8,13 @@ differences and normalize annotations relative to heartbeat start.
 
 Functions
 ---------
-load_annotations_from_dataset
+:func:`~pepbench.annotations._annotations.load_annotations_from_dataset`
     Load and align annotations from two datasets per-signal (ECG, ICG).
-match_annotations
+:func:`~pepbench.annotations._annotations.match_annotations`
     Match annotations between two raters/datasets and return paired annotations.
-compute_annotation_differences
+:func:`~pepbench.annotations._annotations.compute_annotation_differences`
     Compute pointwise differences between two raters' annotations.
-normalize_annotations_to_heartbeat_start
+:func:`~pepbench.annotations._annotations.normalize_annotations_to_heartbeat_start`
     Normalize annotation times to the heartbeat start for each rater.
 """
 import pandas as pd
