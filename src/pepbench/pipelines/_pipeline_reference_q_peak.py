@@ -1,3 +1,15 @@
+"""
+PEP extraction pipeline using reference Q-peaks.
+
+This module implements a validation pipeline that computes the pre-ejection period (PEP)
+by using reference Q-peak annotations. The pipeline extracts heartbeats from ECG,
+runs C- and B-point extraction on ICG, aligns extracted heartbeats to reference annotations,
+applies outlier correction to B-point samples, and computes per-beat PEP values.
+
+The pipeline is intended for controlled evaluation of B-point extraction and outlier
+correction algorithms when reference Q-peaks are available in the dataset.
+"""
+
 from typing import get_args
 
 import pandas as pd
@@ -16,15 +28,22 @@ __all__ = ["PepExtractionPipelineReferenceQPeaks"]
 class PepExtractionPipelineReferenceQPeaks(BasePepExtractionPipeline):
     """`tpcp` Pipeline for PEP extraction that uses reference Q-peaks for Q-peak detection.
 
-    This pipeline is used to validate different B-point extraction algorithms and computing the PEP using reference
-    Q-peaks.
+    This pipeline validates different B-point extraction algorithms by computing the
+    pre-ejection period (PEP) using reference Q-peak annotations from labeled datasets.
+    It performs heartbeat segmentation, heartbeat matching against reference annotations,
+    Q-peak alignment using reference annotations, runs C-point and B-point extraction,
+    applies outlier correction for B-point samples, and computes final PEP values.
 
+    Parameters
+    ----------
     %(base_parameters)s
 
     Other Parameters
     ----------------
     %(datapoint_pipeline_labeled)s
 
+    Attributes
+    ----------
     %(attributes)s
 
     """
@@ -32,13 +51,40 @@ class PepExtractionPipelineReferenceQPeaks(BasePepExtractionPipeline):
     def run(self, datapoint: DatasetT) -> Self:
         """Run the pipeline on the given datapoint.
 
-        The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be
-        stored in the attributes of the class.
+        The pipeline executes the following steps:
+        - Validate configuration values (for example, that `handle_negative_pep` is valid).
+        - Clone configured algorithms and optionally set `handle_missing_events` on algorithms
+          that support missing-event handling.
+        - Extract heartbeats from the ECG signal.
+        - Match extracted heartbeats to the reference heartbeat annotations (tolerance 100 ms).
+        - Select true-positive matches and align reference Q-peaks with extracted heartbeat indices.
+        - Run C-point and B-point extraction for matched heartbeats, add `nan_reason` column to
+          aligned Q-peak table.
+        - Mark and prepare B-point samples for outlier correction, then apply the outlier
+          correction algorithm.
+        - Compute PEP values using aligned Q- and B-points and store results on the pipeline.
 
         Parameters
         ----------
-        %(datapoint_pipeline_labeled)s
+        datapoint : BasePepDatasetWithAnnotations
+            Labeled datapoint that provides ECG data, sampling rates, reference heartbeat
+            annotations, and reference PEP/Q-peak annotations.
 
+        Returns
+        -------
+        Self
+            The pipeline instance with result attributes populated (see class attributes).
+
+        Raises
+        ------
+        ValueError
+            If `handle_negative_pep` is not a valid value from the allowed options.
+
+        Notes
+        -----
+        - Heartbeat matching uses a default tolerance of 100 ms.
+        - False positives and negatives in heartbeat matching are currently not corrected
+          automatically by this pipeline; only true-positive matches are used to compute PEP.
         """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(

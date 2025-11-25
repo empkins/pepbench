@@ -1,3 +1,61 @@
+r"""Plotting primitives and high-level plotting functions for PEPBench.
+
+This module implements the core plotting building blocks used across the
+PEPBench project. It contains high-level routines to visualise ECG and ICG
+signals, overlays for reference annotations and algorithm results, utilities
+to compute and display PEP intervals, and diagnostic plotting helpers such as
+Bland\-Altman and paired plots.
+
+The functions in this module are consumed directly by the public
+:mod:`pepbench.plotting` package and by internal code in
+:mod:`pepbench.plotting._utils`.
+
+Functions
+---------
+:func:`~pepbench.plotting._base_plotting.plot_signals`
+    Plot ECG and ICG signals (one or two axes, optional heartbeat filtering).
+
+:func:`~pepbench.plotting._base_plotting.plot_signals_with_reference_labels`
+    Plot signals annotated with reference Q-peaks and B-points (and artefacts).
+
+:func:`~pepbench.plotting._base_plotting.plot_signals_with_reference_pep`
+    Plot signals and overlay PEP intervals derived from reference annotations.
+
+:func:`~pepbench.plotting._base_plotting.plot_signals_with_algorithm_results`
+    Plot signals and overlay detections produced by an extraction algorithm.
+
+:func:`~pepbench.plotting._base_plotting.plot_signals_from_challenge_results`
+    Plot signals using results produced by the challenge output format.
+
+:func:`~pepbench.plotting._base_plotting._plot_signals_one_axis`
+    Internal helper to render multiple traces into a single axis.
+
+:func:`~pepbench.plotting._base_plotting._plot_signals_two_axes`
+    Internal helper to render ECG and ICG into two stacked axes.
+
+:func:`~pepbench.plotting._base_plotting._plot_blandaltman`
+    Generate a Bland\-Altman plot for method comparison and limits of agreement.
+
+:func:`~pepbench.plotting._base_plotting._plot_paired`
+    Create paired/\-within subject plots with optional boxplots and pointplots.
+
+Notes
+-----
+- Low-level drawing utilities and data preparation helpers live in
+  :mod:`pepbench.plotting._utils`.
+- The public \:mod:`pepbench.plotting` package re-exports the key high-level
+  functions from this module for convenient import (e.g.
+  ``from pepbench.plotting import plot_signals``).
+- Plot styling uses the project's color maps from :mod:`fau_colors.cmaps` and
+  follows the general layout/legend conventions used throughout PEPBench.
+
+Examples
+--------
+>>> from pepbench.plotting import plot_signals
+>>> fig, ax = plot_signals(datapoint, collapse=False, normalize_time=True)
+
+"""
+
 from collections.abc import Sequence
 from typing import Any
 
@@ -55,24 +113,49 @@ def plot_signals(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
-    """Plot ECG and ICG signals.
+    """
+    Plot ECG and ICG signals.
 
     Parameters
     ----------
     datapoint : :class:`~pepbench.datasets.BasePepDataset`
-        Dataset to plot.
+        Dataset to plot. Should contain ECG and ICG traces; annotations are
+        optional.
     collapse : bool, optional
-        If ``True``, plot ECG and ICG signals in one axis. If ``False``, plot ECG and ICG signals in two axes.
-        Default: ``False``.
+        If ``True``, plot ECG and ICG on a single axis. If ``False``, render two
+        stacked axes (ECG above ICG). Default: ``False``.
     normalize_time : bool, optional
-        If ``True``, normalize time to seconds. If ``False``, use the original time format.
-        Default: ``False``.
-    heartbeat_subset : list of int, optional
-        List of heartbeats (as indices) to plot. If ``None``, plot all heartbeats.
-        Default: ``None``.
-    kwargs : dict, optional
-        Additional keyword arguments.
+        If ``True``, convert the time index to seconds. If ``False``, preserve the
+        original time index (e.g. ``DatetimeIndex``). Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Sequence of heartbeat indices to include in the plot. If ``None``, all
+        heartbeats are plotted. Default: ``None``.
+    **kwargs : Any
+        Additional plotting options forwarded to the low-level helpers (axis
+        handling, legend placement, colours, layout, etc.). Refer to
+        :func:`~pepbench.plotting._base_plotting._plot_signals_one_axis` and
+        :func:`~pepbench.plotting._base_plotting._plot_signals_two_axes` for
+        supported keyword arguments.
 
+    Returns
+    -------
+    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes]]
+        Matplotlib figure and axis (or sequence of axes) containing the rendered
+        traces.
+
+    Notes
+    -----
+    This function is a thin convenience wrapper that selects the appropriate
+    renderer based on the ``collapse`` flag: it delegates to
+    :func:`~pepbench.plotting._base_plotting._plot_signals_one_axis` when a
+    single-axis display is requested, and to
+    :func:`~pepbench.plotting._base_plotting._plot_signals_two_axes` otherwise.
+    Default legend and layout parameters are applied here before delegation.
+
+    Examples
+    --------
+    >>> from pepbench.plotting import plot_signals
+    >>> fig, ax = plot_signals(datapoint, collapse=False, normalize_time=True, heartbeat_subset=[0, 1, 2])
     """
     if collapse:
         return _plot_signals_one_axis(
@@ -98,33 +181,32 @@ def plot_signals_with_reference_labels(  # noqa: C901
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     """
-    Plot ECG and ICG signals with reference labels.
+    Plot signals and overlay reference Q-peaks and B-points.
 
     Parameters
     ----------
-    datapoint: BasePepDatasetWithAnnotations
-        Dataset to plot.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    collapse: bool, optional
-        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
-        Default: False.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`
+        Dataset containing ECG/ICG traces and reference annotations.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeat indices to plot. If ``None``, all heartbeats are plotted.
+    collapse : bool, optional
+        If ``True``, plot ECG and ICG on a single axis. Default: ``False``.
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    **kwargs : Any
+        Additional plotting options forwarded to the low-level plotting helpers
+        (legend placement, axis handling, colours, etc.).
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, ax) : tuple[matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+        Matplotlib figure and axis (or axes) containing the rendered traces.
 
+    Notes
+    -----
+    This function augments the base signal plotting with reference labels (Q-peaks,
+    B-points and artefacts) via :mod:`pepbench.plotting._utils` utilities and then
+    handles legends/layout according to the project conventions.
     """
     kwargs.setdefault("sharex", True)
     kwargs.setdefault("legend_max_cols", 6)
@@ -192,32 +274,30 @@ def plot_signals_with_reference_pep(
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     """
-    Plot ECG and ICG signals with reference PEP intervals.
+    Plot signals and overlay reference-derived PEP intervals.
 
     Parameters
     ----------
-    datapoint: BasePepDatasetWithAnnotations
-        Dataset to plot.
-
-    collapse: bool, optional
-        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`
+        Dataset with reference annotations used to compute PEP intervals.
+    collapse : bool, optional
+        If ``True``, plot ECG and ICG on a single axis. Default: ``False``.
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeat indices to plot. If ``None``, all heartbeats are plotted.
+    **kwargs : Any
+        Additional plotting options forwarded to plotting utilities.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+        Figure and axis (or axes) with PEP overlays added.
 
+    Notes
+    -----
+    PEP rectangles are created from concatenated reference label tables and drawn
+    using the helper :func:`pepbench.plotting._utils._add_pep_from_reference`.
     """
     kwargs.setdefault("legend_orientation", "vertical")
     kwargs.setdefault("legend_outside", False)
@@ -275,36 +355,34 @@ def plot_signals_with_algorithm_results(
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     """
-    Plot ECG and ICG signals with algorithm-detected points.
+    Plot signals and overlay detections from an algorithm.
 
     Parameters
     ----------
-    datapoint: BasePepDatasetWithAnnotations
-        Dataset to plot.
-
-    collapse: bool, optional
-        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
-        Default: False.
-
-    algorithm: BaseExtraction
-        Algorithm to use for point detection.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`
+        Dataset to annotate with algorithm detections.
+    collapse : bool, optional
+        If ``True``, plot ECG and ICG on a single axis. Default: ``False``.
+    algorithm : :class:`biopsykit.signals._base_extraction.BaseExtraction`
+        Extraction algorithm instance used to detect peaks/points. The function
+        will call ``algorithm.extract(...)`` and then plot ``algorithm.points_``.
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeat indices to run the algorithm on. If ``None``, all are used.
+    **kwargs : Any
+        Additional plotting options.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+        Figure and axis (or axes) with algorithm detections added.
 
+    Notes
+    -----
+    Supports ECG algorithms implementing heartbeat-aware extraction
+    (:class:`biopsykit.signals.ecg.event_extraction.BaseEcgExtractionWithHeartbeats`)
+    and B-point extraction algorithms (:class:`biopsykit.signals.icg.event_extraction.BaseBPointExtraction`).
     """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
@@ -404,39 +482,36 @@ def plot_signals_from_challenge_results(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     """
-    Plot ECG and ICG signals with PEP challenge results.
+    Plot signals annotated with labels from challenge-style results.
 
     Parameters
     ----------
-    datapoint: :class:`BasePepDatasetWithAnnotations`
-        Dataset to plot.
-
-    pep_results_per_sample: :class:`pandas.DataFrame`
-        DataFrame containing PEP results per sample.
-
-    collapse: bool, optional
-        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    add_pep: bool, optional
-        If True, add PEP intervals to the plot.
-        Default: False.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`
+        Dataset containing ECG/ICG traces.
+    pep_results_per_sample : :class:`pandas.DataFrame`
+        Challenge-format per-sample results containing predicted and reference
+        labels for Q-peaks and B-points.
+    collapse : bool, optional
+        If ``True``, plot ECG and ICG on a single axis. Default: ``False``.
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeat indices to plot. Default: ``None``.
+    add_pep : bool, optional
+        If ``True``, overlay computed PEP rectangles for reference and estimated labels.
+    **kwargs : Any
+        Additional plotting options.
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, ax) : tuple[matplotlib.figure.Figure, matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes]]
+        Figure and axis (or axes) with challenge labels and optional PEP overlays.
 
+    Notes
+    -----
+    This function converts the challenge table into per-heartbeat label arrays using
+    :func:`pepbench.plotting._utils._get_labels_from_challenge_results` and then
+    adds markers/PEP rectangles using the low-level helpers.
     """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
@@ -568,32 +643,30 @@ def _plot_signals_one_axis(
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
     """
-    Plot ECG and ICG signals in one axis.
+    Low-level helper to render one- or multi-trace data into a single axis.
 
     Parameters
     ----------
-    datapoint: BasePepDataset, optional
-        Dataset to plot.
-
-    df: pandas.DataFrame, optional
-        DataFrame containing signals to plot.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDataset` | None
+        If provided, ECG and ICG are extracted from the dataset and plotted.
+    df : :class:`pandas.DataFrame` | None
+        Alternative data frame to plot. Either ``datapoint`` or ``df`` must be set.
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeats to display.
+    **kwargs : Any
+        Additional plotting options (axis, colours, legend).
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, ax) : tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+        The figure and single axis used for plotting.
 
+    Raises
+    ------
+    ValueError
+        If both ``datapoint`` and ``df`` are provided or both are ``None``.
     """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
@@ -653,29 +726,28 @@ def _plot_signals_two_axes(
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
     """
-    Plot ECG and ICG signals in two axes.
+    Low-level helper to render ECG and ICG into two stacked axes.
 
     Parameters
     ----------
-    datapoint: BasePepDataset
-        Dataset to plot.
-
-    normalize_time: bool, optional
-        If True, normalize time to seconds. If False, use the original time format.
-        Default: False.
-
-    heartbeat_subset: list of int, optional
-        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
-        Default: None.
-
-    kwargs: dict, optional
-        Additional keyword arguments.
+    datapoint : :class:`~pepbench.datasets.BasePepDataset`
+        Dataset containing ECG and ICG signals (required).
+    normalize_time : bool, optional
+        If ``True``, convert time index to seconds. Default: ``False``.
+    heartbeat_subset : Sequence[int] | None, optional
+        Subset of heartbeat indices to display.
+    **kwargs : Any
+        Additional plotting options (nrows, legend placement, axis handling).
 
     Returns
     -------
-    fig: matplotlib.figure.Figure
-        Figure object.
+    (fig, axs) : tuple[matplotlib.figure.Figure, Sequence[matplotlib.axes.Axes]]
+        Figure and the two axes (ECG on top, ICG below).
 
+    Notes
+    -----
+    This helper sets titles and axis labels following the project style and calls
+    :func:`pepbench.plotting._utils._get_fig_axs` to obtain axes.
     """
     kwargs.setdefault("nrows", 2)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))

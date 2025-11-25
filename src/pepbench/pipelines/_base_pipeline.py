@@ -1,3 +1,38 @@
+"""Base PEP extraction pipeline utilities.
+
+This module provides the base pipeline building block used to extract PEP-related signals
+from synchronized ECG and ICG recordings. The primary export is
+:class:`pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`, a lightweight wrapper
+around :class:`tpcp.Pipeline` that bundles heartbeat segmentation, Q-peak, B-point and
+C-point extraction algorithms together with optional outlier correction and PEP post-processing.
+
+The module also exposes a small docstring filler helper
+(:data:`base_pep_pipeline_docfiller`) used to inject common parameter and attribute
+documentation into subclasses of :class:`BasePepExtractionPipeline`.
+
+See Also
+--------
+:mod:`pepbench.datasets`
+    Dataset interfaces expected by the pipelines (e.g. :class:`~pepbench.datasets.BasePepDataset`).
+:mod:`biopsykit.signals.ecg.segmentation`
+    Heartbeat segmentation algorithms used by the pipeline.
+:mod:`biopsykit.signals.ecg.event_extraction`
+    Q-peak extraction interfaces used by the pipeline.
+:mod:`biopsykit.signals.icg.event_extraction`
+    B- and C-point extraction interfaces used by the pipeline.
+
+Public classes
+--------------
+BasePepExtractionPipeline
+    Pipeline class orchestrating heartbeat segmentation, event extraction, outlier correction
+    and PEP computation.
+
+Notes
+-----
+- The class is intended to be subclassed or configured with concrete algorithm implementations.
+- The module follows the project-wide NumPy/Sphinx docstring conventions used across the package.
+"""
+
 from typing import TYPE_CHECKING, Literal, TypeVar
 
 import pandas as pd
@@ -135,6 +170,32 @@ class BasePepExtractionPipeline(Pipeline):
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:
+        """Initialize a BasePepExtractionPipeline.
+
+        Parameters
+        ----------
+        heartbeat_segmentation_algo : BaseHeartbeatSegmentation
+            Algorithm instance used to segment ECG into heartbeats.
+        q_peak_algo : BaseEcgExtraction
+            Algorithm instance used to detect Q-peaks in the ECG.
+        b_point_algo : BaseBPointExtraction
+            Algorithm instance used to detect B-points in the ICG.
+        c_point_algo : BaseCPointExtraction, optional
+            Algorithm used to detect C-points in the ICG. Required by many B-point extractors.
+            Defaults to a scipy-based peak finder clone.
+        outlier_correction_algo : BaseBPointOutlierCorrection or None, optional
+            Algorithm for outlier correction applied to B-point results. If ``None``, a dummy no-op
+            outlier corrector is used.
+        handle_negative_pep : {'nan', 'zero', 'keep'}, optional
+            Strategy to handle negative PEP values:
+                - ``'nan'``: set negative PEP to NaN
+                - ``'zero'``: set negative PEP to 0
+                - ``'keep'``: keep negative values as-is
+            Default is ``'nan'``.
+        handle_missing_events : {'warn', 'ignore', 'raise'} or None, optional
+            Strategy to handle missing events during extraction. If ``None``, defaults to ``'warn'``.
+
+        """
         self.heartbeat_segmentation_algo = heartbeat_segmentation_algo
         self.q_peak_algo = q_peak_algo
         self.b_point_algo = b_point_algo
@@ -157,6 +218,32 @@ class BasePepExtractionPipeline(Pipeline):
         b_point_samples: BPointDataFrame,
         sampling_rate_hz: float,
     ) -> pd.DataFrame:
+        """Compute PEP results from heartbeat segmentation and event detections.
+
+        This helper runs an internal :class:`biopsykit.signals.pep.PepExtraction` instance to
+        compute PEP-related metrics from the provided heartbeat, Q-peak and B-point data and
+        returns a well-typed :class:`pandas.DataFrame` compatible with the package's expected
+        ``PepResultDataFrame`` schema.
+
+        Parameters
+        ----------
+        heartbeats : HeartbeatSegmentationDataFrame
+            Segmented heartbeat frames with at least ``start_sample`` and ``end_sample`` indices.
+        q_peak_samples : QPeakDataFrame
+            Detected Q-peak sample indices.
+        b_point_samples : BPointDataFrame
+            Detected B-point sample indices.
+        sampling_rate_hz : float
+            Sampling frequency of the recordings in Hz.
+
+        Returns
+        -------
+        pandas.DataFrame
+            PEP result dataframe containing columns such as ``q_peak_sample``, ``b_point_sample``,
+            ``pep_sample``, ``pep_ms`` and supporting metadata. The returned dataframe will have
+            pandas nullable dtypes applied (e.g., ``Int64``, ``Float64``) and be validated with
+            :func:`pepbench.utils.dtypes.is_pep_result_dataframe`.
+        """
         pep_extraction_algo = PepExtraction(handle_negative_pep=self.handle_negative_pep)
         pep_extraction_algo.extract(
             heartbeats=heartbeats,

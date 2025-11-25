@@ -1,3 +1,10 @@
+"""Utilities for plotting pepbench signals and annotations.
+
+This module contains internal helper functions used by the pepbench plotting
+routines to create figures/axes, draw annotated markers (R/Q peaks, B/C points),
+highlight PEP intervals, and prepare heartbeat/label subsets.
+"""
+
 import inspect
 from collections.abc import Sequence
 from typing import Any
@@ -14,14 +21,34 @@ from pepbench.heartbeat_matching import match_heartbeat_lists
 
 
 def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
+    """Get a Matplotlib figure and axis from kwargs.
+
+    If an `ax` object is present in `kwargs`, its figure is returned. Otherwise,
+    a new figure and axis are created using keyword arguments supported by
+    `plt.subplots` / `plt.figure`. Any keys consumed for figure creation are
+    removed from `kwargs`.
+
+    Parameters
+    ----------
+    kwargs : dict[str, Any]
+        Keyword arguments that may contain `ax` or any parameters accepted
+        by `plt.subplots` / `plt.figure`.
+
+    Returns
+    -------
+    fig : :class:`~matplotlib.figure.Figure`
+        The figure instance.
+    ax : :class:`~matplotlib.axes.Axes`
+        The axis instance where plotting should occur.
+    """
     ax = kwargs.pop("ax", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs_subplot = {
         key: value
         for key, value in kwargs.items()
         if key
-        in list(inspect.signature(plt.subplots).parameters.keys())
-        + list(inspect.signature(plt.figure).parameters.keys())
+           in list(inspect.signature(plt.subplots).parameters.keys())
+           + list(inspect.signature(plt.figure).parameters.keys())
     }
     # remove the kwargs that are used for plt.subplots
     for key in kwargs_subplot:
@@ -36,14 +63,32 @@ def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
 
 
 def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """Get a Matplotlib figure and multiple axes from kwargs.
+
+    Similar to `_get_fig_ax` but handles an `axs` sequence. If `axs` is provided
+    it is assumed to be an indexable sequence where `axs[0]` provides the figure.
+
+    Parameters
+    ----------
+    kwargs : dict[str, Any]
+        Keyword arguments that may contain `axs` or any parameters accepted
+        by `plt.subplots` / `plt.figure`.
+
+    Returns
+    -------
+    fig : :class:`~matplotlib.figure.Figure`
+        The figure instance.
+    axs : Sequence[:class:`~matplotlib.axes.Axes`]
+        The axes created or provided.
+    """
     axs: plt.Axes | None = kwargs.pop("axs", None)
     # filter out the kwargs that are not needed for plt.subplots
     kwargs_subplot = {
         key: value
         for key, value in kwargs.items()
         if key
-        in list(inspect.signature(plt.subplots).parameters.keys())
-        + list(inspect.signature(plt.figure).parameters.keys())
+           in list(inspect.signature(plt.subplots).parameters.keys())
+           + list(inspect.signature(plt.figure).parameters.keys())
     }
 
     if axs is not None:
@@ -54,11 +99,29 @@ def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]
 
 
 def _add_ecg_r_peaks(
-    ecg_data: pd.DataFrame,
-    r_peaks: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        r_peaks: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ECG R-peak markers and vertical lines to an axis.
+
+    Uses helper functions to add scatter markers and vertical lines at R-peak
+    sample positions.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    r_peaks : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of R-peak samples.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style parameters (e.g. `r_peak_color`, `r_peak_marker`,
+        `r_peak_linestyle`, `r_peak_plot_marker`, `r_peak_plot_vline`, ...).
+
+    """
     label = kwargs.get("r_peak_label", "R-Peaks")
     color = kwargs.get("r_peak_color", cmaps.wiso[0])
     marker = kwargs.get("r_peak_marker", "o")
@@ -87,11 +150,27 @@ def _add_ecg_r_peaks(
 
 
 def _add_ecg_r_peak_artefacts(
-    ecg_data: pd.DataFrame,
-    r_peaks: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        r_peaks: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ECG R-peak artefact markers using artefact styling.
+
+    Wrapper around `_add_ecg_r_peaks` that applies artefact-specific defaults.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    r_peaks : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of artefact R-peaks.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style overrides.
+
+    """
     label = kwargs.get("r_peak_artefact_label", "R-Peak Artefacts")
     color = kwargs.get("r_peak_artefact_color", cmaps.wiso_dark[0])
     marker = kwargs.get("r_peak_artefact_marker", "X")
@@ -109,11 +188,26 @@ def _add_ecg_r_peak_artefacts(
 
 
 def _add_ecg_q_peaks(
-    ecg_data: pd.DataFrame,
-    q_peaks: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        q_peaks: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ECG Q-peak markers and vertical lines to an axis.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    q_peaks : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of Q-peak samples.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style parameters (e.g. `q_peak_color`, `q_peak_marker`,
+        `q_peak_linestyle`, ...).
+
+    """
     label = kwargs.get("q_peak_label", "Q-Peaks")
     color = kwargs.get("q_peak_color", cmaps.med[0])
     marker = kwargs.get("q_peak_marker", "o")
@@ -140,11 +234,27 @@ def _add_ecg_q_peaks(
 
 
 def _add_ecg_q_peak_artefacts(
-    ecg_data: pd.DataFrame,
-    q_peak_artefacts: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        q_peak_artefacts: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ECG Q-peak artefact markers using artefact styling.
+
+    Wrapper around `_add_ecg_q_peaks` that applies artefact-specific defaults.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    q_peak_artefacts : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of artefact Q-peaks.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style overrides.
+
+    """
     label = kwargs.get("q_peak_artefact_label", "Q-Peak Artefacts")
     color = kwargs.get("q_peak_artefact_color", cmaps.med_dark[0])
     marker = kwargs.get("q_peak_artefact_marker", "X")
@@ -162,11 +272,25 @@ def _add_ecg_q_peak_artefacts(
 
 
 def _add_icg_b_points(
-    icg_data: pd.DataFrame,
-    b_points: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        icg_data: pd.DataFrame,
+        b_points: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ICG B-point markers and (optionally) vertical lines.
+
+    Parameters
+    ----------
+    icg_data : :class:`~pandas.DataFrame`
+        ICG signal indexed by sample/time.
+    b_points : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of B-point samples.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style parameters (e.g. `b_point_color`, `b_point_marker`,
+        `b_point_plot_marker`, `b_point_plot_vlines`, ...).
+    """
     color = kwargs.get("b_point_color", cmaps.phil[0])
     b_point_label = kwargs.get("b_point_label", "B-Points")
     marker = kwargs.get("b_point_marker", "o")
@@ -195,11 +319,26 @@ def _add_icg_b_points(
 
 
 def _add_icg_b_point_artefacts(
-    icg_data: pd.DataFrame,
-    b_points: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        icg_data: pd.DataFrame,
+        b_points: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ICG B-point artefacts using artefact styling.
+
+    Wrapper around `_add_icg_b_points`.
+
+    Parameters
+    ----------
+    icg_data : :class:`~pandas.DataFrame`
+        ICG signal indexed by sample/time.
+    b_points : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of artefact B-points.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style overrides.
+    """
     color = kwargs.get("b_point_artefact_color", cmaps.phil_dark[0])
     label = kwargs.get("b_point_artefact_label", "B-Point Artefacts")
     marker = kwargs.get("b_point_artefact_marker", "X")
@@ -212,11 +351,25 @@ def _add_icg_b_point_artefacts(
 
 
 def _add_icg_c_points(
-    icg_data: pd.DataFrame,
-    c_points: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        icg_data: pd.DataFrame,
+        c_points: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Add ICG C-point markers and vertical lines.
+
+    Parameters
+    ----------
+    icg_data : :class:`~pandas.DataFrame`
+        ICG signal indexed by sample/time.
+    c_points : :class:`~pandas.DataFrame` or array-like
+        Indices (relative) of C-point samples.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional style parameters (e.g. `c_point_color`, `c_point_marker`,
+        `c_point_linestyle`, ...).
+    """
     color = kwargs.get("c_point_color", cmaps.wiso_light[0])
     c_point_label = kwargs.get("c_point_label", "C Points")
     marker = kwargs.get("c_point_marker", "X")
@@ -250,14 +403,35 @@ def _add_icg_c_points(
 
 
 def _base_add_vlines(
-    x: pd.Series,
-    color: str,
-    alpha: float,
-    label: str,
-    linestyle: str,
-    ax: plt.Axes,
-    **kwargs: Any,
+        x: pd.Series,
+        color: str,
+        alpha: float,
+        label: str,
+        linestyle: str,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Draw vertical lines at specified x positions scaled to axis.
+
+    This draws vertical lines using axis-transform so lines span the axis height.
+
+    Parameters
+    ----------
+    x : :class:`~pandas.Series` or array-like
+        X positions where vertical lines are drawn (sample/time).
+    color : str
+        Line color.
+    alpha : float
+        Transparency of the lines.
+    label : str
+        Legend label for the lines.
+    linestyle : str
+        Line style.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Additional keyword arguments forwarded to `ax.vlines`.
+    """
     ax.vlines(
         x=x,
         ymin=0,
@@ -273,13 +447,31 @@ def _base_add_vlines(
 
 
 def _base_add_scatter(
-    x: pd.Series,
-    y: pd.Series,
-    color: str,
-    label: str,
-    marker: str,
-    ax: plt.Axes,
+        x: pd.Series,
+        y: pd.Series,
+        color: str,
+        label: str,
+        marker: str,
+        ax: plt.Axes,
 ) -> None:
+    """Draw scatter markers at given positions.
+
+    Parameters
+    ----------
+    x : :class:`~pandas.Series` or array-like
+        X positions for markers.
+    y : :class:`~pandas.Series` or array-like
+        Y positions for markers (signal values).
+    color : str
+        Marker color.
+    label : str
+        Legend label for the markers.
+    marker : str
+        Marker style.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+
+    """
     ax.scatter(
         x=x,
         y=y,
@@ -291,12 +483,31 @@ def _base_add_scatter(
 
 
 def _add_pep_from_reference(
-    ecg_data: pd.DataFrame,
-    icg_data: pd.DataFrame,
-    labels: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        icg_data: pd.DataFrame,
+        labels: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Shade PEP intervals derived from reference annotations.
+
+    Draws vertical spans between ECG and ICG reference sample indices for each
+    annotated PEP interval. Artefacts are rendered using separate styling.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    icg_data : :class:`~pandas.DataFrame`
+        ICG signal indexed by sample/time.
+    labels : :class:`~pandas.DataFrame`
+        Reference labels containing `('ecg', 'sample_relative')` and
+        `('icg', 'sample_relative')` and per-heartbeat labels.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Styling options (colors, hatch, alpha, label names).
+    """
     color = kwargs.get("pep_color", cmaps.nat[0])
     color_artefact = kwargs.get("pep_artefact_color", cmaps.wiso[0])
     edgecolor = kwargs.get("pep_edgecolor", color)
@@ -339,12 +550,29 @@ def _add_pep_from_reference(
 
 
 def _add_pep_from_results(
-    ecg_data: pd.DataFrame,
-    icg_data: pd.DataFrame,
-    labels: pd.DataFrame,
-    ax: plt.Axes,
-    **kwargs: Any,
+        ecg_data: pd.DataFrame,
+        icg_data: pd.DataFrame,
+        labels: pd.DataFrame,
+        ax: plt.Axes,
+        **kwargs: Any,
 ) -> None:
+    """Shade PEP intervals derived from algorithm results.
+
+    Uses estimated sample indices present in result tables to draw PEP spans.
+
+    Parameters
+    ----------
+    ecg_data : :class:`~pandas.DataFrame`
+        ECG signal indexed by sample/time.
+    icg_data : :class:`~pandas.DataFrame`
+        ICG signal indexed by sample/time.
+    labels : :class:`~pandas.DataFrame`
+        Results table containing `ecg` and `icg` sample indices per heartbeat.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Styling options (colors, hatch, alpha, label names).
+    """
     color = kwargs.get("pep_color", cmaps.nat[0])
     edgecolor = kwargs.get("pep_edgecolor", color)
     facecolor = kwargs.get("pep_facecolor", color)
@@ -370,6 +598,20 @@ def _add_pep_from_results(
 
 
 def _add_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any) -> None:
+    """Add heartbeat border vertical lines.
+
+    Draws dashed vertical lines at heartbeat start/end borders.
+
+    Parameters
+    ----------
+    heartbeats : :class:`~pandas.Index` or array-like
+        Positions (sample/time) of heartbeat borders.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to draw on.
+    **kwargs : Any
+        Optional styling.
+
+    """
     color = kwargs.get("heartbeat_border_color", cmaps.tech[2])
     ax.vlines(
         x=heartbeats,
@@ -384,6 +626,22 @@ def _add_heartbeat_borders(heartbeats: pd.DataFrame, ax: plt.Axes, **kwargs: Any
 
 
 def _handle_legend_one_axis(fig: plt.Figure, ax: plt.Axes, **kwargs: Any) -> None:
+    """Assemble and place a legend for a single axis.
+
+    Removes duplicate entries and supports placing the legend outside the
+    figure.
+
+    Parameters
+    ----------
+    fig : :class:`~matplotlib.figure.Figure`
+        Figure that may contain a global legend.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis whose legend entries are collected.
+    **kwargs : Any
+        Options: `legend_max_cols`, `legend_outside`, `legend_orientation`,
+        `legend_loc`.
+
+    """
     legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -404,10 +662,24 @@ def _handle_legend_one_axis(fig: plt.Figure, ax: plt.Axes, **kwargs: Any) -> Non
 
 
 def _handle_legend_two_axes(
-    fig: plt.Figure,
-    axs: Sequence[plt.Axes],
-    **kwargs: Any,
+        fig: plt.Figure,
+        axs: Sequence[plt.Axes],
+        **kwargs: Any,
 ) -> None:
+    """Assemble and place a legend for two (or more) axes.
+
+    When `legend_outside` is True a single consolidated legend is created for
+    all provided axes, otherwise each axis legend is handled separately.
+
+    Parameters
+    ----------
+    fig : :class:`~matplotlib.figure.Figure`
+        Figure instance.
+    axs : Sequence[:class:`~matplotlib.axes.Axes`]
+        Axes whose legends are to be combined or handled.
+    **kwargs : Any
+        Options forwarded to `_handle_legend_one_axis`.
+    """
     legend_max_cols = kwargs.get("legend_max_cols", 5)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -433,6 +705,20 @@ def _handle_legend_two_axes(
 
 
 def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequence[str]) -> tuple[list, list]:
+    """Remove duplicate legend entries preserving order.
+
+    Parameters
+    ----------
+    handles : Sequence[:class:`~matplotlib.artist.Artist`]
+        Legend handles.
+    labels : Sequence[str]
+        Legend labels.
+
+    Returns
+    -------
+    tuple[list, list]
+        Tuple of (unique_handles, unique_labels).
+    """
     unique_labels = []
     unique_handles = []
     for handle, label in zip(handles, labels, strict=False):
@@ -443,7 +729,30 @@ def _remove_duplicate_legend_entries(handles: Sequence[plt.Artist], labels: Sequ
 
 
 def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None) -> Sequence[int] | None:
+    """Normalize heartbeat subsample specification.
+
+    Accepts None, a single-element sequence, a tuple specifying a start/end
+    range, or a sequence of indices. If a tuple of two ints is given it is
+    expanded to a list(range(start, end+1)). If a sequence is given it is
+    validated to be incrementing by 1.
+
+    Parameters
+    ----------
+    heartbeat_subsample : Sequence[int] | None
+        Requested heartbeat subset.
+
+    Returns
+    -------
+    Sequence[int] | None
+        Normalized list of heartbeat indices or None.
+
+    Raises
+    ------
+    ValueError
+        If the provided sequence is not an incrementing range.
+    """
     if heartbeat_subsample is None:
+
         return None
     if len(heartbeat_subsample) == 1:
         return heartbeat_subsample
@@ -457,8 +766,28 @@ def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None)
 
 
 def _get_data(
-    datapoint: BasePepDataset, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
+        datapoint: BasePepDataset, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Extract and optionally normalize ECG/ICG data for plotting.
+
+    Selects a contiguous window covering the requested heartbeat subset and
+    optionally normalizes the time/index to start at zero.
+
+    Parameters
+    ----------
+    datapoint : BasePepDataset
+        Dataset object providing `ecg`, `icg` and `heartbeats`.
+    normalize_time : bool
+        If True convert Timedelta/Datetime indices to seconds and shift indices
+        to start at zero.
+    heartbeat_subset : Sequence[int] | None
+        Heartbeat indices to include (see `_sanitize_heartbeat_subset`).
+
+    Returns
+    -------
+    ecg_data, icg_data : tuple[:class:`~pandas.DataFrame`, :class:`~pandas.DataFrame`]
+        Subsetted ECG and ICG data ready for plotting.
+    """
     ecg_data = datapoint.ecg
     icg_data = datapoint.icg
 
@@ -495,9 +824,29 @@ def _get_data(
 
 
 def _get_reference_labels(
-    datapoint: BasePepDatasetWithAnnotations,
-    heartbeat_subset: Sequence[int] | None = None,
+        datapoint: BasePepDatasetWithAnnotations,
+        heartbeat_subset: Sequence[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
+    """Collect and align reference labels to extracted heartbeats.
+
+    Matches reference heartbeat borders to extracted heartbeats and returns
+    Q-peak / B-point labels and artefacts adjusted to relative sample indices
+    starting from the first heartbeat in the matched subset.
+
+    Parameters
+    ----------
+    datapoint : BasePepDatasetWithAnnotations
+        Dataset with reference annotations.
+    heartbeat_subset : Sequence[int] | None
+        Optional heartbeat subset to restrict to.
+
+    Returns
+    -------
+    dict[str, :class:`~pandas.DataFrame`]
+        Dictionary with keys: ``heartbeats``, ``q_peaks``, ``q_peak_artefacts``,
+        ``b_points``, ``b_point_artefacts``. All indices are relative to the
+        first start sample of the returned subset.
+    """
     heartbeats = datapoint.heartbeats
     heartbeats = heartbeats[["start_sample", "end_sample"]]
     reference_heartbeats = datapoint.reference_heartbeats
@@ -543,7 +892,7 @@ def _get_reference_labels(
     # compute the start_sample of the first heartbeat in the subset to get relative sample indices, corrected by the
     # offset between the reference heartbeat borders and the extracted heartbeat borders
     start_sample = reference_heartbeats["start_sample"].iloc[0] - (
-        reference_heartbeats["start_sample"].iloc[0] - heartbeats["start_sample"].iloc[0]
+            reference_heartbeats["start_sample"].iloc[0] - heartbeats["start_sample"].iloc[0]
     )
 
     # subtract start_sample to get relative sample indices
@@ -551,8 +900,29 @@ def _get_reference_labels(
 
 
 def _get_labels_from_challenge_results(
-    pep_results_per_sample: pd.DataFrame, heartbeat_subsample: Sequence[int]
+        pep_results_per_sample: pd.DataFrame, heartbeat_subsample: Sequence[int]
 ) -> dict[str, pd.DataFrame]:
+    """Prepare labels from challenge result table.
+
+    Reindexes results according to the provided heartbeat subsample and returns
+    per-heartbeat start/end and peak labels normalized to the first heartbeat's
+    start index.
+
+    Parameters
+    ----------
+    pep_results_per_sample : :class:`~pandas.DataFrame`
+        Results table indexed by `heartbeat_id` and containing reference/estimated
+        sample columns.
+    heartbeat_subsample : Sequence[int]
+        Heartbeat indices to include.
+
+    Returns
+    -------
+    dict[str, :class:`~pandas.DataFrame`]
+        Keys include ``heartbeats_start``, ``heartbeats_end``,
+        ``q_peak_labels_reference``, ``q_peak_labels_estimated``,
+        ``b_point_labels_reference``, ``b_point_labels_estimated``.
+    """
     heartbeat_subsample = _sanitize_heartbeat_subset(heartbeat_subsample)
     pep_results_per_sample = pep_results_per_sample.reindex(heartbeat_subsample, level="heartbeat_id")
 
@@ -578,6 +948,19 @@ def _get_labels_from_challenge_results(
 
 
 def _get_rect(kwargs: dict[str, Any]) -> tuple[float, ...]:
+    """Compute figure rectangle for layout depending on legend placement.
+
+    Parameters
+    ----------
+    kwargs : dict[str, Any]
+        Keyword options that may include `rect`, `legend_outside`, and
+        `legend_orientation`.
+
+    Returns
+    -------
+    tuple[float, float, float, float]
+        Rectangle passed to `fig.subplots_adjust` or similar.
+    """
     rect = kwargs.pop("rect", None)
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -590,6 +973,18 @@ def _get_rect(kwargs: dict[str, Any]) -> tuple[float, ...]:
 
 
 def _get_legend_loc(kwargs: dict[str, Any]) -> str:
+    """Choose a default legend location based on options.
+
+    Parameters
+    ----------
+    kwargs : dict[str, Any]
+        May include `legend_loc`, `legend_outside`, and `legend_orientation`.
+
+    Returns
+    -------
+    str
+        Legend location string accepted by Matplotlib.
+    """
     legend_loc = kwargs.get("legend_loc")
     legend_outside = kwargs.get("legend_outside", False)
     legend_orientation = kwargs.get("legend_orientation", "vertical")
@@ -602,6 +997,13 @@ def _get_legend_loc(kwargs: dict[str, Any]) -> str:
 
 
 def _get_annotation_bbox() -> dict[str, Any]:
+    """Return bbox style dict for annotation boxes with edge.
+
+    Returns
+    -------
+    dict
+        Keyword args suitable for :class:`~matplotlib.text.Text` bounding box.
+    """
     return {
         "fc": (1, 1, 1, plt.rcParams["legend.framealpha"]),
         "ec": plt.rcParams["legend.edgecolor"],
@@ -610,6 +1012,13 @@ def _get_annotation_bbox() -> dict[str, Any]:
 
 
 def _get_annotation_bbox_no_edge() -> dict[str, Any]:
+    """Return bbox style dict for annotation boxes without an edge.
+
+    Returns
+    -------
+    dict
+        Keyword args suitable for :class:`~matplotlib.text.Text` bounding box.
+    """
     return {
         "fc": (1, 1, 1, plt.rcParams["legend.framealpha"]),
         "ec": "none",
@@ -618,17 +1027,52 @@ def _get_annotation_bbox_no_edge() -> dict[str, Any]:
 
 
 def _get_bbox_coords(
-    artist: plt.Artist,
-    ax: plt.Axes,
+        artist: plt.Artist,
+        ax: plt.Axes,
 ) -> np.ndarray:
+    """Get the data coordinates of an artist's bounding box.
+
+    Converts the artist's display bounding box into axis data coordinates.
+
+    Parameters
+    ----------
+    artist : :class:`~matplotlib.artist.Artist`
+        Artist to inspect.
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis used to transform the bounding box.
+
+    Returns
+    -------
+    :class:`~numpy.ndarray`
+        Array shape (2, 2) containing the lower-left and upper-right points in
+        data coordinates.
+    """
     return artist.get_window_extent().transformed(ax.transData.inverted()).get_points()
 
 
 def add_fancy_patch_around(
-    ax: plt.Axes,
-    bb: Bbox,
-    **kwargs: dict[str, Any],
+        ax: plt.Axes,
+        bb: Bbox,
+        **kwargs: dict[str, Any],
 ) -> FancyBboxPatch:
+    """Add a FancyBboxPatch around a bounding box.
+
+    Convenience to draw a rounded rectangle patch around a bounding box.
+
+    Parameters
+    ----------
+    ax : :class:`~matplotlib.axes.Axes`
+        Axis to add the patch to.
+    bb : :class:`~matplotlib.transforms.Bbox`
+        Bounding box in data coordinates.
+    **kwargs : dict[str, Any]
+        Optional style arguments passed to `FancyBboxPatch` (fc, ec, boxstyle, ...).
+
+    Returns
+    -------
+    :class:`~matplotlib.patches.FancyBboxPatch`
+        The created patch.
+    """
     kwargs.setdefault("fc", (1, 1, 1, plt.rcParams["legend.framealpha"]))
     kwargs.setdefault("ec", "none")
     kwargs.setdefault("boxstyle", "round,pad=5")
@@ -638,8 +1082,28 @@ def add_fancy_patch_around(
 
 
 def _get_heartbeats(
-    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
+        datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
 ) -> pd.DataFrame:
+    """Extract and optionally normalize heartbeat metadata.
+
+    Returns a DataFrame with `start_sample`, `end_sample` and `r_peak_sample`
+    columns, optionally restricted to a heartbeat subset and shifted to a zero
+    origin.
+
+    Parameters
+    ----------
+    datapoint : BasePepDatasetWithAnnotations
+        Dataset providing heartbeat metadata.
+    heartbeat_subset : Sequence[int] | None
+        Optional subset of heartbeat indices to return.
+    normalize : bool, optional
+        If True shift samples to start at zero.
+
+    Returns
+    -------
+    :class:`~pandas.DataFrame`
+        Heartbeat metadata for the requested subset.
+    """
     heartbeats = datapoint.heartbeats.drop(columns="start_time")
     if heartbeat_subset is not None:
         heartbeats = heartbeats.loc[heartbeat_subset][["start_sample", "end_sample", "r_peak_sample"]]
@@ -652,6 +1116,23 @@ def _get_heartbeats(
 
 
 def _get_heartbeat_borders(data: pd.DataFrame, heartbeats: pd.DataFrame) -> pd.DataFrame:
+    """Compute sample/time locations of heartbeat borders.
+
+    Given signal `data` and a `heartbeats` table with `start_sample` and
+    `end_sample`, returns an Index of start positions and the final end sample.
+
+    Parameters
+    ----------
+    data : :class:`~pandas.DataFrame`
+        Signal data used to map sample indices to axis values.
+    heartbeats : :class:`~pandas.DataFrame`
+        Heartbeat table containing `start_sample` and `end_sample`.
+
+    Returns
+    -------
+    :class:`~pandas.Index`
+        Index of heartbeat border positions in the signal's index.
+    """
     start_samples = data.index[heartbeats["start_sample"]]
     end_sample = data.index[heartbeats["end_sample"] - 1][-1]
     # combine both into one array

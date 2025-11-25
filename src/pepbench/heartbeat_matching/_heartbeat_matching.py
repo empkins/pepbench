@@ -1,3 +1,14 @@
+"""Heartbeat matching utilities for comparing extracted and reference heartbeat lists.
+
+This module provides routines to compare detected heartbeats with reference annotations and to derive
+matching-based metrics. The primary public function is :func:`pepbench.heartbeat_matching.match_heartbeat_lists`,
+which accepts ground-truth and extracted heartbeat lists and returns pairings and match types according to a
+configurable tolerance and matching strategy.
+
+Internal helpers :func:`_match_heartbeat_lists` and :func:`_match_label_lists` implement the core matching logic
+using KD-tree nearest-neighbor searches and a combination of Chebyshev and Manhattan distance criteria.
+"""
+
 from collections.abc import Sequence
 
 import numpy as np
@@ -26,8 +37,8 @@ def match_heartbeat_lists(
     Two heartbeat are considered a positive match, if both their start and their end values differ by less than the
     `threshold`.
 
-    By default (controlled by the one-to-one parameter), if multiple heartbeats of the extracted heartbeat list would
-    match to a single ground truth heartbeat (or vise-versa), only the heartbeat with the lowest distance is considered
+    By default, (controlled by the one-to-one parameter) if multiple heartbeats of the extracted heartbeat list would
+    match to a single ground truth heartbeat (or vise versa), only the heartbeat with the lowest distance is considered
     an actual match.
     If `one_to_one` is set to False, all matches would be considered True positives.
     This might lead to unexpected results in certain cases and should not be used to calculate traditional metrics like
@@ -127,6 +138,65 @@ def _match_heartbeat_lists(
     suffix_a: str = "_a",
     suffix_b: str = "_b",
 ) -> pd.DataFrame:
+    """Compare extracted heartbeat segments to reference annotations and classify matches.
+
+    The function aligns two heartbeat lists (ground truth and extracted) using a per-label tolerance,
+    and classifies each pairing as a true positive (`'tp'`), false positive (`'fp'`) or false negative (`'fn'`).
+    The comparison is performed on the columns `start_sample` and `end_sample` and the tolerance is supplied
+    in milliseconds and converted to samples using `sampling_rate_hz`.
+
+    Parameters
+    ----------
+    heartbeats_reference : :class:`~pandas.DataFrame`
+        Ground-truth heartbeat list. Must have an index (used as heartbeat ids) and columns
+        at least `start_sample` and `end_sample`.
+    heartbeats_extracted : :class:`~pandas.DataFrame`
+        Extracted heartbeat list. Same expectations as ``heartbeats_reference``.
+    tolerance_ms : int or float, optional
+        Allowed tolerance between label coordinates in milliseconds (default: 10 ms). Matches with
+        distance ``<= tolerance_ms`` are considered valid.
+    sampling_rate_hz : int or float
+        Sampling rate of the underlying signal in Hz. Used to convert ``tolerance_ms`` to samples.
+    one_to_one : bool, optional
+        If True (default) enforce one-to-one matching: a heartbeat in one list can be matched to at most
+        one heartbeat in the other list. If False, multiple matches per heartbeat are allowed.
+    heartbeats_reference_suffix : str or None, optional
+        Suffix appended to the reference index name in the output (default: ``'_reference'``).
+    heartbeats_extracted_suffix : str or None, optional
+        Suffix appended to the extracted index name in the output (default: ``''``).
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with three columns:
+        - ``{extracted_index_name}`` : index values of the extracted heartbeat list
+        (or ``pd.NA`` for unmatched reference entries)
+        - ``{reference_index_name}`` : index values of the reference heartbeat list
+        (or ``pd.NA`` for unmatched extracted entries)
+        - ``match_type`` : one of ``'tp'`` (true positive), ``'fp'`` (false positive) or ``'fn'`` (false negative)
+
+        The exact index column names are the original index names of the inputs with the provided suffixes appended.
+        Unmatched entries are represented by ``pd.NA`` in the corresponding id column.
+
+    Notes
+    -----
+    - The function internally converts ``tolerance_ms`` to integer sample tolerance before matching.
+    - When ``one_to_one`` is True, ties are resolved by selecting the closest match based on Manhattan distance.
+    - For reliable results, provide ordered, non-overlapping heartbeat lists where possible.
+
+    Examples
+    --------
+    >>> ref = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=['start', 'end']).rename_axis('hb_id')
+    >>> ext = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=['start', 'end']).rename_axis('hb_id')
+    >>> matches = match_heartbeat_lists(
+    ...     heartbeats_reference=ref,
+    ...     heartbeats_extracted=ext,
+    ...     sampling_rate_hz=500,
+    ...     tolerance_ms=10,
+    ... )
+    >>> matches['match_type'].unique()
+    array(['tp', 'fp', 'fn'], dtype=object)
+    """
     if suffix_a == suffix_b:
         raise ValueError("The suffix for the first and the second heartbeat list must be different.")
 
