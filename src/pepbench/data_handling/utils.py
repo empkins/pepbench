@@ -22,7 +22,7 @@ phase_mapping_guardian = {
 
 
 def reindex_empkins(data: pd.DataFrame, after_rename: bool = False) -> pd.DataFrame:
-    """Reindex data from the *EmpkinSDataset*.
+    """Reindex data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
 
     The reindexing is performed according to the condition (tsst, ftsst) and phase (Prep, Pause_1, Talk, Math, Pause_5)
     mappings. The reindexing can be performed *before* or *after* the data has been renamed
@@ -31,7 +31,7 @@ def reindex_empkins(data: pd.DataFrame, after_rename: bool = False) -> pd.DataFr
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
-        Data from the *EmpkinSDataset*.
+        Data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
     after_rename : bool, optional
         ``True`` if the data has already been renamed using :func:`rename_empkins`, ``False`` otherwise.
         Default: ``False``
@@ -39,7 +39,7 @@ def reindex_empkins(data: pd.DataFrame, after_rename: bool = False) -> pd.DataFr
     Returns
     -------
     :class:`pandas.DataFrame`
-        Reindexed data from the *EmpkinSDataset*.
+        Reindexed data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
 
     """
     if after_rename:
@@ -52,7 +52,7 @@ def reindex_empkins(data: pd.DataFrame, after_rename: bool = False) -> pd.DataFr
 
 
 def rename_empkins(data: pd.DataFrame) -> pd.DataFrame:
-    """Rename the data from the *EmpkinSDataset*.
+    """Rename the data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
 
     The renaming is performed according to the condition (tsst -> TSST, ftsst -> f-TSST) and phase
     (Prep -> Preparation, Pause_1 -> Pause 1, Talk -> Talk, Math -> Math, Pause_5 -> Pause 5) mappings.
@@ -60,12 +60,12 @@ def rename_empkins(data: pd.DataFrame) -> pd.DataFrame:
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
-        Data from the *EmpkinSDataset*.
+        Data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
 
     Returns
     -------
     :class:`pandas.DataFrame`
-        Renamed data from the *EmpkinSDataset*.
+        Renamed data from the :class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset.
 
     """
     return data.rename(condition_mapping_empkins, level="condition").rename(phase_mapping_empkins, level="phase")
@@ -80,7 +80,7 @@ def reindex_guardian(data: pd.DataFrame, after_rename: bool | None = False) -> p
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
-        Data from the *GuardianDataset*.
+        Data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset.
     after_rename : bool, optional
         ``True`` if the data has already been renamed using :func:`rename_guardian`, ``False`` otherwise.
         Default: ``False``
@@ -88,7 +88,7 @@ def reindex_guardian(data: pd.DataFrame, after_rename: bool | None = False) -> p
     Returns
     -------
     :class:`pandas.DataFrame`
-        Reindexed data from the *GuardianDataset*.
+        Reindexed data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset.
 
     """
     if after_rename:
@@ -97,7 +97,7 @@ def reindex_guardian(data: pd.DataFrame, after_rename: bool | None = False) -> p
 
 
 def rename_guardian(data: pd.DataFrame) -> pd.DataFrame:
-    """Rename the data from the *GuardianDataset*.
+    """Rename the data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset.
 
     The renaming is performed according to the phase (Pause -> Pause, Valsalva -> Valsalva, HoldingBreath -> Apnea,
     TiltUp -> Tilt-Up, TiltDown -> Tilt-Down) mappings.
@@ -105,12 +105,12 @@ def rename_guardian(data: pd.DataFrame) -> pd.DataFrame:
     Parameters
     ----------
     data : :class:`pandas.DataFrame`
-        Data from the *GuardianDataset*.
+        Data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset.
 
     Returns
     -------
     :class:`pandas.DataFrame`
-        Renamed data from the *GuardianDataset*.
+        Renamed data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset.
 
     """
     return data.rename(phase_mapping_guardian, level="phase")
