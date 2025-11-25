@@ -1,3 +1,13 @@
+r"""PEP extraction pipeline utilities.
+
+This module provides the PepExtractionPipeline class which sequences the
+algorithms required to extract pre\-ejection period (PEP) from ECG and ICG
+recordings. The pipeline handles heartbeat segmentation, Q\-peak detection,
+C/B point extraction on ICG, outlier correction and final PEP computation.
+
+Only the PepExtractionPipeline class is exported from this module.
+"""
+
 from typing import get_args
 
 from biopsykit.signals._base_extraction import CanHandleMissingEventsMixin
@@ -11,29 +21,43 @@ from pepbench.pipelines._base_pipeline import BasePepDatasetT, BasePepExtraction
 
 @base_pep_pipeline_docfiller
 class PepExtractionPipeline(BasePepExtractionPipeline):
-    """Standard `tpcp` Pipeline for PEP extraction from ECG and ICG data.
+    r"""Standard `tpcp` Pipeline for pre\-ejection period (PEP) extraction from ECG and ICG data.
 
-    This pipeline can be used to run the PEP extraction algorithms on a given dataset. It will use the algorithms
-    passed to the ``__init__`` method to extract PEP from the data. The results will be stored in the attributes of
-    the class.
+    The PepExtractionPipeline orchestrates a full extraction workflow:
+    heartbeat segmentation (ECG), Q\-peak detection (ECG), C\- and B\-point
+    extraction (ICG), outlier correction and final PEP calculation. Algorithms
+    provided to the pipeline are cloned before execution so original instances
+    are not modified.
 
-
+    Parameters
+    ----------
     %(base_parameters)s
 
     Other Parameters
     ----------------
     %(datapoint_pipeline)s
 
+    Attributes
+    ----------
     %(attributes)s
 
+    Notes
+    -----
+    - The pipeline sets the `handle_missing_events` parameter on algorithms that
+    implement `CanHandleMissingEventsMixin` when the pipeline's
+    `handle_missing_events` is not ``None``.
+    - Negative PEP handling is performed by the outlier correction algorithm and
+    controlled via ``handle_negative_pep`` which must correspond to one of the
+    values defined in `biopsykit.signals.pep._pep_extraction.NEGATIVE_PEP_HANDLING`.
     """
 
     @base_pep_pipeline_docfiller
     def run(self, datapoint: BasePepDatasetT) -> Self:
-        """Run the pipeline on the given datapoint.
+        r"""Run the pipeline on a single datapoint.
 
-        The pipeline will extract PEP from the given datapoint using the specified algorithms. The results will be
-        stored in the attributes of the class.
+        Executes the extraction sequence and stores results on the pipeline instance
+        (e.g. `heartbeat_segmentation_results_`, `q_peak_results_`, `c_point_results_`,
+        `b_point_results_`, `b_point_after_outlier_correction_results_`, `pep_results_`).
 
         Parameters
         ----------
@@ -42,13 +66,20 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
         Returns
         -------
         Self
-            The instance of the class with the results set.
+            The pipeline instance with extraction results stored as attributes.
 
         Raises
         ------
         ValueError
-            If the `handle_negative_pep` parameter is not one of the allowed values.
+            If ``handle_negative_pep`` is not one of the allowed values defined in
+            `biopsykit.signals.pep._pep_extraction.NEGATIVE_PEP_HANDLING`.
 
+        Notes
+        -----
+        - Sampling rates used are taken from the datapoint (``sampling_rate_ecg`` and
+          ``sampling_rate_icg``).
+        - Outlier correction is applied to B/C points; the final PEP computation uses
+          B\-points after outlier correction.
         """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(
