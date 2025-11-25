@@ -6,10 +6,6 @@ signals, overlays for reference annotations and algorithm results, utilities
 to compute and display PEP intervals, and diagnostic plotting helpers such as
 Bland\-Altman and paired plots.
 
-The functions in this module are consumed directly by the public
-:mod:`pepbench.plotting` package and by internal code in
-:mod:`pepbench.plotting._utils`.
-
 Functions
 ---------
 :func:`~pepbench.plotting._base_plotting.plot_signals`
@@ -38,16 +34,6 @@ Functions
 
 :func:`~pepbench.plotting._base_plotting._plot_paired`
     Create paired/\-within subject plots with optional boxplots and pointplots.
-
-Notes
------
-- Low-level drawing utilities and data preparation helpers live in
-  :mod:`pepbench.plotting._utils`.
-- The public \:mod:`pepbench.plotting` package re-exports the key high-level
-  functions from this module for convenient import (e.g.
-  ``from pepbench.plotting import plot_signals``).
-- Plot styling uses the project's color maps from :mod:`fau_colors.cmaps` and
-  follows the general layout/legend conventions used throughout PEPBench.
 
 Examples
 --------
@@ -139,7 +125,7 @@ def plot_signals(
 
     Returns
     -------
-    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes]]
+    (fig, ax) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
         Matplotlib figure and axis (or sequence of axes) containing the rendered
         traces.
 
@@ -199,7 +185,7 @@ def plot_signals_with_reference_labels(  # noqa: C901
 
     Returns
     -------
-    (fig, ax) : tuple[matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+    (fig, ax) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
         Matplotlib figure and axis (or axes) containing the rendered traces.
 
     Notes
@@ -291,7 +277,7 @@ def plot_signals_with_reference_pep(
 
     Returns
     -------
-    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
         Figure and axis (or axes) with PEP overlays added.
 
     Notes
@@ -375,7 +361,7 @@ def plot_signals_with_algorithm_results(
 
     Returns
     -------
-    (fig, ax) : tuple[:class:~matplotlib.figure.Figure, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
         Figure and axis (or axes) with algorithm detections added.
 
     Notes
@@ -488,7 +474,7 @@ def plot_signals_from_challenge_results(
     ----------
     datapoint : :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`
         Dataset containing ECG/ICG traces.
-    pep_results_per_sample : :class:`pandas.DataFrame`
+    pep_results_per_sample : class:`~pandas.DataFrame`
         Challenge-format per-sample results containing predicted and reference
         labels for Q-peaks and B-points.
     collapse : bool, optional
@@ -504,7 +490,7 @@ def plot_signals_from_challenge_results(
 
     Returns
     -------
-    (fig, ax) : tuple[matplotlib.figure.Figure, matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes]]
+    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
         Figure and axis (or axes) with challenge labels and optional PEP overlays.
 
     Notes
@@ -649,7 +635,7 @@ def _plot_signals_one_axis(
     ----------
     datapoint : :class:`~pepbench.datasets.BasePepDataset` | None
         If provided, ECG and ICG are extracted from the dataset and plotted.
-    df : :class:`pandas.DataFrame` | None
+    df : :class:`~pandas.DataFrame` | None
         Alternative data frame to plot. Either ``datapoint`` or ``df`` must be set.
     normalize_time : bool, optional
         If ``True``, convert time index to seconds. Default: ``False``.
@@ -660,7 +646,7 @@ def _plot_signals_one_axis(
 
     Returns
     -------
-    (fig, ax) : tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]
+    (fig, ax) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes`]
         The figure and single axis used for plotting.
 
     Raises
@@ -741,7 +727,7 @@ def _plot_signals_two_axes(
 
     Returns
     -------
-    (fig, axs) : tuple[matplotlib.figure.Figure, Sequence[matplotlib.axes.Axes]]
+    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, Sequence[:class:`~matplotlib.axes.Axes`]]
         Figure and the two axes (ECG on top, ICG below).
 
     Notes
@@ -796,7 +782,7 @@ def _plot_blandaltman(  # noqa: PLR0915
 
     Parameters
     ----------
-    x, y : pd.Series, np.array, or list
+    x, y : :class:`~pandas.Series`, :class:`~numpy.ndarray`, or :class:`~builtins.list`
         First and second measurements.
     agreement : float
         Multiple of the standard deviation to plot agreement limits.
@@ -815,14 +801,14 @@ def _plot_blandaltman(  # noqa: PLR0915
     annotate : bool
         If True (default), annotate the values for the mean difference
         and agreement limits.
-    ax : matplotlib axes
+    ax : :class:`~matplotlib.axes.Axes`
         Axis on which to draw the plot.
     **kwargs : optional
         Optional argument(s) passed to :py:func:`matplotlib.pyplot.scatter`.
 
     Returns
     -------
-    ax : Matplotlib Axes instance
+    ax : :class:`~matplotlib.axes.Axes`
         Returns the Axes object with the plot for further tweaking.
 
     Notes
@@ -1043,7 +1029,7 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
 
     Parameters
     ----------
-    data : :py:class:`pandas.DataFrame`
+    data : :class:`~pandas.DataFrame`
         Long-format dataFrame.
     dv : string
         Name of column containing the dependent variable.
@@ -1069,7 +1055,7 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
         by 90 degrees.
 
         .. versionadded:: 0.3.9
-    ax : matplotlib axes
+    ax : :class:`~matplotlib.axes.Axes`
         Axis on which to draw the plot.
     colors : list of str
         Line colors names. Default is green when value increases from A to B,
@@ -1084,7 +1070,7 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
 
     Returns
     -------
-    ax : Matplotlib Axes instance
+    ax : :class:`~matplotlib.axes.Axes`
         Returns the Axes object with the plot for further tweaking.
 
     Notes
