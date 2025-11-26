@@ -147,7 +147,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+         :class:`~pandas.DataFrame`
             Dataset index. Columns are either `participant`, `phase` (and optionally
             `label_period`) depending on `only_labeled`.
 
@@ -238,7 +238,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+         :class:`~pandas.DataFrame`
             DataFrame with columns `ecg` and `icg_der` indexed by a pandas
             TimedeltaIndex representing time since recording start.
 
@@ -288,7 +288,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        EcgRawDataFrame
+        :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
             ECG single-channel DataFrame (may be raw or filtered depending on
             `return_clean`) indexed by time.
 
@@ -308,7 +308,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        IcgRawDataFrame
+        :class:`~pepbench.datasets.rebeat_icg._dataset.IcgRawDataFrame`
             ICG single-channel DataFrame (cleaned or raw) indexed by time.
 
         Raises
@@ -332,7 +332,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Heartbeats as a pandas DataFrame describing onset/offset and segmentation info.
+            Heartbeats as a DataFrame describing onset/offset and segmentation info.
 
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
@@ -347,7 +347,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Labeling borders as a pandas DataFrame with integer sample columns such as
+            Labeling borders as a DataFrame with integer sample columns such as
             `start_sample` and `end_sample`.
 
         Raises
@@ -378,7 +378,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame
             Reference heartbeat table indexed by `heartbeat_id` and containing sample
             indices for heartbeat boundaries. Indices are adjusted relative to the
             labeling period.
@@ -414,7 +414,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame
             Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
             and a `sample_relative` column containing sample indices relative to the
             labeling segment.
@@ -450,7 +450,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame
             Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
             and a `sample_relative` column containing sample indices relative to the
             labeling segment.
@@ -482,7 +482,7 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pd.DataFrame
+        :class:`~pandas.DataFrame
             DataFrame with B-point annotations including `sample_relative` and any
             annotation metadata.
         """
