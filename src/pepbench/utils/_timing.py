@@ -7,7 +7,7 @@ coarse logging and diagnostics, not high-precision benchmarking.
 
 Classes
 -------
-MeasureTimeResults
+:class:`~pepbench.utils._timing.MeasureTimeResults`
     Typed dictionary describing the structure returned by :func:`measure_time`.
 
 Functions
@@ -67,7 +67,7 @@ def measure_time() -> Generator[MeasureTimeResults, None, None]:
 
     Yields
     ------
-    MeasureTimeResults
+    :class:`~pepbench.utils._timing.MeasureTimeResults`
         Mutable mapping populated with entry/exit timestamps and measured runtime.
 
     Notes

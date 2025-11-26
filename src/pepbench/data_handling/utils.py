@@ -72,7 +72,7 @@ def rename_empkins(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def reindex_guardian(data: pd.DataFrame, after_rename: bool | None = False) -> pd.DataFrame:
-    """Reindex data from the *GuardianDataset*.
+    """Reindex data from the :class:`~pepbench.datasets.guardian._dataset.GuardianDataset`.
 
     The reindexing is performed according to the phase (Pause, Valsalva, HoldingBreath, TiltUp, TiltDown) mappings.
     The reindexing can be performed *before* or *after* the data has been renamed (using :func:`rename_guardian`).

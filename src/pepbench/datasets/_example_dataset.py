@@ -55,7 +55,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         *,
         return_clean: bool = True,
     ) -> None:
-        """Initialize the ExampleDataset.
+        """Initialize the :class:`~pepbench.datasets.ExampleDataset`.
 
         Parameters
         ----------
@@ -122,7 +122,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        EcgRawDataFrame
+        :class:`~pepbench.utils.dtypes.EcgRawDataFrame`
             ECG signal data or cleaned ECG signal.
 
         Raises
@@ -148,7 +148,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        IcgRawDataFrame
+        :class:`~pepbench.utils.dtypes.IcgRawDataFrame`
             ICG signal data or cleaned ICG signal.
 
         Raises
@@ -175,7 +175,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Time-indexed signal data with a ``DatetimeIndex``.
         """
         p_id = self.index["participant"][0]
@@ -192,7 +192,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Reference labels for the ECG signal.
         """
         return self._load_reference_labels("ECG")
@@ -203,7 +203,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Reference labels for the ICG signal.
         """
         return self._load_reference_labels("ICG")
@@ -218,7 +218,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Reference labels indexed by (heartbeat_id, channel, label). Contains
             both ``sample_relative`` and ``sample_absolute`` columns.
 
@@ -247,8 +247,8 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
-            Reference heartbeats as a pandas DataFrame.
+        :class:`~pandas.DataFrame`
+            Reference heartbeats as a :class:`~pandas.DataFrame`.
         """
         return self._load_reference_heartbeats()
 
@@ -260,7 +260,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Reference heartbeats.
         """
         reference_ecg = self.reference_labels_ecg

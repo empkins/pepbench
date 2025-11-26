@@ -99,9 +99,9 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         exclude_missing_data : bool
             Whether to exclude participants where parts of the data are missing. Default: ``False``.
         use_cache : bool
-            Whether to use caching for loading biopac data. Default: ``True``.
+            Whether to use caching for loading Biopac data. Default: ``True``.
         only_labeled : bool
-            Whether to only return sections of the biopac data that are labeled (i.e., cut to labeling borders).
+            Whether to only return sections of the Biopac data that are labeled (i.e., cut to labeling borders).
             This is necessary when using the dataset for evaluating the performance of PEP extraction algorithms or for
             training ML-based PEP extraction algorithms. Default: ``False``.
         label_type: str, optional
@@ -190,7 +190,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single participant+condition+phase is selected, returns a DataFrame
+            If a single participant+condition+phase is selected, returns a  :class:`~pandas.DataFrame`
             containing the Biopac channels. If a single participant+condition but all
             phases are selected and `only_labeled` is True, returns a dict mapping phase
             names to DataFrames. In other multi-subset cases a ValueError is raised.
@@ -245,7 +245,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            ICG data as a pandas DataFrame.
+            ICG data as  :class:`~pandas.DataFrame`.
 
         Raises
         ------
@@ -274,7 +274,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
-            ECG data as a pandas DataFrame.
+            ECG data as a  :class:`~pandas.DataFrame`.
 
         Raises
         ------
@@ -341,7 +341,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         tuple[:class:`~pandas.DataFrame`, int]
-            Tuple containing the biopac data DataFrame and the sampling frequency in Hz.
+            Tuple containing the biopac data :class:`~pandas.DataFrame` and the sampling frequency in Hz.
         """
         if self.use_cache:
             data, fs = _cached_get_biopac_data(self.base_path, participant_id, condition)
@@ -436,7 +436,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single phase is selected, returns a DataFrame of reference labels for
+            If a single phase is selected, returns a :class:`~pandas.DataFrame` of reference labels for
             that phase. If all phases are selected, returns a concatenated DataFrame
             indexed by phase.
 
@@ -454,7 +454,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single phase is selected, returns a DataFrame of reference labels for
+            If a single phase is selected, returns a :class:`~pandas.DataFrame` of reference labels for
             that phase. If all phases are selected, returns a concatenated DataFrame
             indexed by phase.
 
@@ -489,8 +489,8 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single phase is selected, returns a DataFrame of reference labels for
-            that phase. If all phases are selected, returns a concatenated DataFrame
+            If a single phase is selected, returns a :class:`~pandas.DataFrame` of reference labels for
+            that phase. If all phases are selected, returns a concatenated :class:`~pandas.DataFrame`
             indexed by phase.
         """
         participant = self.index["participant"][0]
@@ -537,7 +537,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~biopsykit.utils.dtypes.HeartbeatSegmentationDataFrame`
-            DataFrame describing heartbeat onsets/offsets and related segmentation info.
+            :class:`~pandas.DataFrame` describing heartbeat onsets/offsets and related segmentation info.
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit(variable_length=True)
         heartbeat_algo.extract(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
