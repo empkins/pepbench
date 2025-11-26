@@ -17,41 +17,42 @@ or return a `pandas.DataFrame` ready for rendering or further styling.
 Functions
 ---------
 convert_to_latex(data, collapse_index_columns: bool = False, **kwargs)
-    Convert a `pandas.DataFrame` or `pandas.io.formats.style.Styler` to LaTeX.
+    Convert a :class:`~pandas.DataFrame` or :class:`~pandas.io.formats.style.Styler` to LaTeX.
     Sets sensible defaults for tabular formatting (siunitx, hrules, clines),
     preserves existing Styler formatting, and injects `\sisetup{...}` for
     separate-uncertainty rendering. If `collapse_index_columns` is True the
     index is reset and the row index is hidden in the produced LaTeX.
 
-create_algorithm_result_table(data: pandas.DataFrame, collapse_algo_levels: bool = False) -> pandas.DataFrame
+create_algorithm_result_table(
+    data: :class:`~pandas.DataFrame`,
+    collapse_algo_levels: bool = False,
+) -> :class:`~pandas.DataFrame`
     Format algorithm-level result tables. Combines mean and standard deviation
-    into `mean \pm std` strings for commonly exported metrics, computes and
-    formats an "Invalid PEPs" column (count and percent), and renames index
-    values using the package algorithm mapping. If `collapse_algo_levels` is
-    True, multi-level algorithm indices are collapsed into a single string
-    column.
+    into `mean \pm std` strings for commonly exported metrics, and computes
+    summary statistics.
 
-create_nan_reason_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None,
-    use_short_names: bool = True) -> pandas.DataFrame
-    Build a table of counts per reason for NaN/invalid PEPs grouped by
-    baseline (`b_point_algorithm`) and `outlier_correction_algorithm`. Returns
-    integer counts with columns renamed to short or long reason labels. Missing
-    outlier algorithms can be reindexed with `outlier_algos`.
+:func:`~pepbench.export._latex.create_nan_reason_table`(
+    data: :class:`~pandas.DataFrame`,
+    outlier_algos: :class:`~pandas.Sequence`[str] | None = None,
+) -> :class:`~pandas.DataFrame`
+    Build a table of counts per reason for NaN / invalid PEPs per algorithm.
 
-create_outlier_correction_table(data: pandas.DataFrame, outlier_algos: Sequence[str] | None = None) -> pandas.DataFrame
-    Reindex and format results grouped by baseline (`b_point_algorithm`) and
-    outlier-correction algorithm. Renames metric columns and algorithm levels
-    for consistent presentation and ensures a predictable index order when
-    `outlier_algos` is provided.
 
-create_reference_pep_table(data: pandas.DataFrame) -> pandas.DataFrame
+:func:`~pepbench.export._latex.create_outlier_correction_table`(
+    data: :class:`~pandas.DataFrame`,
+    outlier_algos: :class:`~pandas.Sequence`[str] | None = None,
+) -> :class:`~pandas.DataFrame`
+    Reindex and format results grouped by baseline (b_point) and
+    outlier-correction algorithm. Rename metrics and levels for presentation.
+
+create_reference_pep_table(data: :class:`~pandas.DataFrame`) -> :class:`~pandas.DataFrame`
     Format reference PEP (`pep_ms`) statistics into two presentation columns:
     "M ± SD [ms]" (mean ± standard deviation) and "Range [ms]" (min, max).
     Index level names are capitalized for display.
 
 Parameters
 ----------
-data : pandas.DataFrame or pandas.io.formats.style.Styler
+data : :class:`~pandas.DataFrame` or :class:`~pandas.io.formats.style.Styler`
     Analysis results produced by the PEPBench pipeline. Specific functions
     may expect particular column layouts (e.g. multi-level columns with
     `('metric', 'mean')`, `('metric', 'std')`, `('Invalid PEPs', 'total')`,
@@ -65,7 +66,7 @@ use_short_names : bool, optional
 
 Returns
 -------
-str or pandas.DataFrame
+str or :class:`~pandas.DataFrame`
     `convert_to_latex` returns a LaTeX string. Other functions return a
     `pandas.DataFrame` formatted for presentation.
 
@@ -117,14 +118,14 @@ def create_reference_pep_table(data: pd.DataFrame) -> pd.DataFrame:
 
     Parameters
     ----------
-    data : pandas.DataFrame
+    data : :class:`~pandas.DataFrame`
         DataFrame produced by the analysis pipeline containing multi-level
         columns for `pep_ms` (expected keys: `('pep_ms', 'mean')`,
         `('pep_ms', 'std')`, `('pep_ms', 'min')`, `('pep_ms', 'max')`).
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         A two-column DataFrame with columns ``"M ± SD [ms]"`` and
         ``"Range [ms]"`` suitable for LaTeX rendering or further styling.
 
@@ -167,7 +168,7 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
 
     Parameters
     ----------
-    data : pandas.DataFrame
+    data : :class:`~pandas.DataFrame`
         DataFrame indexed by algorithm identifiers and containing metric
         subcolumns (e.g. `('Mean Absolute Error [ms]', 'mean')`,
         `('Mean Absolute Error [ms]', 'std')`, etc.).
@@ -177,7 +178,7 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         Formatted DataFrame with human-readable metric columns and renamed
         index values ready for conversion to LaTeX or other presentation.
 
@@ -237,16 +238,16 @@ def create_outlier_correction_table(data: pd.DataFrame, outlier_algos: Sequence[
 
     Parameters
     ----------
-    data : pandas.DataFrame
+    data : :class:`~pandas.DataFrame`
         Grouped analysis results indexed by at least ``b_point_algorithm`` and
         ``outlier_correction_algorithm`` levels.
-    outlier_algos : Sequence[str] or None, optional
+    outlier_algos : :class:`~pandas.Sequence` [str] or None, optional
         Desired ordering / reindexing for the ``outlier_correction_algorithm``
         level. If None, the original ordering is preserved.
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         Reindexed and renamed DataFrame ready for display or further styling.
 
     Notes
@@ -278,7 +279,7 @@ def create_nan_reason_table(
 
     Parameters
     ----------
-    data : pandas.DataFrame
+    data : :class:`~pandas.DataFrame`
         DataFrame containing a ``('nan_reason', 'estimated')`` column.
     outlier_algos : Sequence[str] or None, optional
         If provided, reindex the ``outlier_correction_algorithm`` level to
@@ -289,7 +290,7 @@ def create_nan_reason_table(
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         Integer-count DataFrame (dtype ``Int64``) indexed by algorithm levels
         with columns representing NaN reasons.
 
@@ -328,7 +329,7 @@ def convert_to_latex(
 
     Parameters
     ----------
-    data : pandas.DataFrame or pandas.io.formats.style.Styler
+    data : :class:`~pandas.DataFrame` or :class:`~pandas.io.formats.style.Styler`
         Data to render as LaTeX. If a DataFrame is provided, it will be
         converted to a `Styler` and column names will be renamed using a
         small presentation mapping.

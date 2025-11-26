@@ -125,7 +125,10 @@ def plot_signals(
 
     Returns
     -------
-    (fig, ax) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
+    (fig, ax) : tuple[
+        :class:`~matplotlib.figure.Figure`,
+        :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]
+        ]
         Matplotlib figure and axis (or sequence of axes) containing the rendered
         traces.
 
@@ -185,8 +188,12 @@ def plot_signals_with_reference_labels(  # noqa: C901
 
     Returns
     -------
-    (fig, ax) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
-        Matplotlib figure and axis (or axes) containing the rendered traces.
+    (fig, ax) : tuple[
+        :class:`~matplotlib.figure.Figure`,
+        :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]
+        ]
+        Matplotlib figure and axis (or sequence of axes) containing the rendered
+        traces.
 
     Notes
     -----
@@ -277,7 +284,10 @@ def plot_signals_with_reference_pep(
 
     Returns
     -------
-    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
+    (fig, axs) : tuple[
+        :class:`~matplotlib.figure.Figure`,
+        :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]
+        ]
         Figure and axis (or axes) with PEP overlays added.
 
     Notes
@@ -361,7 +371,10 @@ def plot_signals_with_algorithm_results(
 
     Returns
     -------
-    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:~matplotlib.axes.Axes | Sequence[:class:~matplotlib.axes.Axes]]
+    (fig, axs) : tuple[
+        :class:`~matplotlib.figure.Figure`,
+        :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]
+        ]
         Figure and axis (or axes) with algorithm detections added.
 
     Notes
@@ -490,7 +503,10 @@ def plot_signals_from_challenge_results(
 
     Returns
     -------
-    (fig, axs) : tuple[:class:`~matplotlib.figure.Figure`, :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]]
+    (fig, axs) : tuple[
+        :class:`~matplotlib.figure.Figure`,
+        :class:`~matplotlib.axes.Axes` | Sequence[:class:`~matplotlib.axes.Axes`]
+        ]
         Figure and axis (or axes) with challenge labels and optional PEP overlays.
 
     Notes
