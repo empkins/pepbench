@@ -1,6 +1,4 @@
 """
-.. _custom_dataset_basics:
-
 Base classes for PEP extraction datasets.
 
 Provides base classes and mixins for datasets used in PEP extraction from ICG and ECG data.
@@ -17,6 +15,7 @@ Classes
     Combines :class:`BasePepDataset` and :class:`PepLabelMixin` to provide a unified
     interface for evaluation datasets with annotations.
 
+.. _custom_dataset_basics:
 """
 import pandas as pd
 from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame

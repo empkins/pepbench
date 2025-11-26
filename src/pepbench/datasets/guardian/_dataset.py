@@ -266,7 +266,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single phase is selected, a :class:`~pandas.DataFrame` of channel
+            If a single phase is selected, a DataFrame of channel
             signals is returned. If all phases are selected, a dict mapping phase names
             to DataFrames is returned.
 
@@ -411,7 +411,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-        If a single phase is selected, returns a :class:`~pandas.DataFrame` for that
+        If a single phase is selected, returns a DataFrame for that
         phase. If all phases are selected, returns a concatenated DataFrame indexed
         by phase.
 
@@ -448,7 +448,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame` or dict
-            If a single phase is selected, returns a :class:`~pandas.DataFrame`
+            If a single phase is selected, returns a DataFrame.
         """
         participant = self.index["participant"][0]
         phases = self.index["phase"]
@@ -484,7 +484,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Heartbeats as a pandas DataFrame.
+            Heartbeats as a DataFrame.
 
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
@@ -513,7 +513,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Metadata as a pandas DataFrame.
+            Metadata as a DataFrame.
 
         """
         data = pd.read_csv(self.base_path.joinpath("metadata/demographics.csv"))
@@ -528,7 +528,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Age as a pandas DataFrame.
+            Age as a DataFrame.
 
         """
         return self.metadata[["Age"]]
@@ -552,7 +552,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            BMI as a pandas DataFrame.
+            BMI as a DataFrame.
 
         """
         return bmi(self.metadata[["Weight", "Height"]])
