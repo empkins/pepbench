@@ -23,7 +23,7 @@ Functions
     data: :class:`~pandas.DataFrame`,
     outlier_algos: Sequence[str] | None = None,
     use_short_names: bool = True,
-) -> pandas.DataFrame
+) -> :class:`~pandas.DataFrame`
     Build a table of counts per reason for NaN / invalid PEPs per algorithm and
     outlier-correction algorithm.
 

@@ -7,7 +7,7 @@ aggregator should operate on the concatenation of those arrays across datapoints
 
 Classes
 -------
-PerSampleAggregator
+:class:`~pepbench.evaluation._scoring_aggregator.PerSampleAggregator`
     Aggregator that applies a callable to the horizontally stacked array of per-sample values.
 
 Notes
@@ -35,10 +35,14 @@ class PerSampleAggregator(Aggregator[np.ndarray]):
 
     Parameters
     ----------
-    func : Callable[[Sequence[np.ndarray]], float | dict[str, float]]
+    func : :class:`collections.abc.Callable`[
+        [ :class:`collections.abc.Sequence`[:class:`numpy.ndarray`] ],
+        float | dict[str, float]
+        ]
         Callable that accepts a sequence or array of values (typically the result
         of :func:`numpy.hstack`) and returns either a scalar or a mapping of
         scalar metrics.
+
     return_raw_scores : bool, optional
         Passed to the base :class:`tpcp.validate.Aggregator` initializer and
         controls whether raw (unaggregated) scores are kept. Default is ``True``.
@@ -70,7 +74,7 @@ class PerSampleAggregator(Aggregator[np.ndarray]):
 
         Parameters
         ----------
-        values : Sequence[np.ndarray]
+        values : Sequence[:class:`~numpy.ndarray`]
             Sequence of NumPy arrays produced by the scoring function for each datapoint.
 
         Returns
