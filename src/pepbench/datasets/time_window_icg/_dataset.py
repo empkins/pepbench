@@ -155,7 +155,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             DataFrame with columns ``participant`` and ``phase`` and a default
             integer index. Rows present in ``data_to_exclude`` are dropped.
         """
@@ -223,7 +223,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Time-indexed signal data.
 
         Raises
@@ -300,7 +300,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Heartbeat borders and related metadata (one row per heartbeat).
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
@@ -318,7 +318,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Single-row DataFrame with labeling borders.
 
         Raises
@@ -344,7 +344,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Reference heartbeat borders with integer sample columns:
             ``start_sample``, ``end_sample``, ``r_peak_sample``, ``rr_interval_sample``,
             and time column ``start_time`` (float seconds).
@@ -407,7 +407,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Multi\-indexed DataFrame indexed by (``heartbeat_id``, ``channel``, ``label``)
             with a single column ``sample_relative`` containing the sample index of
             the annotated point relative to the phase start.
@@ -468,7 +468,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Multi\-indexed DataFrame indexed by (``heartbeat_id``, ``channel``, ``label``)
             with a single column ``sample_relative``.
 
@@ -508,7 +508,7 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+         :class:`~pandas.DataFrame`
             Table of label sample indices keyed by ``heartbeat_id``.
         """
         data = pd.read_csv(file_path)

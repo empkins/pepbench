@@ -33,7 +33,7 @@ def _load_tfm_data(base_path: path_t, date: pd.Timestamp) -> dict[str, pd.DataFr
 
     Returns
     -------
-    dict[str, pd.DataFrame]
+    dict[str,  :class:`~pandas.DataFrame`]
         A dictionary containing TFM data as DataFrames indexed by local datetime.
     """
     tfm_data = TFMLoader.from_mat_file(base_path, date)

@@ -1,6 +1,6 @@
 """Module for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
 
-This module provides the TFMLoader class, which can load TFM data from .mat files,
+This module provides the :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader` class, which can load TFM data from .mat files,
 downsample the data to a common sampling rate,
 and organize the data into a structured format for further analysis.
 """
@@ -101,15 +101,15 @@ class TFMLoader:
         ----------
         file_path : path_t
             Path to the .mat file.
-        date : str | pd.Timestamp
+        date : str | :class:`~pandas.Timestamp`
             Date of the recording.
         tz : str, optional
             Timezone of the data. Default: "Europe/Berlin"
 
         Returns
         -------
-        TFMLoader
-            An instance of the TFMLoader class containing the loaded data.
+        :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`
+            An instance of the :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader` class containing the loaded data.
 
         """
         data = loadmat(file_path, struct_as_record=False, squeeze_me=True)
@@ -192,7 +192,7 @@ class TFMLoader:
         return self._tz
 
     def data_as_dict(self, index: str | None = None) -> dict[str, pd.DataFrame]:
-        """Get the TFM data as a dictionary of dataframes.
+        """Get the TFM data as a dictionary of :class:`~pandas.DataFrame`s.
 
         Parameters
         ----------
@@ -207,7 +207,7 @@ class TFMLoader:
 
         Returns
         -------
-        dict[str, pd.DataFrame]
+        dict[str, :class:`~pandas.DataFrame`]
             Dictionary containing the TFM data with the specified index.
 
         """
@@ -221,8 +221,8 @@ class TFMLoader:
 
         Parameters
         ----------
-        data : pd.DataFrame
-            Dataframe to add the index to.
+        data :  :class:`~pandas.DataFrame`
+             :class:`~pandas.DataFrame` to add the index to.
         index : str
             Type of index to add. Options are:
             - None: simple integer index representing sample number
@@ -230,14 +230,14 @@ class TFMLoader:
             - "utc": UTC timestamps
             - "utc_datetime": UTC datetime index
             - "local_datetime": Local datetime index in the dataset's timezone
-        start_time : pd.Timestamp, optional
+        start_time : :class:`~pandas.Timestamp`, optional
             Start time of the recording. Required for "utc", "utc_datetime", and "local
             _datetime" index types. Default: None
 
         Returns
         -------
-        pd.DataFrame
-            Dataframe with the specified index.
+         :class:`~pandas.DataFrame`
+             :class:`~pandas.DataFrame` with the specified index.
 
         """
         index_names = {
