@@ -23,7 +23,7 @@ See Also
 
 Public classes
 --------------
-BasePepExtractionPipeline
+:class:`~pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`
     Pipeline class orchestrating heartbeat segmentation, event extraction, outlier correction
     and PEP computation.
 
@@ -170,7 +170,7 @@ class BasePepExtractionPipeline(Pipeline):
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:
-        """Initialize a BasePepExtractionPipeline.
+        """Initialize a :class:`~pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`.
 
         Parameters
         ----------
@@ -238,7 +238,7 @@ class BasePepExtractionPipeline(Pipeline):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             PEP result dataframe containing columns such as ``q_peak_sample``, ``b_point_sample``,
             ``pep_sample``, ``pep_ms`` and supporting metadata. The returned dataframe will have
             pandas nullable dtypes applied (e.g., ``Int64``, ``Float64``) and be validated with
