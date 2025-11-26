@@ -19,8 +19,6 @@ from pepbench.datasets._helper import compute_reference_heartbeats, load_labelin
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import path_t
 
-
-
 _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 
 

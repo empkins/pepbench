@@ -23,7 +23,7 @@ from pepbench.utils._types import path_t
 
 
 def _load_txt_data(file_path: path_t) -> pd.DataFrame:
-    """Load a plain text signal file into a pandas DataFrame.
+    """Load a plain text signal file into a DataFrame.
 
     The function reads a text file with no header and assigns the column names
     ``['icg', 'icg_der', 'ecg']``. The returned DataFrame contains the raw
@@ -31,20 +31,20 @@ def _load_txt_data(file_path: path_t) -> pd.DataFrame:
 
     Parameters
     ----------
-    file_path : str or pathlib.Path
+    file_path : str or :class:`~pathlib.Path`
         Path to the plain text file to read. Each row is expected to contain
         three numeric samples.
 
     Returns
     -------
-    pandas.DataFrame
+    :class:`~pandas.DataFrame`
         DataFrame with columns ``icg``, ``icg_der`` and ``ecg`` in that order.
 
     Raises
     ------
-    OSError
+    :class:`OSError`
         If the file cannot be read.
-    ValueError
+    :class:`ValueError`
         If the file does not contain exactly three columns.
     """
     data = pd.read_csv(file_path, header=None)
@@ -63,18 +63,18 @@ def _get_match_heartbeat_label_ids(heartbeats: pd.DataFrame, b_points: pd.DataFr
 
     Parameters
     ----------
-    heartbeats : pandas.DataFrame
+    heartbeats : :class:`~pandas.DataFrame`
         DataFrame of heartbeat borders. Must contain integer or numeric columns
         ``start_sample`` and ``end_sample`` representing inclusive sample indices
         for each heartbeat.
-    b_points : pandas.DataFrame
+    b_points : :class:`~pandas.DataFrame`
         DataFrame of annotation points. Must contain a column ``sample_relative``
         with the sample index (relative to the phase start) for each B-point.
         The index of this DataFrame is used as the key in the returned Series.
 
     Returns
     -------
-    pandas.Series
+    :class:`~pandas.Series`
         Series indexed by the B-point indices (the index of ``b_points``) and
         containing the matched heartbeat index (int). B-points without a match
         are omitted from the returned Series.
@@ -113,7 +113,7 @@ def generate_heartbeat_borders(base_path: path_t) -> None:
 
     Parameters
     ----------
-    base_path : str or pathlib.Path
+    base_path : str or :class:`~pathlib.Path`
         Root folder of the dataset. The function expects the following
         subfolders to exist:
         - ``signals`` : contains ``IDN<id>.txt`` files with raw signals.
@@ -122,13 +122,10 @@ def generate_heartbeat_borders(base_path: path_t) -> None:
         - ``reference_heartbeats`` : will be created if missing and receives
           the generated CSV files.
 
-    Returns
-    -------
-    None
 
     Raises
     ------
-    OSError
+    :class:`OSError`
         If required input folders (``signals`` or ``annotations``) are missing
         or cannot be read.
 

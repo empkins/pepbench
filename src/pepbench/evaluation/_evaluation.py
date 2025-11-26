@@ -1,4 +1,4 @@
-"""Evaluation utilities for PEP extraction pipelines.
+r"""Evaluation utilities for PEP extraction pipelines.
 
 Provides a ``tpcp`` Algorithm implementation to evaluate PEP extraction pipelines on datasets.
 The module exposes a namedtuple for packaging results and the ``PepEvaluationChallenge`` class
@@ -6,9 +6,9 @@ that runs the evaluation, aggregates results and saves them to disk.
 
 Components
 ----------
-ChallengeResults
+:class:\~pepbench.evaluation._evaluation.ChallengeResults``
     Named tuple with fields ``agg_mean_std``, ``agg_total``, ``single``, ``per_sample``.
-PepEvaluationChallenge
+:class:`~pepbench.evaluation._evaluation.PepEvaluationChallenge`
     The main challenge class that runs and aggregates evaluations.
 
 Notes
@@ -71,7 +71,7 @@ class PepEvaluationChallenge(Algorithm):
 
     Parameters
     ----------
-    dataset : BasePepDatasetWithAnnotations
+    dataset : :class:`BasePepDatasetWithAnnotations`
         The dataset to evaluate. The dataset must implement the unified interface required by the
         evaluation utilities.
     scoring : Callable, optional
@@ -129,13 +129,13 @@ class PepEvaluationChallenge(Algorithm):
 
         Parameters
         ----------
-        dataset : BasePepDatasetWithAnnotations
+        dataset : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
             The dataset to evaluate the pipeline on. The dataset needs to be a subclass of
             ``BaseUnifiedPepExtractionDataset``, which provides the necessary unified interface to access the data.
         scoring : Callable, optional
             The scoring function to use for the evaluation. The scoring function should take the pipeline and a
             datapoint from the dataset as input and return a dictionary with the evaluation results. The default
-            scoring function is :func:``pepbench.evaluation.score_pep_evaluation``.
+            scoring function is :func:``pepbench.evaluation._scoring.score_pep_evaluation``.
         validate_kwargs : dict, optional
             Additional keyword arguments to pass to the :class:``tpcp.validate.Scorer`` class.
 
@@ -152,7 +152,7 @@ class PepEvaluationChallenge(Algorithm):
 
         Parameters
         ----------
-        pipeline : BasePepExtractionPipeline
+        pipeline : :class:`~pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`
             The PEP extraction pipeline to evaluate. The pipeline needs to be a subclass of
             :class:``pepbench.pipelines.BasePepExtractionPipeline`` and should be able to process the dataset.
 
@@ -175,7 +175,7 @@ class PepEvaluationChallenge(Algorithm):
     def save_results(self, folder_path: path_t, filename_stub: str) -> None:
         """Save the results of the evaluation to disk.
 
-        Saves timing information as JSON and DataFrame results as CSV files using the provided filename stub.
+        Saves timing information as JSON and :class:`~pandas.DataFrame` results as CSV files using the provided filename stub.
 
         Parameters
         ----------
@@ -233,7 +233,7 @@ class PepEvaluationChallenge(Algorithm):
         Returns
         -------
         Self
-            The challenge instance with DataFrame attributes populated.
+            The challenge instance with :class:`~pandas.DataFrame` attributes populated.
 
         """
         results = self.results_.copy()

@@ -66,7 +66,7 @@ class PepExtractionPipelineReferenceQPeaks(BasePepExtractionPipeline):
 
         Parameters
         ----------
-        datapoint : BasePepDatasetWithAnnotations
+        datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
             Labeled datapoint that provides ECG data, sampling rates, reference heartbeat
             annotations, and reference PEP/Q-peak annotations.
 

@@ -835,7 +835,7 @@ def _get_reference_labels(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Dataset with reference annotations.
     heartbeat_subset : Sequence[int] | None
         Optional heartbeat subset to restrict to.
@@ -913,7 +913,7 @@ def _get_labels_from_challenge_results(
     pep_results_per_sample : :class:`~pandas.DataFrame`
         Results table indexed by `heartbeat_id` and containing reference/estimated
         sample columns.
-    heartbeat_subsample : Sequence[int]
+    heartbeat_subsample : :class:`~pandas.Sequence` [int]
         Heartbeat indices to include.
 
     Returns
@@ -1092,7 +1092,7 @@ def _get_heartbeats(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Dataset providing heartbeat metadata.
     heartbeat_subset : Sequence[int] | None
         Optional subset of heartbeat indices to return.

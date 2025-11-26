@@ -5,7 +5,7 @@ Guardian dataset implementation.
 
 Functions
 ---------
-_load_tfm_data
+:func:`~pepbench.datasets.guardian._helper._load_tfm_data`
     Load TFM data for a given date and return a dictionary of :class:`~pandas.DataFrame`
     objects indexed by local datetime.
 
