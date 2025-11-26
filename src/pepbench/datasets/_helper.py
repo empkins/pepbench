@@ -5,9 +5,9 @@ and converting heartbeat segmentation into a reference format.
 
 Functions
 ---------
-load_labeling_borders
+:func:`~pepbench.datasets._helper.load_labeling_borders`
     Load labeling borders from a CSV file into a :class:`~pandas.DataFrame`.
-compute_reference_heartbeats
+:func:`~pepbench.datasets._helper.compute_reference_heartbeats`
     Reformat heartbeat segmentation into per-heartbeat sample columns in a
     :class:`~pandas.DataFrame`.
 
@@ -43,7 +43,7 @@ def load_labeling_borders(file_path: path_t) -> pd.DataFrame:
 
 
 def compute_reference_heartbeats(heartbeats: pd.DataFrame) -> pd.DataFrame:
-    """Reformat the heartbeats DataFrame.
+    """Reformat the heartbeats :class:`~pandas.DataFrame`.
 
     Parameters
     ----------

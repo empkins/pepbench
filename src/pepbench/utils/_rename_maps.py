@@ -5,11 +5,11 @@ display labels used across plots, tables and UI components in the project.
 
 Functions
 ---------
-rename_metrics
+:func:`~pepbench.utils._rename_maps.rename_metrics`
     Map a metric identifier or an iterable of identifiers to human-readable labels.
-rename_algorithms
+:func:`~pepbench.utils._rename_maps.rename_algorithms`
     Map an algorithm identifier or an iterable of identifiers to short display names.
-get_nan_reason_mapping
+:func:`~pepbench.utils._rename_maps.get_nan_reason_mapping`
     Return a dictionary mapping short NaN-reason labels to verbose descriptions.
 
 Notes

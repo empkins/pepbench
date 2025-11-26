@@ -55,7 +55,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         *,
         return_clean: bool = True,
     ) -> None:
-        """Initialize the ExampleDataset.
+        """Initialize the :class:`~pepbench.datasets.ExampleDataset`.
 
         Parameters
         ----------
@@ -201,7 +201,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Reference labels for the ECG signal as a pandas DataFrame
+            Reference labels for the ECG signal as a pandas DataFrame.
 
         """
         return self._load_reference_labels("ECG")
@@ -229,7 +229,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
         Returns
         -------
-        pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Reference labels indexed by (heartbeat_id, channel, label). Contains
             both ``sample_relative`` and ``sample_absolute`` columns.
 

@@ -7,13 +7,13 @@ Provides base classes and mixins for datasets used in PEP extraction from ICG an
 
 Classes
 -------
-BasePepDataset
+:class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset`
     Interface for datasets used for PEP extraction by the :class:`~pepbench.pipelines.PepExtractionPipeline`.
-MetadataMixin
+:class:`~pepbench.datasets._base_pep_extraction_dataset.MetadataMixin`
     Mixin for datasets that provide demographic metadata (age, gender, BMI).
-PepLabelMixin
+:class:`~pepbench.datasets._base_pep_extraction_dataset.PepLabelMixin`
     Mixin for datasets that contain manually labeled PEP data and reference labels.
-BasePepDatasetWithAnnotations
+:class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations
     Combines :class:`BasePepDataset` and :class:`PepLabelMixin` to provide a unified
     interface for evaluation datasets with annotations.
 
@@ -74,7 +74,7 @@ class BasePepDataset(Dataset):
     ----------
     groupby_cols : list[str] or str or None, optional
         Columns used to group the dataset, by default None.
-    subset_index : pandas.DataFrame or None, optional
+    subset_index :  :class:`~pandas.DataFrame` or None, optional
         Subset index for the dataset, by default None.
     return_clean : bool, optional
         Whether to return cleaned data by default, by default True
@@ -93,13 +93,13 @@ class BasePepDataset(Dataset):
         subset_index: pd.DataFrame | None = None,
         return_clean: bool = True,
     ) -> None:
-        """Initialize the BasePepDataset.
+        """Initialize the :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset`.
 
         Parameters
         ----------
         groupby_cols : list[str] or str or None, optional
             Columns used to group the dataset, by default None.
-        subset_index : pandas.DataFrame or None, optional
+        subset_index :  :class:`~pandas.DataFrame` or None, optional
             Subset index for the dataset, by default None.
         return_clean : bool, optional
             Whether to return cleaned data by default, by default True
@@ -352,13 +352,13 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
         return_clean: bool = True,
         only_labeled: bool = False,
     ) -> None:
-        """Initialize the BasePepDatasetWithAnnotations.
+        """Initialize the :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`.
 
         Parameters
         ----------
         groupby_cols : list[str] or str or None, optional
             Columns used to group the dataset, by default None.
-        subset_index : pandas.DataFrame or None, optional
+        subset_index : :class:`~pandas.DataFrame` or None, optional
             Subset index for the dataset, by default None.
         return_clean : bool, optional
             Whether to return cleaned data by default, by default True
