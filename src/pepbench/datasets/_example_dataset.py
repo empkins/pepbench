@@ -17,8 +17,6 @@ from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._helper import compute_reference_heartbeats
 from pepbench.utils._types import path_t
 
-
-
 HERE = Path(__file__).parent
 EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
 
