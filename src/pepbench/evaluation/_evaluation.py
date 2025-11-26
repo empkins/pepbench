@@ -155,7 +155,8 @@ class PepEvaluationChallenge(Algorithm):
     def save_results(self, folder_path: path_t, filename_stub: str) -> None:
         """Save the results of the evaluation to disk.
 
-        Saves timing information as JSON and :class:`~pandas.DataFrame` results as CSV files using the provided filename stub.
+        Saves timing information as JSON and :class:`~pandas.DataFrame` results as CSV
+        files using the provided filename stub.
 
         Parameters
         ----------

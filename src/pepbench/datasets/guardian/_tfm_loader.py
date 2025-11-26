@@ -1,8 +1,10 @@
 """Module for loading and processing Task Force Monitor (TFM) data from the Guardian Study.
 
-This module provides the :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader` class, which can load TFM data from .mat files,
-downsample the data to a common sampling rate,
-and organize the data into a structured format for further analysis.
+This module provides the
+:class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`
+class, which can load TFM data from .mat files, downsample the data to a common
+sampling rate, and organize the data into a structured format for further
+analysis.
 """
 from typing import ClassVar
 
@@ -109,8 +111,9 @@ class TFMLoader:
         Returns
         -------
         :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`
-            An instance of the :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader` class containing the loaded data.
-
+            An instance of the
+            :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`
+            class containing the loaded data.
         """
         data = loadmat(file_path, struct_as_record=False, squeeze_me=True)
 
