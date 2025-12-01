@@ -11,7 +11,7 @@ Classes
     Mixin for datasets that provide demographic metadata (age, gender, BMI).
 :class:`~pepbench.datasets._base_pep_extraction_dataset.PepLabelMixin`
     Mixin for datasets that contain manually labeled PEP data and reference labels.
-:class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations
+:class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
     Combines :class:`BasePepDataset` and :class:`PepLabelMixin` to provide a unified
     interface for evaluation datasets with annotations.
 
@@ -371,16 +371,10 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
     def reference_pep(self) -> pd.DataFrame:
         """Compute the reference PEP values between the reference Q-peak and B-point labels.
 
-        Parameters
-        ----------
-        subset : :class:`pepbench.datasets.BasePepDatasetWithAnnotations`
-            Subset of a dataset containing the reference labels.
-
         Returns
         -------
-        :class:`pandas.DataFrame`
+        :class:`~pandas.DataFrame`
             DataFrame containing the computed PEP values.
-
         """
         heartbeats = self.reference_heartbeats
         reference_icg = self.reference_labels_icg
@@ -436,14 +430,14 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
 
         Parameters
         ----------
-        points : :class:`pandas.DataFrame`
+        points: :class:`~pandas.DataFrame`
             DataFrame containing the reference labels (either Q-peaks or B-points).
-        reference_data : :class:`pandas.DataFrame`
+        reference_data : :class:`~pandas.DataFrame`
             DataFrame containing the reference heartbeat segmentation data.
 
         Returns
         -------
-        :class:`pandas.DataFrame`
+        :class:`~pandas.DataFrame`
             DataFrame with filled unlabeled artefacts.
         """
         # get the indices of reference_icg that are not in b_points.index => they are artefacts but were not labeled
