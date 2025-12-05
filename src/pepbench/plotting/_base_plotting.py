@@ -8,32 +8,20 @@ Bland\-Altman and paired plots.
 
 Functions
 ---------
-:func:`~pepbench.plotting._base_plotting.plot_signals`
+:func:`~pepbench.plotting.plot_signals`
     Plot ECG and ICG signals (one or two axes, optional heartbeat filtering).
 
-:func:`~pepbench.plotting._base_plotting.plot_signals_with_reference_labels`
+:func:`~pepbench.plotting.plot_signals_with_reference_labels`
     Plot signals annotated with reference Q-peaks and B-points (and artefacts).
 
-:func:`~pepbench.plotting._base_plotting.plot_signals_with_reference_pep`
+:func:`~pepbench.plotting.plot_signals_with_reference_pep`
     Plot signals and overlay PEP intervals derived from reference annotations.
 
-:func:`~pepbench.plotting._base_plotting.plot_signals_with_algorithm_results`
+:func:`~pepbench.plotting.plot_signals_with_algorithm_results`
     Plot signals and overlay detections produced by an extraction algorithm.
 
-:func:`~pepbench.plotting._base_plotting.plot_signals_from_challenge_results`
+:func:`~pepbench.plotting.plot_signals_from_challenge_results`
     Plot signals using results produced by the challenge output format.
-
-:func:`~pepbench.plotting._base_plotting._plot_signals_one_axis`
-    Internal helper to render multiple traces into a single axis.
-
-:func:`~pepbench.plotting._base_plotting._plot_signals_two_axes`
-    Internal helper to render ECG and ICG into two stacked axes.
-
-:func:`~pepbench.plotting._base_plotting._plot_blandaltman`
-    Generate a Bland\-Altman plot for method comparison and limits of agreement.
-
-:func:`~pepbench.plotting._base_plotting._plot_paired`
-    Create paired/\-within subject plots with optional boxplots and pointplots.
 
 Examples
 --------
@@ -171,6 +159,8 @@ def plot_signals_with_reference_labels(  # noqa: C901
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
     """
     Plot signals and overlay reference Q-peaks and B-points.
+
+    # TODO: not showing in docu
 
     Parameters
     ----------

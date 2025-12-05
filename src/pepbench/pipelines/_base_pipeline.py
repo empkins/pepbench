@@ -71,8 +71,6 @@ BasePepDatasetWithAnnotationsT = TypeVar("BasePepDatasetWithAnnotationsT", bound
 base_pep_pipeline_docfiller = make_filldoc(
     {
         "base_parameters": """
-        Parameters
-        ----------
         heartbeat_segmentation_algo : :class:`~biopsykit.signals.ecg.segmentation.BaseHeartbeatSegmentation`
             Algorithm for heartbeat segmentation.
         q_peak_algo : :class:`~biopsykit.signals.ecg.event_extraction.BaseEcgExtraction`
@@ -110,8 +108,6 @@ base_pep_pipeline_docfiller = make_filldoc(
             heartbeats and reference PEP.
             """,
         "attributes": """
-        Attributes
-        ----------
         heartbeat_segmentation_results_ : :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationDataFrame`
             Results from the heartbeat segmentation step.
         q_peak_results_ : :class:`~biopsykit.signals.ecg.event_extraction.QPeakDataFrame`

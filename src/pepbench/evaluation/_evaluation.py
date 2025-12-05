@@ -6,9 +6,9 @@ that runs the evaluation, aggregates results and saves them to disk.
 
 Components
 ----------
-:class:\~pepbench.evaluation._evaluation.ChallengeResults``
+:class:`~pepbench.evaluation.ChallengeResults`
     Named tuple with fields ``agg_mean_std``, ``agg_total``, ``single``, ``per_sample``.
-:class:`~pepbench.evaluation._evaluation.PepEvaluationChallenge`
+:class:`~pepbench.evaluation.PepEvaluationChallenge`
     The main challenge class that runs and aggregates evaluations.
 
 Notes
@@ -71,13 +71,13 @@ class PepEvaluationChallenge(Algorithm):
 
     Parameters
     ----------
-    dataset : :class:`BasePepDatasetWithAnnotations`
+    dataset : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         The dataset to evaluate. The dataset must implement the unified interface required by the
         evaluation utilities.
     scoring : Callable, optional
         The scoring function to use for evaluation. The scoring function should accept the pipeline and a
         datapoint and return a dictionary with evaluation outputs. Default is
-        :func:`pepbench.evaluation._scoring.score_pep_evaluation`.
+        :func:`pepbench.evaluation.score_pep_evaluation`.
     validate_kwargs : dict, optional
         Additional keyword arguments passed to :class:`tpcp.validate.Scorer`.
 

@@ -59,7 +59,7 @@ import numpy as np
 import pandas as pd
 import pingouin as pg
 
-from pepbench.utils._types import str_t
+from pepbench.utils._types import str_t, check_data_is_df
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
@@ -106,7 +106,13 @@ def get_reference_data(results_per_sample: pd.DataFrame) -> pd.DataFrame:
     :class:`pandas.DataFrame`
         The reference data.
 
+    Raises
+    ------
+    TypeError
+        If the input data is not a :class:`pandas.DataFrame`.
+
     """
+    check_data_is_df(results_per_sample)
     reference_pep = results_per_sample.xs("reference", level=-1, axis=1)
     reference_pep = reference_pep.groupby(_algo_levels)
     reference_pep = reference_pep.get_group(next(iter(reference_pep.groups))).droplevel(_algo_levels)
@@ -170,6 +176,7 @@ def get_pep_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]
         The PEP values for the specified algorithm combination.
 
     """
+    check_data_is_df(results_per_sample)
     pep = get_data_for_algo(results_per_sample, algo_combi)
     pep = pep[[("pep_ms", "estimated")]].droplevel(level=-1, axis=1)
 
@@ -277,6 +284,9 @@ def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
         The data with the heart rate in beats per minute
 
     """
+    # TODO: assert df has rr_interval_ms column
+    check_data_is_df(data)
+    assert "rr_interval_ms" in data.columns, 'Input DataFrame must contain "rr_interval_ms" column.'
     heart_rate_bpm = 60 * 1000 / data[["rr_interval_ms"]]
     heart_rate_bpm = heart_rate_bpm.rename(columns={"rr_interval_ms": "heart_rate_bpm"})
     return data.join(heart_rate_bpm)
@@ -368,6 +378,7 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
         The results dataframe with the unique IDs added as new index level.
 
     """
+    check_data_is_df(data)
     data = data.copy()
     if data.columns.nlevels > 1:
         data = data.droplevel(axis=1, level=-1).rename(index=str)
@@ -401,6 +412,7 @@ def compute_improvement_outlier_correction(data: pd.DataFrame, outlier_algos: Se
         The percentage of samples which improved, deteriorated, or remained unchanged after outlier correction.
 
     """
+    check_data_is_df(data)
     data = data.copy()
     if "outlier_correction_algorithm" not in data.columns.names:
         data = data.unstack("outlier_correction_algorithm")
@@ -436,6 +448,7 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
         (i.e., either positive to negative, vice versa, or no change) between two pipelines.
 
     """
+    check_data_is_df(data)
     data = data.copy()
     pipelines = ["_".join(i) for i in pipelines]
 

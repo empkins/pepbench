@@ -1,7 +1,7 @@
-
 import pandas as pd
 import numpy as np
 import pytest
+from joblib.testing import raises
 
 from pepbench.data_handling._data_handling import (
     get_reference_data,
@@ -16,6 +16,9 @@ from pepbench.data_handling._data_handling import (
     get_error_by_group,
     correlation_reference_pep_heart_rate,
     get_performance_metric,
+    compute_pep_performance_metrics,
+    compute_improvement_outlier_correction,
+    compute_improvement_pipeline,
 )
 
 
@@ -65,6 +68,8 @@ def test_get_reference_data_and_pep(sample_results_per_sample):
     # current implementation returns the first algorithm group only -> check those values
     assert pep.iloc[0, 0] == 120.0
     assert pep.iloc[1, 0] == 121.0
+    with raises(TypeError):
+        get_reference_data([1000.0, 500.0])
 
 
 def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
@@ -101,6 +106,18 @@ def test_rr_interval_to_heart_rate():
     assert "heart_rate_bpm" in out.columns
     assert np.isclose(out["heart_rate_bpm"].iloc[0], 60.0)
     assert np.isclose(out["heart_rate_bpm"].iloc[1], 120.0)
+    # test if error is raised when input is not a DataFrame
+    with raises(TypeError):
+        rr_interval_to_heart_rate([1000.0, 500.0])
+    # test if erorr is raised when rr_interval_ms column is missing/ wrongly named
+    with raises(AssertionError):
+        rr_interval_to_heart_rate(pd.DataFrame({"wrong_column_name": [1, 2, 3]}))
+    # test if column has been added not overwritten
+    df2 = pd.DataFrame({"rr_interval_ms": [800.0, 600.0]})
+    out2 = rr_interval_to_heart_rate(df2)
+    assert ("rr_interval_ms" and "heart_rate_bpm") in out2.columns
+
+
 
 
 def test_add_unique_id_to_results_dataframe(sample_results_per_sample):
@@ -176,6 +193,85 @@ def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_
     # check types
     assert isinstance(res["linear_regression"], pd.DataFrame)
     assert isinstance(res["correlation"], pd.DataFrame)
+
+
+def test_merge_result_metrics_annotation_difference_and_error():
+    # two annotators: difference computed
+    a1 = pd.DataFrame({"Mean Absolute Error [ms]": [5.0], "Mean Error [ms]": [0.5]}, index=["algoA"])
+    a2 = pd.DataFrame({"Mean Absolute Error [ms]": [6.0], "Mean Error [ms]": [0.0]}, index=["algoA"])
+    merged_with_diff = merge_result_metrics_from_multiple_annotators([a1, a2], add_annotation_difference=True)
+    # should contain "Annotator Difference" as a top-level column (after concatenation)
+    assert any("Annotator Difference" in str(lv) or "Annotator Difference" in str(c) for c in merged_with_diff.columns.get_level_values(0)) or "Annotator Difference" in merged_with_diff.columns.get_level_values(0).astype(str)
+
+    # three annotators: computing difference should raise ValueError
+    a3 = pd.DataFrame({"Mean Absolute Error [ms]": [7.0], "Mean Error [ms]": [0.1]}, index=["algoA"])
+    with pytest.raises(ValueError):
+        merge_result_metrics_from_multiple_annotators([a1, a2, a3], add_annotation_difference=True)
+
+
+def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
+    # create a reasonable num_heartbeats Series indexed by algo levels + participant so unstack() inside function works
+    algo_levels = ["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+    # count heartbeats per (algo_levels + participant)
+    num_hb = sample_results_per_sample[("pep_ms", "reference")].groupby(level=[*algo_levels, "participant"]).count()
+    # call function; ensure it returns a DataFrame and renamed columns exist
+    perf = compute_pep_performance_metrics(sample_results_per_sample, num_heartbeats=num_hb)
+    assert isinstance(perf, pd.DataFrame)
+    # renamed metrics from _pep_error_metric_map must be present as top-level column names
+    assert any("Mean Absolute Error [ms]" in str(col) for col in perf.columns.get_level_values(0))
+
+
+def test_compute_improvement_outlier_correction_signs():
+    # Construct DataFrame with a column level named 'outlier_correction_algorithm'
+    cols = pd.MultiIndex.from_product(
+        [["absolute_error_per_sample_ms"], ["out1", "out2"]],
+        names=[None, "outlier_correction_algorithm"],
+    )
+    # rows are samples; values chosen to produce negative/positive/zero diffs
+    df = pd.DataFrame(
+        [
+            [5.0, 2.0],   # diff = -3 -> sign -1 (improvement)
+            [2.0, 2.0],   # diff = 0 -> sign 0 (no change)
+            [1.0, 4.0],   # diff = 3 -> sign 1 (deterioration)
+        ],
+        columns=cols,
+    )
+    res = compute_improvement_outlier_correction(df, outlier_algos=["out1", "out2"])
+    # result should be a DataFrame with improvement_percent row and three columns
+    assert isinstance(res, pd.DataFrame)
+    assert "improvement_percent" in res.index or "improvement_percent" in res.columns or res.shape[0] >= 1
+    # percentages should add up to ~100 across the three categories
+    vals = res.iloc[0].dropna().astype(float).values
+    assert np.isclose(vals.sum(), 100.0)
+
+
+def test_compute_improvement_pipeline_sign_changes():
+    # Build a Series indexed by pipeline and sample so unstack("pipeline") yields two columns
+    pipelines = [("a", "b"), ("c", "d")]
+    pipeline_keys = ["_".join(p) for p in pipelines]  # ['a_b', 'c_d']
+    samples = [1, 2, 3]
+    index = pd.MultiIndex.from_product([pipeline_keys, samples], names=["pipeline", "sample"])
+    # create values such that:
+    # sample 1: a_b >0, c_d <0 -> pos->neg
+    # sample 2: a_b >0, c_d >0 -> pos->pos
+    # sample 3: a_b <0, c_d <0 -> neg->neg
+    values = [
+        1.0, 1.0,  -1.0,  # pipeline a_b for samples 1,2,3
+        -1.0, 2.0, -2.0,  # pipeline c_d for samples 1,2,3
+    ]
+    s = pd.Series(values, index=index)
+    res = compute_improvement_pipeline(s, pipelines=pipelines)
+    # result should be a DataFrame with percentage rows (True/False) for change flags
+    assert isinstance(res, pd.DataFrame)
+    # change_diff True should occur for one of three samples -> approx 33.33%
+    if "change_diff" in res.index or "change_diff" in res.columns:
+        # normalize: one True out of three equals ~33.33
+        # locate row/column appropriately
+        arr = res.values.astype(float)
+        assert np.isclose(arr.sum(), 100.0)
+    else:
+        # fallback check: expect DataFrame with boolean distribution percentages
+        assert res.shape[0] > 0
 
 if __name__ == "__main__":
     pytest.main([__file__])

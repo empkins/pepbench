@@ -32,3 +32,16 @@ Implemented Datasets
 
     EmpkinsDataset
     GuardianDataset
+    ReBeatIcgDataset
+    TimeWindowIcgDataset
+
+Example Dataset
+++++++++++++++++++++
+
+.. currentmodule:: pepbench.datasets
+
+.. autosummary::
+   :toctree: generated
+   :template: class.rst
+
+    ExampleDataset
