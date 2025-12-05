@@ -40,6 +40,7 @@ See Also
 from collections.abc import Hashable, Sequence
 from pathlib import Path
 from typing import TypeVar
+from pepbench.utils.exceptions import ValidationError
 
 import numpy as np
 import pandas as pd
@@ -87,7 +88,7 @@ def check_file_exists(file_path: path_t) -> None:
 
 def check_data_is_df(data: object) -> None:
     """
-    Raise TypeError if data is not a pandas DataFrame.
+    Raise ValidationError if data is not a pandas DataFrame.
 
     Parameters
     ----------
@@ -96,10 +97,28 @@ def check_data_is_df(data: object) -> None:
 
     Raises
     ------
-    TypeError
+    ValidationError
         If data is not a pandas DataFrame.
 
     """
     if not isinstance(data, pd.DataFrame):
-        raise TypeError(f"Expected data to be a pandas DataFrame, got {type(data)} instead.")
+        raise ValidationError(f"Expected data to be a pandas DataFrame, got {type(data)} instead.")
+
+def check_data_is_series(data: object) -> None:
+    """
+    Raise TypeError if data is not a pandas Series.
+
+    Parameters
+    ----------
+    data : object
+        The data to check.
+
+    Raises
+    ------
+    ValidationError
+        If data is not a pandas Series.
+
+    """
+    if not isinstance(data, pd.Series):
+        raise ValidationError(f"Expected data to be a pandas Series, got {type(data)} instead.")
 

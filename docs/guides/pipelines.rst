@@ -4,7 +4,7 @@ Building and Customizing PEP Extraction Pipelines
 =================================================
 
 A **PEP extraction pipeline** in pepbench is a
-:tpcp:`tpcp <tpcp>` pipeline that chains heartbeat segmentation, Q-peak
+`tpcp` pipeline that chains heartbeat segmentation, Q-peak
 detection, C- and B-point detection, optional outlier correction, and
 finally PEP computation.
 
