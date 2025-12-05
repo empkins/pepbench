@@ -374,12 +374,16 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Reference heartbeats loaded from the generated CSVs.
+        """
+        Return reference heartbeats for the datapoint.
+
+        The returned DataFrame contains columns ``heartbeat_index``, ``start_sample`` and
+        ``end_sample`` describing heartbeat boundaries in sample indices.
 
         Returns
         -------
-        :class:`~pandas.DataFrame
-            Reference heartbeat table indexed by `heartbeat_id` and containing sample
+        :class:`~pandas.DataFrame`
+            Reference heartbeat table indexed by ``heartbeat_id`` and containing sample
             indices for heartbeat boundaries. Indices are adjusted relative to the
             labeling period.
         """
@@ -410,11 +414,15 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
-        """Reference labels for the ICG data derived from B-point annotations and heartbeat borders.
+        """
+        Return reference labels for ICG events.
+
+        The DataFrame contains event sample indices such as ``b_point_sample`` and ``c_point_sample``
+        as well as metadata columns (e.g., ``nan_reason``) when events are missing.
 
         Returns
         -------
-        :class:`~pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
             and a `sample_relative` column containing sample indices relative to the
             labeling segment.
@@ -446,11 +454,15 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Reference labels for the ECG data derived from Q-peak extraction and heartbeat borders.
+        """
+        Return reference labels for ECG events.
+
+        The DataFrame contains ECG event columns such as ``r_peak_sample`` and ``q_peak_sample``
+        indexed by heartbeat or event identifiers.
 
         Returns
         -------
-        :class:`~pandas.DataFrame
+        :class:`~pandas.DataFrame`
             Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
             and a `sample_relative` column containing sample indices relative to the
             labeling segment.

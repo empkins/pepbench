@@ -1,4 +1,5 @@
-"""Scoring utilities for PEP evaluation.
+"""
+Scoring utilities for PEP evaluation.
 
 This module implements the per-datapoint scoring logic and helper utilities used when
 validating PEP extraction pipelines.
@@ -22,6 +23,7 @@ Notes
   and :func:`pepbench.evaluation._error_metrics.abs_rel_error` for metric computation.
 - The returned structures are designed to be consumed by :mod:`tpcp.validate` aggregators
   (e.g. :class:`tpcp.validate.FloatAggregator`, custom per-sample aggregators).
+
 """
 
 from collections.abc import Sequence
@@ -40,10 +42,12 @@ __all__ = ["mean_and_std", "score_pep_evaluation"]
 
 
 def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePepDatasetWithAnnotations) -> dict:
-    """Run a PEP extraction pipeline on a single datapoint and compute evaluation metrics.
+    """
+    Run a PEP extraction pipeline on a single datapoint and compute evaluation metrics.
 
     The function executes the pipeline on ``datapoint`` and matches detected heartbeats to the
     reference. It computes a set of metrics that are either:
+
       - first averaged on the single datapoint and later aggregated across the dataset
         (returned as scalar floats),
       - passed through as single values per datapoint (to be aggregated later via a
@@ -53,7 +57,7 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePep
     The following metrics are computed and returned (grouped by treatment):
 
     First averaged over the datapoint and then aggregated (mean, std) on the total dataset
-    -------------------------------------------------------------------------------
+    --------------------------------------------------------------------------------------
     * ``pep_reference_ms``: Mean reference PEP in milliseconds.
     * ``pep_estimated_ms``: Mean estimated PEP in milliseconds.
     * ``error_ms``: Mean signed error (reference - estimated) in milliseconds.
@@ -78,7 +82,7 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePep
 
     Direct per-sample aggregations (aggregated across *all* samples without intermediate
     per-datapoint averaging)
-    -------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------
     * ``error_per_sample_ms``: Mean error per sample (aggregated directly across samples).
     * ``absolute_error_per_sample_ms``: Mean absolute error per sample.
     * ``absolute_relative_error_per_sample_percent``: Mean absolute relative error per sample.
@@ -176,7 +180,8 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePep
 
 
 def mean_and_std(vals: Sequence[float]) -> dict:
-    """Compute mean and standard deviation for a sequence of numerical values.
+    """
+    Compute mean and standard deviation for a sequence of numerical values.
 
     Parameters
     ----------
@@ -196,7 +201,8 @@ def mean_and_std(vals: Sequence[float]) -> dict:
 def _merge_extracted_and_reference_pep(
     extracted: pd.DataFrame, reference: pd.DataFrame, tp_matches: pd.DataFrame | None = None
 ) -> pd.DataFrame:
-    """Merge extracted and reference PEP DataFrames into a unified MultiIndex-column DataFrame.
+    """
+    Merge extracted and reference PEP DataFrames into a unified MultiIndex-column DataFrame.
 
     The function aligns the two input DataFrames on their heartbeat index (optionally using
     the index of ``tp_matches``), keeps only common columns between the two frames, and

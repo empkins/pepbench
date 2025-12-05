@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import pytest
 from joblib.testing import raises
+from pepbench.utils.exceptions import ValidationError
 
 from pepbench.data_handling._data_handling import (
     get_reference_data,
@@ -107,7 +108,7 @@ def test_rr_interval_to_heart_rate():
     assert np.isclose(out["heart_rate_bpm"].iloc[0], 60.0)
     assert np.isclose(out["heart_rate_bpm"].iloc[1], 120.0)
     # test if error is raised when input is not a DataFrame
-    with raises(TypeError):
+    with raises(ValidationError):
         rr_interval_to_heart_rate([1000.0, 500.0])
     # test if erorr is raised when rr_interval_ms column is missing/ wrongly named
     with raises(AssertionError):

@@ -86,11 +86,13 @@ base_pep_pipeline_docfiller = make_filldoc(
                 - `"nan"`: Set negative PEP values to NaN
                 - `"zero"`: Set negative PEP values to 0
                 - `"keep"`: Keep negative PEP values as is
+                
         handle_missing_events : one of {`"warn"`, `"ignore"`, `"raise"`}
             How to handle missing events. Possible values are:
                 - `"warn"`: Issue a warning if missing events are detected
                 - `"ignore"`: Ignore missing events
                 - `"raise"`: Raise an error if missing events are detected
+                
         """,
         "datapoint_pipeline": """
         datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset`
@@ -108,18 +110,19 @@ base_pep_pipeline_docfiller = make_filldoc(
             heartbeats and reference PEP.
             """,
         "attributes": """
-        heartbeat_segmentation_results_ : :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationDataFrame`
+        ``heartbeat_segmentation_results_`` :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationDataFrame`
             Results from the heartbeat segmentation step.
-        q_peak_results_ : :class:`~biopsykit.signals.ecg.event_extraction.QPeakDataFrame`
+        ``q_peak_results_`` :class:`~biopsykit.signals.ecg.event_extraction.QPeakDataFrame`
             Results from the Q-peak extraction step.
-        c_point_results_ : :class:`~biopsykit.signals.icg.event_extraction.CPointDataFrame`
+        ``c_point_results_`` :class:`~biopsykit.signals.icg.event_extraction.CPointDataFrame`
             Results from the C-point extraction step.
-        b_point_results_ : :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
+        ``b_point_results_`` :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
             Results from the B-point extraction step.
-        b_point_after_outlier_correction_results_ : :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
+        ``b_point_after_outlier_correction_results_`` :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
             Results from the B-point extraction step after outlier correction.
-        pep_results_ : :class:`~biopsykit.signals.pep.PepResultDataFrame`
+        ``pep_results_`` :class:`~biopsykit.signals.pep.PepResultDataFrame`
             Results from the PEP extraction step.
+            
         """,
     },
     doc_summary="Decorator to fill common parts of the docstring for subclasses of :class:`BasePepExtractionPipeline`.",
@@ -166,7 +169,8 @@ class BasePepExtractionPipeline(Pipeline):
         handle_negative_pep: Literal[NEGATIVE_PEP_HANDLING] = "nan",
         handle_missing_events: Literal[HANDLE_MISSING_EVENTS] | None = None,
     ) -> None:
-        """Initialize a :class:`~pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`.
+        """
+        Initialize a :class:`~pepbench.pipelines._base_pipeline.BasePepExtractionPipeline`.
 
         Parameters
         ----------
@@ -187,6 +191,7 @@ class BasePepExtractionPipeline(Pipeline):
                 - ``'nan'``: set negative PEP to NaN
                 - ``'zero'``: set negative PEP to 0
                 - ``'keep'``: keep negative values as-is
+
             Default is ``'nan'``.
         handle_missing_events : {'warn', 'ignore', 'raise'} or None, optional
             Strategy to handle missing events during extraction. If ``None``, defaults to ``'warn'``.
@@ -239,6 +244,7 @@ class BasePepExtractionPipeline(Pipeline):
             ``pep_sample``, ``pep_ms`` and supporting metadata. The returned dataframe will have
             pandas nullable dtypes applied (e.g., ``Int64``, ``Float64``) and be validated with
             :func:`pepbench.utils.dtypes.is_pep_result_dataframe`.
+
         """
         pep_extraction_algo = PepExtraction(handle_negative_pep=self.handle_negative_pep)
         pep_extraction_algo.extract(
