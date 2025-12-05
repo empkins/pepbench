@@ -264,4 +264,5 @@ intersphinx_mapping = {
     "biopsykit": ("https://biopsykit.readthedocs.io/en/latest/", None),
     "scikit-learn": ("https://scikit-learn.org/stable/", None),
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
+    "tpcp": ("https://tpcp.readthedocs.io/en/latest/", None),
 }

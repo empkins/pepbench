@@ -84,3 +84,22 @@ def check_file_exists(file_path: path_t) -> None:
     file_path = Path(file_path)
     if not file_path.exists():
         raise FileNotFoundError(f"No file {file_path.absolute()} exists!")
+
+def check_data_is_df(data: object) -> None:
+    """
+    Raise TypeError if data is not a pandas DataFrame.
+
+    Parameters
+    ----------
+    data : object
+        The data to check.
+
+    Raises
+    ------
+    TypeError
+        If data is not a pandas DataFrame.
+
+    """
+    if not isinstance(data, pd.DataFrame):
+        raise TypeError(f"Expected data to be a pandas DataFrame, got {type(data)} instead.")
+

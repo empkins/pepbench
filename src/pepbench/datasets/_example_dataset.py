@@ -54,6 +54,7 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         subset_index: Sequence[str] | None = None,
         *,
         return_clean: bool = True,
+        only_labeled: bool = False,
     ) -> None:
         """Initialize the :class:`~pepbench.datasets.ExampleDataset`.
 
@@ -67,12 +68,14 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
             Subset of the dataset index to use. Default is None.
         return_clean : bool, optional
             Whether to return cleaned signals. Default is True.
+        only_labeled : bool, optional
+            Whether to include only labeled data points. Default is False.
         """
         self.example_file_path = example_file_path
         # unzip the example dataset
         with zipfile.ZipFile(str(self.example_file_path)) as zf:
             zf.extractall(EXAMPLE_DATA_PATH)
-        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
+        super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean, only_labeled=only_labeled)
 
     def create_index(self) -> pd.DataFrame:
         """Create the dataset index.
