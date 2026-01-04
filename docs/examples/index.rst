@@ -38,6 +38,16 @@ These examples demonstrate how to combine Q-Peak and B-Point detection algorithm
 
     _notebooks/PEP_Extraction_Pipeline_Example
 
+Datasets
+========
+These examples demonstrate how to load and utilize datasets available in pepbench.
+.. nbgallery::
+    :caption: Using Example Datasets
+    :name: using-example-datasets
+    :glob:
+
+    _notebooks/Example_Dataset
+
 
 Evaluation Challenges
 =====================
