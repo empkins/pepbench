@@ -48,7 +48,6 @@ _algorithm_mapping = {
     "linear-interpolation": "LinInt",
 }
 _algorithm_mapping.update(**{f"vanlien2013-{i}-ms": f"Van13 ({i} ms)" for i in np.arange(32, 44, 2)})
-_algorithm_mapping.update()
 
 _metric_mapping = {
     "mean": "Mean",
@@ -83,16 +82,53 @@ _nan_reason_mapping_short = {
 
 
 def rename_metrics(metrics: str_t) -> str_t:
+    """
+    Rename metrics.
+
+    Parameters
+    ----------
+    metrics : str_t
+        Metric name or list of metric names to rename.
+
+    Returns
+    -------
+    str_t
+        Renamed metric name or list of renamed metric names.
+
+    """
     if isinstance(metrics, str):
         return _metric_mapping.get(metrics, metrics)
     return [_metric_mapping.get(metric, metric) for metric in metrics]
 
 
 def rename_algorithms(algorithms: str_t) -> str_t:
+    """
+    Rename algorithms.
+
+    Parameters
+    ----------
+    algorithms : str_t
+        Algorithm name or list of algorithm names to rename.
+
+    Returns
+    -------
+    str_t
+        Renamed algorithm name or list of renamed algorithm names.
+
+    """
     if isinstance(algorithms, str):
         return _algorithm_mapping.get(algorithms, algorithms)
     return [_algorithm_mapping.get(algo, algo) for algo in algorithms]
 
 
 def get_nan_reason_mapping() -> dict:
+    """
+    Get mapping of short NaN reason codes to full descriptions.
+
+    Returns
+    -------
+    dict
+        Mapping of short NaN reason codes to full descriptions.
+
+    """
     return {_nan_reason_mapping_short[k]: _nan_reason_mapping[k] for k in _nan_reason_mapping}

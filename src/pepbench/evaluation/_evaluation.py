@@ -1,8 +1,9 @@
+"""Evaluation challenge for PEP extraction pipelines."""
+
 import json
 import warnings
-from collections import namedtuple
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -18,7 +19,26 @@ from pepbench.utils._types import path_t
 
 __all__ = ["ChallengeResults", "PepEvaluationChallenge"]
 
-ChallengeResults = namedtuple("ChallengeResults", ["agg_mean_std", "agg_total", "single", "per_sample"])
+class ChallengeResults(NamedTuple):
+    """Container for the results produced by a PEP evaluation challenge.
+
+    This named tuple contains the main result tables produced by the evaluation pipeline.
+
+    Attributes
+    ----------
+    agg_mean_std : pandas.DataFrame
+        The aggregated metrics (mean and std) across the dataset.
+    agg_total : pandas.DataFrame
+        The total counts (e.g. number of PEPs valid/invalid) for the dataset.
+    single : pandas.DataFrame
+        The single (non-aggregated) results for each datapoint / test instance.
+    per_sample : pandas.DataFrame
+        The per-sample results (detailed per-estimation metrics) for each datapoint.
+    """
+    agg_mean_std: pd.DataFrame
+    agg_total: pd.DataFrame
+    single: pd.DataFrame
+    per_sample: pd.DataFrame
 
 
 # TODO add CrossValidateChallenge

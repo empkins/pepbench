@@ -18,6 +18,18 @@ T = TypeVar("T")
 
 
 def check_file_exists(file_path: path_t) -> None:
+    """
+    Check that a file exists at the given path.
+
+    Parameters
+    ----------
+    file_path
+
+    Returns
+    -------
+    None
+
+    """
     # ensure pathlib
     file_path = Path(file_path)
     if not file_path.exists():
