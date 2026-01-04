@@ -1,12 +1,18 @@
-# python
-# File: `tests/test_annotations.py`
+
 import pandas as pd
 import pytest
+from collections import namedtuple
 
-from pepbench.annotations._annotations import compute_annotation_differences
+from pepbench.annotations import (
+    compute_annotation_differences,
+    load_annotations_from_dataset,
+    normalize_annotations_to_heartbeat_start,
+)
 from pepbench.annotations.stats import describe_annotation_differences, bin_annotation_differences
+from pepbench.utils.exceptions import ValidationError
 
 from pepbench.example_data import get_example_dataset
+from pepbench.datasets import BasePepDatasetWithAnnotations
 
 
 class TestAnnotationSyntheticData:
@@ -94,6 +100,98 @@ class TestAnnotationSyntheticData:
         assert "annotation_bins" in binned_labelled.columns
         assert pd.api.types.is_categorical_dtype(binned_labelled["annotation_bins"].dtype)
 
+    def test_load_annotations_from_dataset_concatenates_signals(self, monkeypatch):
+        # create simple stubbed match_annotations that returns deterministic small DataFrames
+        def fake_match_annotations(ann01, ann02, sampling_rate_hz):
+            cols = pd.MultiIndex.from_product(
+                [["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"]
+            )
+            idx = pd.Index([0, 1], name="heartbeat_id")
+            # produce different values for the two calls by checking a marker in ann01 (we'll pass a flag)
+            marker = getattr(ann01, "_marker", "ecg")
+            if marker == "ecg":
+                data = [[10, 12], [20, 22]]
+            else:
+                data = [[30, 32], [40, 42]]
+            return pd.DataFrame(data, index=idx, columns=cols)
+
+        monkeypatch.setattr("pepbench.annotations._annotations.match_annotations", fake_match_annotations)
+
+        # Build minimal subset and dataset objects expected by load_annotations_from_dataset
+        GroupLabel = namedtuple("GroupLabel", ["participant"])
+
+        class SimpleSubset:
+            def __init__(self, marker, participant_label="VP_001"):
+                # annotation objects are only passed to fake_match_annotations;
+                # attach a marker attribute so fake_match_annotations can differentiate ECG/ICG
+                self.reference_labels_ecg = type("A", (), {"_marker": marker})()
+                self.reference_labels_icg = type("A", (), {"_marker": marker})()
+                self.group_label = participant_label
+
+        # Create a lightweight dataset that is actually an instance of BasePepDatasetWithAnnotations
+        class TestDataset(BasePepDatasetWithAnnotations):
+            def __init__(self, subset, sampling_rate_ecg=100, groupby_cols=None, subset_index=None, return_clean=True):
+                # set minimal attributes referenced by BasePepDataset/TPCP checks before calling super()
+                self._subsets = [subset]
+                self._sampling_rate_ecg = sampling_rate_ecg
+                # ensure the public attribute expected by the tpcp post-init exists
+                self.subset = subset
+                # store group_labels on a private attribute (base class may expose a read-only property)
+                self._group_labels = [GroupLabel]
+                # now call the base initializer (forward expected parameters)
+                super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
+
+            def groupby(self, _):
+                # load_annotations_from_dataset calls groupby(None); return sequence of subset objects
+                return list(self._subsets)
+
+            @property
+            def sampling_rate_ecg(self) -> int:
+                return self._sampling_rate_ecg
+
+            @property
+            def group_labels(self):
+                # override to return the prepared private attribute without attempting to set the base property
+                return self._group_labels
+
+        # construct two datasets (they can be the same subset content-wise)
+        subset01 = SimpleSubset(marker="ecg")
+        subset02 = SimpleSubset(marker="icg")
+        ds1 = TestDataset(subset01)
+        ds2 = TestDataset(subset02)
+
+        # call the function under test
+        res = load_annotations_from_dataset(ds1, ds2)
+
+        # assertions: columns are single-level named "rater", and "signal" is an index level
+        assert res.columns.nlevels == 1
+        assert res.columns.name == "rater"
+        # ensure both signals present in the index level "signal"
+        signals = list(res.index.get_level_values("signal").unique())
+        assert "ECG" in signals and "ICG" in signals
+
+        # check values were concatenated and accessible via the index:
+        # extract ECG rows and ICG rows using index-level lookup and then the rater column.
+        ecg_rater1 = res.xs("ECG", level="signal")["rater_01"].tolist()
+        icg_rater2 = res.xs("ICG", level="signal")["rater_02"].tolist()
+        # note: current matching uses the first subset's marker for both signals in this minimal stub,
+        # so ICG values will match the ECG-derived values from subset01.
+        assert ecg_rater1 == [10, 20]
+        assert icg_rater2 == [12, 22]
+
+
+    def test_Validation_Error(self):
+        """running should validate input type and raise ValidationError."""
+        with pytest.raises(ValidationError):
+            compute_annotation_differences(["not", "a", "dataframe"])
+        with pytest.raises(ValidationError):
+            normalize_annotations_to_heartbeat_start("invalid_input")
+        with pytest.raises(ValidationError):
+            load_annotations_from_dataset(object(), object())
+        with pytest.raises(ValidationError):
+            describe_annotation_differences("not a dataframe")
+        with pytest.raises(ValidationError):
+            bin_annotation_differences(12345)
 
 
 class TestAnnotationModuleExampleData:
@@ -210,3 +308,4 @@ class TestAnnotationModuleExampleData:
 
 if __name__ == "__main__":
     pytest.main([__file__])
+

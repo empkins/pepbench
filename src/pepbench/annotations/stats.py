@@ -20,6 +20,7 @@ import pingouin as pg
 
 from pepbench.annotations._annotations import compute_annotation_differences, normalize_annotations_to_heartbeat_start
 from pepbench.data_handling import add_unique_id_to_results_dataframe
+from pepbench.utils._types import check_data_is_df, check_data_is_BasePepDatasetWithAnnotations
 
 
 def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_absolute: bool = True) -> pd.DataFrame:
@@ -40,7 +41,18 @@ def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_abso
     -------
     :class:`~pandas.DataFrame`
         A transposed dataframe containing descriptive statistics for the annotation differences.
+
+    Raises
+    ------
+    :class:`ValueError`
+        If the input dataframe does not contain a column named "difference_ms".
+    ValidationError
+        If the input is not a valid dataframe.
+
     """
+
+    check_data_is_df(annotation_diffs)
+
     annotation_diffs_describe = annotation_diffs.copy()
     if include_absolute:
         annotation_diffs_describe = annotation_diffs_describe.assign(
@@ -70,7 +82,14 @@ def bin_annotation_differences(
     -------
     :class:`~pandas.DataFrame`
         A dataframe with a single column named "annotation_bins" containing the binned annotation differences.
+
+    Raises
+    ------
+    ValidationError
+        If the input is not a valid dataframe.
     """
+    check_data_is_df(annotation_diffs)
+
     if bins is None:
         bins = [0, 4, 10]
     annotation_bins = pd.cut(
@@ -99,7 +118,14 @@ def compute_icc(annotation_diffs: pd.DataFrame, sampling_rate_hz: float) -> pd.D
     -------
     :class:`~pandas.DataFrame`
         A dataframe containing the computed ICC values.
+
+    Raises
+    ------
+    ValidationError
+        If the input is not a valid dataframe.
+
     """
+    check_data_is_df(annotation_diffs)
     annotation_diffs_normalized = normalize_annotations_to_heartbeat_start(
         annotation_diffs, sampling_rate_hz=sampling_rate_hz
     )
@@ -136,7 +162,14 @@ def add_annotation_agreement_to_results_dataframe(
     -------
     :class:`~pandas.DataFrame`
         A dataframe with the original results and added annotation agreement information.
+
+    Raises
+    ------
+    ValidationError
+        If the input dataframes are not valid dataframes.
     """
+    check_data_is_df(results_per_sample)
+    check_data_is_df(annotations)
     annotation_diffs = compute_annotation_differences(annotations, sampling_rate_hz=sampling_rate_hz)
     annotation_bins = bin_annotation_differences(annotation_diffs, labels=["high", "medium", "low"])
 
