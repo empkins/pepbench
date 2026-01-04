@@ -59,7 +59,7 @@ import numpy as np
 import pandas as pd
 import pingouin as pg
 
-from pepbench.utils._types import str_t, check_data_is_df
+from pepbench.utils._types import str_t, check_data_is_df, check_data_is_str_t
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
@@ -153,6 +153,9 @@ def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: str_t) -> pd
     :class:`pandas.DataFrame`
         The data for the specified algorithm combination.
 
+    Raises
+    ------
+
     """
 
     check_data_is_df(results_per_sample)
@@ -229,6 +232,9 @@ def describe_pep_values(
     check_data_is_df(data)
     if group_cols is None:
         group_cols = ["phase"]
+    else:
+        # validate provided group columns (str or sequence of str)
+        check_data_is_str_t(group_cols)
     if metrics is None:
         metrics = ["mean", "std", "min", "max"]
 
@@ -284,6 +290,8 @@ def compute_pep_performance_metrics(
     results_per_sample = results_per_sample.join(num_heartbeats)
 
     if sortby is not None:
+        # validate sortby: accepts a string or sequence of strings
+        check_data_is_str_t(sortby)
         results_per_sample = results_per_sample.sort_values(sortby, ascending=ascending)
 
     rename_map = _pep_error_metric_map.copy()
@@ -309,6 +317,8 @@ def get_performance_metric(results_per_sample: pd.DataFrame, metric: str) -> pd.
         The extracted performance metric.
 
     """
+    # validate metric name (string or sequence of strings)
+    check_data_is_str_t(metric)
     return results_per_sample[[metric]].droplevel(level=-1, axis=1)
 
 
@@ -390,8 +400,15 @@ def get_error_by_group(
     :class:`pandas.DataFrame`
         The error metric aggregated by group.
 
+    Raises
+    ------
+    ValidationError
+        If the grouper argument is not a string or a sequence of strings.
+
     """
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
+    # validate grouper argument (str or sequence of str)
+    check_data_is_str_t(grouper)
     if isinstance(grouper, str):
         grouper = [grouper]
 
@@ -425,6 +442,10 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
     :class:`pandas.DataFrame`
         The results dataframe with the unique IDs added as new index level.
 
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame`.
     """
     check_data_is_df(data)
     data = data.copy()
@@ -459,6 +480,10 @@ def compute_improvement_outlier_correction(data: pd.DataFrame, outlier_algos: Se
     :class:`pandas.DataFrame`
         The percentage of samples which improved, deteriorated, or remained unchanged after outlier correction.
 
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame`.
     """
     check_data_is_df(data)
     data = data.copy()
@@ -513,6 +538,13 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
     :class:`pandas.DataFrame`
         Overview of the percentage of samples which showed a change in the sign of the error metric
         (i.e., either positive to negative, vice versa, or no change) between two pipelines.
+
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame` or :class:`pandas.Series`.
+    ValueError
+        If less than two pipelines are provided.
 
     """
     # Accept Series or DataFrame input

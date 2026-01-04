@@ -19,6 +19,21 @@ Functions
 check_file_exists
     Ensure a file path exists, raising :class:`FileNotFoundError` otherwise.
 
+check_data_is_df
+    Validate that an object is a :class:`pandas.DataFrame` and raise
+    :class:`pepbench.utils.exceptions.ValidationError` if not. Useful to perform
+    precondition checks in library functions that expect a DataFrame input.
+
+check_data_is_series
+    Validate that an object is a :class:`pandas.Series` and raise
+    :class:`pepbench.utils.exceptions.ValidationError` if not.
+
+check_data_is_BasePepDatasetWithAnnotations
+    Runtime validator that imports and checks whether an object is an
+    instance of :class:`pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`.
+    The import is delayed inside the function to avoid circular imports at module
+    import time.
+
 Notes
 -----
 - Type aliases are implemented using :class:`typing.TypeVar` to keep compatibility
@@ -45,7 +60,14 @@ from pepbench.utils.exceptions import ValidationError
 import numpy as np
 import pandas as pd
 
-__all__ = ["arr_t", "check_file_exists", "path_t", "str_t"]
+__all__ = ["arr_t",
+           "check_file_exists",
+           "path_t",
+           "str_t", "is_str_t",
+           "check_data_is_str_t",
+           "check_data_is_df",
+           "check_data_is_series",
+           "check_data_is_BasePepDatasetWithAnnotations"]
 
 # Helper alias allowing Hashable or raw str (useful for keys that may be strings)
 _Hashable = Hashable | str
@@ -144,3 +166,77 @@ def check_data_is_BasePepDatasetWithAnnotations(data: object) -> None:
         raise ValidationError(
             f"Expected data to be a BasePepDatasetWithAnnotations, got {type(data)} instead."
         )
+
+def is_str_t(value: object) -> bool:
+    """Return True when ``value`` conforms to the ``str_t`` type alias.
+
+    ``str_t`` is defined as either a :class:`str` or a sequence of strings.
+
+    Rules implemented:
+    - A bare ``str`` returns True.
+    - ``bytes``/``bytearray`` are considered non-text sequences and return False.
+    - Any other ``collections.abc.Sequence`` is accepted only if all
+      its elements are :class:`str`.
+
+    The function is defensive and returns False for non-sequences and
+    for sequences containing non-string elements.
+    """
+    # accept direct string
+    if isinstance(value, str):
+        return True
+    # explicitly reject bytes-like
+    if isinstance(value, (bytes, bytearray)):
+        return False
+
+    # pandas: accept Index and Series if their non-null elements are strings
+    if isinstance(value, (pd.Series, pd.Index)):
+        # take numpy array of values
+        arr = value.to_numpy()
+        # empty -> accept
+        if arr.size == 0:
+            return True
+        # if numpy has string dtype
+        if np.issubdtype(arr.dtype, np.str_):
+            return True
+        # otherwise check non-null elements for Python str
+        for item in arr:
+            if pd.isna(item):
+                continue
+            if not isinstance(item, str):
+                return False
+        return True
+
+    # numpy arrays: accept if string dtype or all non-null items are str
+    if isinstance(value, np.ndarray):
+        if value.size == 0:
+            return True
+        if np.issubdtype(value.dtype, np.str_):
+            return True
+        if value.dtype == object:
+            for item in value:
+                if pd.isna(item):
+                    continue
+                if not isinstance(item, str):
+                    return False
+            return True
+        return False
+
+    # for other sequences, ensure every element is str
+    if isinstance(value, Sequence):
+        try:
+            return all(isinstance(item, str) for item in value)
+        except TypeError:
+            # not iterable in the expected way
+            return False
+    return False
+
+
+def check_data_is_str_t(value: object) -> None:
+    """Raise :class:`ValidationError` if ``value`` is not a valid ``str_t``.
+
+    This mirrors the other ``check_...`` helpers in this module and is useful
+    for validating user inputs or function parameters that accept either a
+    single string or a list/tuple of strings.
+    """
+    if not is_str_t(value):
+        raise ValidationError(f"Expected a str or sequence of str, got {type(value)} instead.")

@@ -70,6 +70,7 @@ def test_get_reference_data_and_pep(sample_results_per_sample):
     # current implementation returns the first algorithm group only -> check those values
     assert pep.iloc[0, 0] == 120.0
     assert pep.iloc[1, 0] == 121.0
+    # wrong types should raise ValidationError
     with raises(ValidationError):
         get_reference_data([1000.0, 500.0])
     with raises(ValidationError):
@@ -91,11 +92,21 @@ def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
     pep_q1b1 = get_pep_for_algo(sample_results_per_sample, ("q1", "b1", "out1"))
     # pep_q1b1 should be a DataFrame/Series with pep values (estimated)
     assert "pep_ms" in getattr(pep_q1b1, "columns", []) or getattr(pep_q1b1, "name", "") == "pep_ms"
+
+    # wrong input types should raise ValidationError
     with raises(ValidationError):
         get_data_for_algo("invalid input", ("q1", "b1", "out1"))
     with raises(ValidationError):
         get_pep_for_algo(sample_results_per_sample, "invalid input")
-
+    # invalid algo_combi type (string) should raise
+    with raises(ValidationError):
+        get_data_for_algo(sample_results_per_sample, "q1")
+    # wrong length combo should raise
+    with raises(ValidationError):
+        get_data_for_algo(sample_results_per_sample, ("q1",))
+    # non-DataFrame first argument should raise for get_pep_for_algo
+    with raises(ValidationError):
+        get_pep_for_algo("not a dataframe", ("q1", "b1", "out1"))
 
 
 def test_describe_pep_values():
@@ -106,8 +117,12 @@ def test_describe_pep_values():
     assert ("pep_ms", "std") in desc.columns
     # check a numeric value
     assert np.isclose(desc[("pep_ms", "mean")].loc["A"], 105.0)
+    # wrong data type
     with raises(ValidationError):
         describe_pep_values("invalid input", group_cols="phase", metrics=["mean"])
+    # wrong group_cols type should raise
+    with raises(ValidationError):
+        describe_pep_values(df, group_cols=[1, 2], metrics=["mean"])
 
 
 def test_rr_interval_to_heart_rate():
@@ -129,8 +144,6 @@ def test_rr_interval_to_heart_rate():
     assert ("rr_interval_ms" and "heart_rate_bpm") in out2.columns
 
 
-
-
 def test_add_unique_id_to_results_dataframe(sample_results_per_sample):
     res = add_unique_id_to_results_dataframe(sample_results_per_sample)
     # resulting index should include id_concat
@@ -138,6 +151,9 @@ def test_add_unique_id_to_results_dataframe(sample_results_per_sample):
     # id_concat values should be strings
     concat_vals = res.index.get_level_values("id_concat")
     assert all(isinstance(x, str) for x in concat_vals)
+    # wrong type should raise
+    with raises(ValidationError):
+        add_unique_id_to_results_dataframe(123)
 
 
 def test_merge_result_metrics_and_per_sample_merge():
@@ -165,6 +181,9 @@ def test_get_error_by_group(sample_results_per_sample):
     assert "metric" in err.columns.names
     # rows should correspond to participants present
     assert "subj1" in err.index.get_level_values("participant") or "subj2" in err.index.get_level_values("participant")
+    # invalid grouper type should raise
+    with raises(ValidationError):
+        get_error_by_group(sample_results_per_sample, error_metric="absolute_error_per_sample_ms", grouper=[1, 2])
 
 
 def test_get_performance_metric_and_compute_performance_like(sample_results_per_sample):
@@ -173,6 +192,9 @@ def test_get_performance_metric_and_compute_performance_like(sample_results_per_
     # implementation drops the inner column level and returns single-level columns containing metric name
     assert metric.columns.nlevels == 1
     assert "absolute_error_per_sample_ms" in metric.columns
+    # wrong metric type should raise
+    with raises(ValidationError):
+        get_performance_metric(sample_results_per_sample, 123)
 
 
 def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_results_per_sample):
@@ -205,6 +227,9 @@ def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_
     # check types
     assert isinstance(res["linear_regression"], pd.DataFrame)
     assert isinstance(res["correlation"], pd.DataFrame)
+    # wrong input type should raise
+    with raises(ValidationError):
+        correlation_reference_pep_heart_rate([1, 2, 3])
 
 
 def test_merge_result_metrics_annotation_difference_and_error():
@@ -231,6 +256,9 @@ def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
     assert isinstance(perf, pd.DataFrame)
     # renamed metrics from _pep_error_metric_map must be present as top-level column names
     assert "Mean Absolute Error [ms]" in perf.columns.get_level_values(0)
+    # invalid sortby type should raise
+    with raises(TypeError):
+        compute_pep_performance_metrics(sample_results_per_sample, num_hb, sortby=123)
 
 
 def test_compute_improvement_outlier_correction_signs():
@@ -255,6 +283,9 @@ def test_compute_improvement_outlier_correction_signs():
     # percentages should add up to ~100 across the three categories
     vals = res.iloc[0].dropna().astype(float).values
     assert np.isclose(vals.sum(), 100.0)
+    # wrong input type should raise
+    with raises(ValidationError):
+        compute_improvement_outlier_correction([1, 2, 3], outlier_algos=["out1", "out2"])
 
 
 def test_compute_improvement_pipeline_sign_changes():
@@ -280,6 +311,10 @@ def test_compute_improvement_pipeline_sign_changes():
     # drop columns that are all-NaN
     col_sums = col_sums.dropna()
     assert np.allclose(col_sums.values, np.full(col_sums.shape, 100.0))
+    # wrong data type should raise
+    with raises(ValidationError):
+        compute_improvement_pipeline(123, pipelines=pipelines)
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
