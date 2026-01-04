@@ -17,7 +17,7 @@ from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._base_pep_extraction_dataset import MetadataMixin, base_pep_extraction_docfiller
 from pepbench.datasets._helper import compute_reference_heartbeats, load_labeling_borders
 from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
-from pepbench.utils._types import path_t
+from pepbench.utils._types import path_t, check_data_is_df
 
 _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
 
@@ -231,7 +231,27 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     @staticmethod
     def _cut_to_labeling_borders(data: pd.DataFrame, labeling_borders: pd.DataFrame) -> pd.DataFrame:
-        """Cut biopac data to the labeling borders."""
+        """Cut biopac data to the labeling borders.
+        Parameters
+        ----------
+        data : :class:`~pandas.DataFrame`
+            Biopac data.
+        labeling_borders : :class:`~pandas.DataFrame`
+            Labeling borders with `sample_relative` column.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Cut biopac data.
+
+        Raises
+        ------
+        ValidationError
+            If input data is not a DataFrame.
+
+        """
+        check_data_is_df(data)
+        check_data_is_df(labeling_borders)
         start_index = labeling_borders["sample_relative"].iloc[0]
         end_index = labeling_borders["sample_relative"].iloc[-1]
         return data.iloc[start_index:end_index]

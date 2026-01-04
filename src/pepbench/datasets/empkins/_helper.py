@@ -17,7 +17,7 @@ import pandas as pd
 from biopsykit.io import load_atimelogger_file
 from biopsykit.io.biopac import BiopacDataset
 
-from pepbench.utils._types import path_t
+from pepbench.utils._types import path_t, check_data_is_patht
 
 
 def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> Path:
@@ -41,7 +41,10 @@ def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> 
     ------
     AssertionError
         If the constructed path does not exist.
+    ValidationError
+        If `base_path` is not a valid path.
     """
+    check_data_is_patht(base_path)
     data_path = base_path.joinpath(f"data_per_subject/{participant_id}/{condition}")
     assert data_path.exists()
     return data_path
@@ -79,7 +82,11 @@ def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) ->
         If the expected ACQ file is missing.
     RuntimeError
         If the Biopac file cannot be parsed by `BiopacDataset`.
+    ValidationError
+        If `base_path` is not a valid path.
     """
+
+    check_data_is_patht(base_path)
     biopac_dir_path = _build_data_path(base_path, participant_id=participant_id, condition=condition).joinpath(
         "biopac/raw"
     )
@@ -124,7 +131,10 @@ def _load_timelog(base_path: path_t, participant_id: str, condition: str, phase:
         If the participant/condition directory does not exist.
     FileNotFoundError
         If the expected processed timelog CSV is missing.
+    ValidationError
+        If `base_path` is not a valid path.
     """
+    check_data_is_patht(base_path)
     timelog_dir_path = _build_data_path(base_path, participant_id=participant_id, condition=condition).joinpath(
         "timelog/processed"
     )

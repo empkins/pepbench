@@ -76,10 +76,11 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
 
         Notes
         -----
-        - Sampling rates used are taken from the datapoint (``sampling_rate_ecg`` and
-          ``sampling_rate_icg``).
-        - Outlier correction is applied to B/C points; the final PEP computation uses
-          B\-points after outlier correction.
++
++        - Sampling rates used are taken from the datapoint (``sampling_rate_ecg`` and
++          ``sampling_rate_icg``).
++        - Outlier correction is applied to B/C points; the final PEP computation uses
++          B\-points after outlier correction.
         """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(

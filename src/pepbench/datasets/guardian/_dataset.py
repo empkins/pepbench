@@ -30,7 +30,7 @@ from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._base_pep_extraction_dataset import MetadataMixin, base_pep_extraction_docfiller
 from pepbench.datasets._helper import compute_reference_heartbeats, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
-from pepbench.utils._types import path_t
+from pepbench.utils._types import path_t, check_data_is_df
 
 __all__ = ["GuardianDataset"]
 
@@ -500,7 +500,14 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         -------
         :class:`~pandas.DataFrame`
             Cut data as a pandas DataFrame.
+
+        Raises
+        ------
+        ValidationError
+            If input data is not a pandas DataFrame.
         """
+        check_data_is_df(data)
+        check_data_is_df(borders)
         start = borders.index[0]
         end = borders.index[-1]
         data = data.loc[start:end]

@@ -53,6 +53,7 @@ class PepExtractionPipelineReferenceBPoints(BasePepExtractionPipeline):
         Run the pipeline on a labeled datapoint.
 
         The pipeline executes the following steps:
+
         - Validate configuration values (for example, that `handle_negative_pep` is valid).
         - Clone configured algorithms and optionally set `handle_missing_events` on algorithms
           that support missing-event handling.
