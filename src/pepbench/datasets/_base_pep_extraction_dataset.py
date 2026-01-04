@@ -453,3 +453,4 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
 
         points = points.sort_index()
         return points
+

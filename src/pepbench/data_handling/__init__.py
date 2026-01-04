@@ -31,6 +31,7 @@ from pepbench.data_handling._data_handling import (
     merge_result_metrics_from_multiple_annotators,
     merge_results_per_sample_from_different_annotators,
     rr_interval_to_heart_rate,
+    get_performance_metric,
 )
 
 __all__ = [
@@ -49,4 +50,5 @@ __all__ = [
     "merge_results_per_sample_from_different_annotators",
     "rr_interval_to_heart_rate",
     "utils",
+    "get_performance_metric"
 ]

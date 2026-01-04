@@ -1,10 +1,11 @@
+import lv
 import pandas as pd
 import numpy as np
 import pytest
 from joblib.testing import raises
 from pepbench.utils.exceptions import ValidationError
 
-from pepbench.data_handling._data_handling import (
+from pepbench.data_handling import (
     get_reference_data,
     get_reference_pep,
     get_data_for_algo,
@@ -69,8 +70,10 @@ def test_get_reference_data_and_pep(sample_results_per_sample):
     # current implementation returns the first algorithm group only -> check those values
     assert pep.iloc[0, 0] == 120.0
     assert pep.iloc[1, 0] == 121.0
-    with raises(TypeError):
+    with raises(ValidationError):
         get_reference_data([1000.0, 500.0])
+    with raises(ValidationError):
+        get_reference_pep("invalid input")
 
 
 def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
@@ -88,6 +91,11 @@ def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
     pep_q1b1 = get_pep_for_algo(sample_results_per_sample, ("q1", "b1", "out1"))
     # pep_q1b1 should be a DataFrame/Series with pep values (estimated)
     assert "pep_ms" in getattr(pep_q1b1, "columns", []) or getattr(pep_q1b1, "name", "") == "pep_ms"
+    with raises(ValidationError):
+        get_data_for_algo("invalid input", ("q1", "b1", "out1"))
+    with raises(ValidationError):
+        get_pep_for_algo(sample_results_per_sample, "invalid input")
+
 
 
 def test_describe_pep_values():
@@ -98,6 +106,8 @@ def test_describe_pep_values():
     assert ("pep_ms", "std") in desc.columns
     # check a numeric value
     assert np.isclose(desc[("pep_ms", "mean")].loc["A"], 105.0)
+    with raises(ValidationError):
+        describe_pep_values("invalid input", group_cols="phase", metrics=["mean"])
 
 
 def test_rr_interval_to_heart_rate():
@@ -160,8 +170,9 @@ def test_get_error_by_group(sample_results_per_sample):
 def test_get_performance_metric_and_compute_performance_like(sample_results_per_sample):
     # create simple metric columns with last level and test droplevel behavior
     metric = get_performance_metric(sample_results_per_sample, "absolute_error_per_sample_ms")
-    # droplevel removed last column level -> resulting columns should be single-level
-    assert metric.columns.nlevels == 1 or list(metric.columns) == ["absolute_error_per_sample_ms"]
+    # implementation drops the inner column level and returns single-level columns containing metric name
+    assert metric.columns.nlevels == 1
+    assert "absolute_error_per_sample_ms" in metric.columns
 
 
 def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_results_per_sample):
@@ -211,15 +222,15 @@ def test_merge_result_metrics_annotation_difference_and_error():
 
 
 def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
-    # create a reasonable num_heartbeats Series indexed by algo levels + participant so unstack() inside function works
+    # create a reasonable num_heartbeats DataFrame indexed by algo levels + participant so unstack() inside function works
     algo_levels = ["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
-    # count heartbeats per (algo_levels + participant)
-    num_hb = sample_results_per_sample[("pep_ms", "reference")].groupby(level=[*algo_levels, "participant"]).count()
+    # count heartbeats per (algo_levels + participant) as a DataFrame indexed by algo_levels + participant
+    num_hb = sample_results_per_sample[("pep_ms", "reference")].groupby(level=[*algo_levels, "participant"]).count().to_frame(name="num_heartbeats")
     # call function; ensure it returns a DataFrame and renamed columns exist
     perf = compute_pep_performance_metrics(sample_results_per_sample, num_heartbeats=num_hb)
     assert isinstance(perf, pd.DataFrame)
     # renamed metrics from _pep_error_metric_map must be present as top-level column names
-    assert any("Mean Absolute Error [ms]" in str(col) for col in perf.columns.get_level_values(0))
+    assert "Mean Absolute Error [ms]" in perf.columns.get_level_values(0)
 
 
 def test_compute_improvement_outlier_correction_signs():
@@ -264,15 +275,11 @@ def test_compute_improvement_pipeline_sign_changes():
     res = compute_improvement_pipeline(s, pipelines=pipelines)
     # result should be a DataFrame with percentage rows (True/False) for change flags
     assert isinstance(res, pd.DataFrame)
-    # change_diff True should occur for one of three samples -> approx 33.33%
-    if "change_diff" in res.index or "change_diff" in res.columns:
-        # normalize: one True out of three equals ~33.33
-        # locate row/column appropriately
-        arr = res.values.astype(float)
-        assert np.isclose(arr.sum(), 100.0)
-    else:
-        # fallback check: expect DataFrame with boolean distribution percentages
-        assert res.shape[0] > 0
+    # Each output column is a percentage distribution (True/False) and should sum to ~100 ignoring NaNs
+    col_sums = res.sum(axis=0, skipna=True).astype(float)
+    # drop columns that are all-NaN
+    col_sums = col_sums.dropna()
+    assert np.allclose(col_sums.values, np.full(col_sums.shape, 100.0))
 
 if __name__ == "__main__":
     pytest.main([__file__])

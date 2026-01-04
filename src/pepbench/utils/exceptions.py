@@ -1,6 +1,6 @@
 """A set of custom exceptions."""
 
-__all__ = ["SamplingRateMismatchError"]
+__all__ = ["SamplingRateMismatchError", "ValidationError"]
 
 
 class SamplingRateMismatchError(Exception):

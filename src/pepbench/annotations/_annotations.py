@@ -22,6 +22,8 @@ from tqdm.auto import tqdm
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.heartbeat_matching import match_heartbeat_lists
+from pepbench.utils._types import check_data_is_df, check_data_is_BasePepDatasetWithAnnotations
+
 
 __all__ = [
     "compute_annotation_differences",
@@ -56,11 +58,21 @@ def load_annotations_from_dataset(
         MultiIndex column where the top level is ``signal`` and lower levels
         represent ``rater`` and ``sample`` (as produced by ``match_annotations``).
 
+    Raises
+    ------
+    ValidationError
+        If input datasets are not instances of ``BasePepDatasetWithAnnotations``.
+
+
     Notes
     -----
     Iteration uses ``dataset.groupby(None)`` and expects group labels to be
     compatible between datasets.
     """
+
+    check_data_is_BasePepDatasetWithAnnotations(dataset_01)
+    check_data_is_BasePepDatasetWithAnnotations(dataset_02)
+
     labels_ecg_dict = {}
     labels_icg_dict = {}
     for subset_01, subset_02 in tqdm(list(zip(dataset_01.groupby(None), dataset_02.groupby(None), strict=False))):
@@ -116,7 +128,12 @@ def match_annotations(
     KeyError, IndexError
         If expected index/column levels (``label``, ``sample_relative``, ``channel``)
         are missing.
+    ValidationError
+        If input annotations are not DataFrames.
     """
+    check_data_is_df(annotations_01)
+    check_data_is_df(annotations_02)
+
     heartbeats_01 = annotations_01.unstack("label")["sample_relative"][["start", "end"]].dropna()
     # heartbeats_01 = annotations_01.reindex(["start", "end"], level="label")["sample_relative"].unstack()
     heartbeats_01 = heartbeats_01.droplevel(-1)
@@ -179,11 +196,19 @@ def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: 
         Single-column DataFrame with the computed differences. Index preserves
         heartbeat/sample identifiers after dropping label/channel where appropriate.
 
+    Raises
+    ------
+    ValidationError
+        If ``annotations`` is not a pandas DataFrame.
+
     Notes
     -----
     The function drops entries labeled ``Artefact`` and removes ``label`` and
     ``channel`` levels from the index before returning.
     """
+    # validate input
+    check_data_is_df(annotations)
+
     if annotations.columns.nlevels == 1:
         annotations = annotations["rater_01"] - annotations["rater_02"]
     else:
@@ -224,10 +249,18 @@ def normalize_annotations_to_heartbeat_start(
         DataFrame of differences normalized to heartbeat start, with a single
         column named ``difference_ms`` or ``difference_samples`` depending on input.
 
+    Raises
+    ------
+    ValidationError
+        If ``annotations`` is not a pandas DataFrame.
+
     Notes
     -----
     Rows that become all-NaN after differencing are dropped.
     """
+    # validate input
+    check_data_is_df(annotations)
+
     annotations = annotations.drop("end", level="label").drop("Artefact", level="label")
     annotations = annotations.droplevel("channel").unstack()
     annotations = annotations.T.groupby("rater").diff().dropna(how="all")

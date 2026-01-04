@@ -122,3 +122,25 @@ def check_data_is_series(data: object) -> None:
     if not isinstance(data, pd.Series):
         raise ValidationError(f"Expected data to be a pandas Series, got {type(data)} instead.")
 
+def check_data_is_BasePepDatasetWithAnnotations(data: object) -> None:
+    """
+    Raise ValidationError if data is not an instance of BasePepDatasetWithAnnotations.
+
+    The import is performed inside the function to avoid circular imports at module import time.
+
+    Parameters
+    ----------
+    data : object
+        The object to validate.
+
+    Raises
+    ------
+    ValidationError
+        If data is not an instance of BasePepDatasetWithAnnotations.
+    """
+    from pepbench.datasets._base_pep_extraction_dataset import BasePepDatasetWithAnnotations
+
+    if not isinstance(data, BasePepDatasetWithAnnotations):
+        raise ValidationError(
+            f"Expected data to be a BasePepDatasetWithAnnotations, got {type(data)} instead."
+        )

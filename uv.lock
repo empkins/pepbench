@@ -1227,6 +1227,15 @@ wheels = [
 ]
 
 [[package]]
+name = "lv"
+version = "0.0.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/90/6bd4069013a025a57892cad6cee025fe186f59ab0ab39168cd3b95e06de2/lv-0.0.6.tar.gz", hash = "sha256:df985f0356ae46eee328d08ac408e7de554b201581869760410010a44e944488", size = 8085, upload-time = "2025-05-23T07:25:17.497Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/8d/de7eb3ade254d2022a6d609c588c0cde60962ee71782bd62fde9ecac81cf/lv-0.0.6-py3-none-any.whl", hash = "sha256:9135564704b4b95e0cffe9ece43bab1b16d36ae2f87a56018af700bbdefab62f", size = 8304, upload-time = "2025-05-23T07:25:15.594Z" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1727,6 +1736,7 @@ source = { editable = "." }
 dependencies = [
     { name = "biopsykit" },
     { name = "jinja2" },
+    { name = "lv" },
     { name = "notebook" },
     { name = "pooch" },
     { name = "pywavelets" },
@@ -1757,6 +1767,7 @@ dev = [
 requires-dist = [
     { name = "biopsykit", git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
+    { name = "lv", specifier = ">=0.0.6" },
     { name = "notebook", specifier = ">=7.5.0" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "pywavelets", specifier = ">=1.8.0" },
