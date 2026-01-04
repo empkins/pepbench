@@ -134,6 +134,81 @@ def test_labeling_borders_monkeypatched(tmp_path, monkeypatch):
     assert any(borders["description"].str.contains("Pause"))
 
 
+def test_create_index_exclude_missing(tmp_path):
+    base = tmp_path / "guardian"
+    _make_minimal_structure(base, participants=("GDN0001", "GDN0002"))
+
+    ds = GuardianDataset(base_path=base)
+    # simulate that GDN0002 has missing data and exclude it
+    # exclude GDN0002 for all phases so they are entirely removed from the index
+    ds.data_to_exclude = tuple(("GDN0002", ph) for ph in ds.PHASES)
+
+    idx = ds.create_index()
+    assert "GDN0002" not in idx["participant"].values
+
+
+def test_tfm_phase_cut_only_labeled(monkeypatch, tmp_path):
+    base = tmp_path / "guardian"
+    _make_minimal_structure(base, participants=("GDN0001",))
+
+    # create a subset (single participant + single phase)
+    subset = pd.DataFrame([{"participant": "GDN0001", "phase": "Pause"}])
+    ds = GuardianDataset(base_path=base, subset_index=subset, only_labeled=True, return_clean=False)
+
+    # create dummy tfm data indexed by sample (0..99)
+    dummy = pd.DataFrame({"ecg_2": np.arange(100), "icg_der": np.zeros(100)}, index=pd.RangeIndex(0, 100))
+
+    # monkeypatch loader to return full-phase dict
+    monkeypatch.setattr(
+        "pepbench.datasets.guardian._dataset._cached_get_tfm_data",
+        lambda path, date: {phase: dummy.copy() for phase in ds.PHASES},
+    )
+
+    # create labeling borders with start/end that should trim the data
+    dummy_borders = pd.DataFrame({"sample_absolute": [10, 50], "description": ["Pause start", "Pause end"]}, index=[10, 50])
+    monkeypatch.setattr("pepbench.datasets.guardian._dataset.load_labeling_borders", lambda fp: dummy_borders)
+
+    # accessing tfm_data should return a cut DataFrame for phase 'Pause'
+    data = ds.tfm_data
+    assert isinstance(data, pd.DataFrame)
+    assert data.index.min() >= 10
+    assert data.index.max() <= 50
+
+
+def test_tfm_requires_single_selection(tmp_path):
+    base = tmp_path / "guardian"
+    _make_minimal_structure(base, participants=("GDN0001", "GDN0002"))
+    ds = GuardianDataset(base_path=base)
+
+    # tfm_data should raise if multiple participants are selected
+    with pytest.raises(ValueError):
+        _ = ds.tfm_data
+
+
+def test_reference_labels_and_pep(tmp_path):
+    base = tmp_path / "guardian"
+    _make_minimal_structure(base, participants=("GDN0001",))
+
+    # create subset selecting GDN0001 / Pause
+    subset = pd.DataFrame([{"participant": "GDN0001", "phase": "Pause"}])
+    ds = GuardianDataset(base_path=base, subset_index=subset)
+
+    # synthesize heartbeats and reference labels in the exact MultiIndex shape the pipeline expects
+    # create heartbeats with column names the pipeline expects BEFORE prefixing
+    # Base code prefixes `heartbeat_` to these column names, so provide 'start_sample' and 'end_sample'
+    heartbeats = pd.DataFrame({"start_sample": [0], "end_sample": [999], "r_peak_sample": [10]}, index=[0])
+    q_peaks = pd.DataFrame({"sample_relative": [100]}, index=[0])
+    b_points = pd.DataFrame({"sample_relative": [160]}, index=[0])
+
+    # build pep_reference from these labeled values
+    pep_reference = heartbeats.copy()
+    pep_reference.columns = [f"heartbeat_{col}" if col != "r_peak_sample" else "r_peak_sample" for col in heartbeats.columns]
+    pep_reference = pep_reference.assign(q_peak_sample=q_peaks["sample_relative"], b_point_sample=b_points["sample_relative"], nan_reason=pd.NA)
+    pep_reference = pep_reference.assign(pep_sample=pep_reference["b_point_sample"] - pep_reference["q_peak_sample"])
+    pep_reference = pep_reference.assign(pep_ms=pep_reference["pep_sample"] / ds.sampling_rate_ecg * 1000)
+
+    assert "pep_ms" in pep_reference.columns
+    assert pep_reference["pep_ms"].iloc[0] >= 0
 
 
 if __name__ == "__main__":

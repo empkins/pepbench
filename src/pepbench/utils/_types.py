@@ -63,7 +63,8 @@ import pandas as pd
 __all__ = ["arr_t",
            "check_file_exists",
            "path_t",
-           "str_t", "is_str_t",
+           "str_t",
+           "is_str_t",
            "check_data_is_str_t",
            "check_data_is_df",
            "check_data_is_series",
@@ -240,3 +241,13 @@ def check_data_is_str_t(value: object) -> None:
     """
     if not is_str_t(value):
         raise ValidationError(f"Expected a str or sequence of str, got {type(value)} instead.")
+
+def check_data_is_patht(value: object) -> None:
+    """Raise :class:`ValidationError` if ``value`` is not a valid ``path_t``.
+
+    This mirrors the other ``check_...`` helpers in this module and is useful
+    for validating user inputs or function parameters that accept either a
+    string or a :class:`pathlib.Path`.
+    """
+    if not isinstance(value, (str, Path)):
+        raise ValidationError(f"Expected a str or pathlib.Path, got {type(value)} instead.")
