@@ -27,6 +27,16 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         *,
         return_clean: bool = True,
     ) -> None:
+        """
+        Initialize the ExampleDataset.
+
+        Parameters
+        ----------
+        example_file_path
+        groupby_cols
+        subset_index
+        return_clean
+        """
         self.example_file_path = example_file_path
         # unzip the example dataset
         with zipfile.ZipFile(str(self.example_file_path)) as zf:
@@ -34,6 +44,15 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
     def create_index(self) -> pd.DataFrame:
+        """
+        Create the index DataFrame for the dataset.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Index DataFrame containing participant identifiers.
+
+        """
         participant_ids = [
             participant_dir.name for participant_dir in get_subject_dirs(EXAMPLE_DATA_PATH, "VP_[0-9]{3}")
         ]
@@ -43,14 +62,41 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def sampling_rate_ecg(self) -> int:
+        """
+        Return the sampling rate of the ECG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ECG signal in Hz.
+
+        """
         return 500
 
     @property
     def sampling_rate_icg(self) -> int:
+        """
+        Return the sampling rate of the ICG signal.
+
+        Returns
+        -------
+        int
+            Sampling rate of the ICG signal in Hz.
+
+        """
         return 500
 
     @property
     def ecg(self) -> EcgRawDataFrame:
+        """
+        Return the ECG data for a single participant and phase.
+
+        Returns
+        -------
+        :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
+            ECG data as a BiopsyKit EcgRawDataFrame.
+
+        """
         if not self.is_single(None):
             raise ValueError("ECG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("ecg")
@@ -62,6 +108,15 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
 
     @property
     def icg(self) -> IcgRawDataFrame:
+        """
+        Return the ICG data for a single participant and phase.
+
+        Returns
+        -------
+        :class:`~biopsykit.utils.dtypes.IcgRawDataFrame`
+            ICG data as a BiopsyKit IcgRawDataFrame.
+
+        """
         if not self.is_single(None):
             raise ValueError("ICG data can only be accessed for a single participant and a single phase!")
         data = self._load_data("icg")
@@ -72,6 +127,20 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return data
 
     def _load_data(self, data_type: str) -> pd.DataFrame:
+        """
+        Load the data for the specified data type.
+
+        Parameters
+        ----------
+        data_type
+            Type of data to load ('ecg' or 'icg').
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Loaded data as a pandas DataFrame.
+
+        """
         p_id = self.index["participant"][0]
         data = pd.read_csv(
             EXAMPLE_DATA_PATH.joinpath(f"{p_id}/{p_id.lower()}_{data_type}_data.csv"),
@@ -105,6 +174,20 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return self._load_reference_labels("ICG")
 
     def _load_reference_labels(self, channel: str) -> pd.DataFrame:
+        """
+        Load the reference labels for the specified channel.
+
+        Parameters
+        ----------
+        channel
+            Channel for which to load the reference labels ('ECG' or 'ICG').
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference labels as a pandas DataFrame
+
+        """
         participant = self.index["participant"][0]
 
         if not (self.is_single(None)):
@@ -132,6 +215,15 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         return self._load_reference_heartbeats()
 
     def _load_reference_heartbeats(self) -> pd.DataFrame:
+        """
+        Load the reference heartbeats.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame`
+            Reference heartbeats as a pandas DataFrame
+
+        """
         reference_ecg = self.reference_labels_ecg
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
