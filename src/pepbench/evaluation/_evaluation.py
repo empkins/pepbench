@@ -19,6 +19,7 @@ from pepbench.utils._types import path_t
 
 __all__ = ["ChallengeResults", "PepEvaluationChallenge"]
 
+
 class ChallengeResults(NamedTuple):
     """Container for the results produced by a PEP evaluation challenge.
 
