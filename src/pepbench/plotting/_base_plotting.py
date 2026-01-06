@@ -97,6 +97,35 @@ def plot_signals_with_reference_labels(  # noqa: C901
     normalize_time: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
+    """
+    Plot ECG and ICG signals with reference labels.
+
+    Parameters
+    ----------
+    datapoint: BasePepDatasetWithAnnotations
+        Dataset to plot.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    collapse: bool, optional
+        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
+        Default: False.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("sharex", True)
     kwargs.setdefault("legend_max_cols", 6)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
@@ -162,6 +191,34 @@ def plot_signals_with_reference_pep(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """
+    Plot ECG and ICG signals with reference PEP intervals.
+
+    Parameters
+    ----------
+    datapoint: BasePepDatasetWithAnnotations
+        Dataset to plot.
+
+    collapse: bool, optional
+        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("legend_orientation", "vertical")
     kwargs.setdefault("legend_outside", False)
     kwargs.setdefault("legend_max_cols", 6)
@@ -217,6 +274,38 @@ def plot_signals_with_algorithm_results(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes | Sequence[plt.Axes]]:
+    """
+    Plot ECG and ICG signals with algorithm-detected points.
+
+    Parameters
+    ----------
+    datapoint: BasePepDatasetWithAnnotations
+        Dataset to plot.
+
+    collapse: bool, optional
+        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
+        Default: False.
+
+    algorithm: BaseExtraction
+        Algorithm to use for point detection.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     rect = _get_rect(kwargs)
@@ -314,6 +403,41 @@ def plot_signals_from_challenge_results(
     add_pep: bool = False,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """
+    Plot ECG and ICG signals with PEP challenge results.
+
+    Parameters
+    ----------
+    datapoint: :class:`BasePepDatasetWithAnnotations`
+        Dataset to plot.
+
+    pep_results_per_sample: :class:`pandas.DataFrame`
+        DataFrame containing PEP results per sample.
+
+    collapse: bool, optional
+        If True, plot ECG and ICG signals in one axis. If False, plot ECG and ICG signals in two axes.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    add_pep: bool, optional
+        If True, add PEP intervals to the plot.
+        Default: False.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     rect = _get_rect(kwargs)
@@ -443,6 +567,34 @@ def _plot_signals_one_axis(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, plt.Axes]:
+    """
+    Plot ECG and ICG signals in one axis.
+
+    Parameters
+    ----------
+    datapoint: BasePepDataset, optional
+        Dataset to plot.
+
+    df: pandas.DataFrame, optional
+        DataFrame containing signals to plot.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
     plot_ecg = kwargs.get("plot_ecg", True)
@@ -500,6 +652,31 @@ def _plot_signals_two_axes(
     heartbeat_subset: Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[plt.Figure, Sequence[plt.Axes]]:
+    """
+    Plot ECG and ICG signals in two axes.
+
+    Parameters
+    ----------
+    datapoint: BasePepDataset
+        Dataset to plot.
+
+    normalize_time: bool, optional
+        If True, normalize time to seconds. If False, use the original time format.
+        Default: False.
+
+    heartbeat_subset: list of int, optional
+        List of heartbeats (as indices) to plot. If None, plot all heartbeats.
+        Default: None.
+
+    kwargs: dict, optional
+        Additional keyword arguments.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        Figure object.
+
+    """
     kwargs.setdefault("nrows", 2)
     kwargs.setdefault("legend_loc", _get_legend_loc(kwargs))
     kwargs.setdefault("legend_max_cols", 5)
