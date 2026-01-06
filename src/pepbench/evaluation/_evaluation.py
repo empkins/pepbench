@@ -35,6 +35,7 @@ class ChallengeResults(NamedTuple):
     per_sample : pandas.DataFrame
         The per-sample results (detailed per-estimation metrics) for each datapoint.
     """
+
     agg_mean_std: pd.DataFrame
     agg_total: pd.DataFrame
     single: pd.DataFrame
