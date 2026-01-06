@@ -1370,6 +1370,7 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "biopsykit" },
+    { name = "ipykernel" },
     { name = "jinja2" },
     { name = "pooch" },
     { name = "pywavelets" },
@@ -1400,6 +1401,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "biopsykit", specifier = ">=0.13.1" },
+    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "pooch", specifier = ">=1.8.2" },
     { name = "pywavelets", specifier = ">=1.8.0" },
