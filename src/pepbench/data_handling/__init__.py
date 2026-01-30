@@ -26,12 +26,12 @@ from pepbench.data_handling._data_handling import (
     get_data_for_algo,
     get_error_by_group,
     get_pep_for_algo,
+    get_performance_metric,
     get_reference_data,
     get_reference_pep,
     merge_result_metrics_from_multiple_annotators,
     merge_results_per_sample_from_different_annotators,
     rr_interval_to_heart_rate,
-    get_performance_metric,
 )
 
 __all__ = [
@@ -44,11 +44,11 @@ __all__ = [
     "get_data_for_algo",
     "get_error_by_group",
     "get_pep_for_algo",
+    "get_performance_metric",
     "get_reference_data",
     "get_reference_pep",
     "merge_result_metrics_from_multiple_annotators",
     "merge_results_per_sample_from_different_annotators",
     "rr_interval_to_heart_rate",
-    "utils",
-    "get_performance_metric"
+    "utils"
 ]

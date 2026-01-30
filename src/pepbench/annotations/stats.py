@@ -20,7 +20,7 @@ import pingouin as pg
 
 from pepbench.annotations._annotations import compute_annotation_differences, normalize_annotations_to_heartbeat_start
 from pepbench.data_handling import add_unique_id_to_results_dataframe
-from pepbench.utils._types import check_data_is_df, check_data_is_BasePepDatasetWithAnnotations
+from pepbench.utils._types import check_data_is_df
 
 
 def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_absolute: bool = True) -> pd.DataFrame:
@@ -50,7 +50,6 @@ def describe_annotation_differences(annotation_diffs: pd.DataFrame, include_abso
         If the input is not a valid dataframe.
 
     """
-
     check_data_is_df(annotation_diffs)
 
     annotation_diffs_describe = annotation_diffs.copy()

@@ -22,8 +22,7 @@ from tqdm.auto import tqdm
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.heartbeat_matching import match_heartbeat_lists
-from pepbench.utils._types import check_data_is_df, check_data_is_BasePepDatasetWithAnnotations
-
+from pepbench.utils._types import check_data_is_BasePepDatasetWithAnnotations, check_data_is_df
 
 __all__ = [
     "compute_annotation_differences",
@@ -69,7 +68,6 @@ def load_annotations_from_dataset(
     Iteration uses ``dataset.groupby(None)`` and expects group labels to be
     compatible between datasets.
     """
-
     check_data_is_BasePepDatasetWithAnnotations(dataset_01)
     check_data_is_BasePepDatasetWithAnnotations(dataset_02)
 

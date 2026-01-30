@@ -53,13 +53,14 @@ See Also
 :mod:`pepbench.pipelines`
     Pipeline helpers and end-to-end execution utilities for PEP extraction.
 """
+import contextlib
 from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
 import pingouin as pg
 
-from pepbench.utils._types import str_t, check_data_is_df, check_data_is_str_t
+from pepbench.utils._types import check_data_is_df, check_data_is_str_t, str_t
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
@@ -155,9 +156,10 @@ def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: str_t) -> pd
 
     Raises
     ------
+    TypeError
+        If the input data is not a :class:`pandas.DataFrame`.
 
     """
-
     check_data_is_df(results_per_sample)
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
 
@@ -206,10 +208,9 @@ def get_pep_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]
         pep = pep[[("pep_ms", "estimated")]].droplevel(level=-1, axis=1)
     else:
         # fallback: if only single-level pep_ms column present, return it
-        try:
+        # suppress common errors from droplevel when columns are already single-level
+        with contextlib.suppress(IndexError, KeyError, AttributeError, ValueError):
             pep = pep.droplevel(level=-1, axis=1)
-        except Exception:
-            pass
 
     return pep
 
@@ -270,8 +271,9 @@ def compute_pep_performance_metrics(
     results_per_sample = results_per_sample.copy()
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
     # select only the error metric columns that actually exist in the frame
-    present_metrics = [k for k in _pep_error_metric_map.keys() if k in results_per_sample.columns.get_level_values(0)]
-    results_per_sample = results_per_sample.loc[:, results_per_sample.columns.get_level_values(0).isin(present_metrics)].droplevel(level=-1, axis=1)
+    present_metrics = [k for k in _pep_error_metric_map if k in results_per_sample.columns.get_level_values(0)]
+    results_per_sample = (results_per_sample.loc[:, results_per_sample.columns.get_level_values(0).
+                          isin(present_metrics)].droplevel(level=-1, axis=1))
     results_per_sample = results_per_sample.groupby(algo_levels)
     results_per_sample = results_per_sample.agg(metrics)
 
@@ -279,12 +281,13 @@ def compute_pep_performance_metrics(
     # Ensure columns are MultiIndex so swaplevel works; if single-level, promote to MultiIndex using the column name
     if not isinstance(num_heartbeats.columns, pd.MultiIndex):
         # column names may be an Index of participants; use the Series/DataFrame name as top level if available
-        top_level_name = getattr(num_heartbeats, "columns", None)
+        # top_level_name = getattr(num_heartbeats, "columns", None)
         # If num_heartbeats came from a Series.unstack() it may be a Series; ensure DataFrame
         if isinstance(num_heartbeats, pd.Series):
             num_heartbeats = num_heartbeats.to_frame()
         # create a top level name
-        top_name = num_heartbeats.columns.name if getattr(num_heartbeats.columns, "name", None) is not None else "num_heartbeats"
+        top_name = num_heartbeats.columns.name if (getattr(num_heartbeats.columns, "name", None)
+                                                   is not None) else "num_heartbeats"
         num_heartbeats.columns = pd.MultiIndex.from_product([[top_name], list(num_heartbeats.columns)])
     num_heartbeats = num_heartbeats.swaplevel(axis=1)
     results_per_sample = results_per_sample.join(num_heartbeats)
@@ -491,11 +494,9 @@ def compute_improvement_outlier_correction(data: pd.DataFrame, outlier_algos: Se
     # Ensure columns indexed by outlier algorithm are available; accept either MultiIndex or simple DataFrame
     if "outlier_correction_algorithm" in (data.columns.names or []):
         # select columns for the requested outlier algorithms
-        try:
-            left = data.xs(outlier_algos[0], level="outlier_correction_algorithm", axis=1)
-            right = data.xs(outlier_algos[1], level="outlier_correction_algorithm", axis=1)
-        except Exception as exc:
-            raise
+        # let any unexpected exceptions bubble up; explicitly handle common lookup errors
+        left = data.xs(outlier_algos[0], level="outlier_correction_algorithm", axis=1)
+        right = data.xs(outlier_algos[1], level="outlier_correction_algorithm", axis=1)
     else:
         # assume simple columns named by outlier_algos
         left = data[outlier_algos[0]]
@@ -503,7 +504,8 @@ def compute_improvement_outlier_correction(data: pd.DataFrame, outlier_algos: Se
 
     # compute difference (after - before), sign: negative -> improvement
     diff = right - left
-    # if diff is DataFrame with multiple columns, reduce to a single series by summing/mean? Here expect single metric column
+    # if diff is DataFrame with multiple columns, reduce to a single series by summing/mean?
+    # Here expect single metric column
     if isinstance(diff, pd.DataFrame):
         # if multiple columns, attempt to reduce to a single series by taking the first column
         diff = diff.iloc[:, 0]
@@ -563,22 +565,16 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
     # After unstack, columns may be a simple Index of pipeline keys or a MultiIndex with a 'pipeline' level
     try:
         unstacked = data.unstack("pipeline")
-    except Exception:
+    except (KeyError, ValueError):
         # If unstack by level name fails, assume index first level already contains pipeline keys and pivot accordingly
-        try:
-            unstacked = data.unstack(level=0)
-        except Exception:
-            raise
+        unstacked = data.unstack(level=0)
 
     # If unstacked has MultiIndex columns with a 'pipeline' level, select by that, otherwise reindex simple columns
     if isinstance(unstacked.columns, pd.MultiIndex) and "pipeline" in (unstacked.columns.names or []):
         df = unstacked.reindex(pipelines, level="pipeline", axis=1)
         # collapse to simple DataFrame of values for comparison
         # take the first metric if multiple present
-        if isinstance(df.columns, pd.MultiIndex):
-            df_values = df.iloc[:, :2]
-        else:
-            df_values = df
+        df_values = df.iloc[:, :2] if isinstance(df.columns, pd.MultiIndex) else df
     else:
         # simple columns: ensure order matches pipelines
         df_values = unstacked.reindex(columns=pipelines)

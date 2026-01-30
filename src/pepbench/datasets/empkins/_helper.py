@@ -17,7 +17,7 @@ import pandas as pd
 from biopsykit.io import load_atimelogger_file
 from biopsykit.io.biopac import BiopacDataset
 
-from pepbench.utils._types import path_t, check_data_is_patht
+from pepbench.utils._types import check_data_is_patht, path_t
 
 
 def _build_data_path(base_path: path_t, participant_id: str, condition: str) -> Path:
@@ -85,7 +85,6 @@ def _load_biopac_data(base_path: path_t, participant_id: str, condition: str) ->
     ValidationError
         If `base_path` is not a valid path.
     """
-
     check_data_is_patht(base_path)
     biopac_dir_path = _build_data_path(base_path, participant_id=participant_id, condition=condition).joinpath(
         "biopac/raw"

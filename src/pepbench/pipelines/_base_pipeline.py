@@ -86,13 +86,13 @@ base_pep_pipeline_docfiller = make_filldoc(
                 - `"nan"`: Set negative PEP values to NaN
                 - `"zero"`: Set negative PEP values to 0
                 - `"keep"`: Keep negative PEP values as is
-                
+
         handle_missing_events : one of {`"warn"`, `"ignore"`, `"raise"`}
             How to handle missing events. Possible values are:
                 - `"warn"`: Issue a warning if missing events are detected
                 - `"ignore"`: Ignore missing events
                 - `"raise"`: Raise an error if missing events are detected
-                
+
         """,
         "datapoint_pipeline": """
         datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDataset`
@@ -121,10 +121,9 @@ base_pep_pipeline_docfiller = make_filldoc(
         ``b_point_after_outlier_correction_results_`` :class:`~biopsykit.signals.icg.event_extraction.BPointDataFrame`
             Results from the B-point extraction step after outlier correction.
         ``pep_results_`` :class:`~biopsykit.signals.pep.PepResultDataFrame`
-            Results from the PEP extraction step.
-            
-        """,
-    },
+             Results from the PEP extraction step.
+         """,
+     },
     doc_summary="Decorator to fill common parts of the docstring for subclasses of :class:`BasePepExtractionPipeline`.",
 )
 

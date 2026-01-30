@@ -133,6 +133,7 @@ def rename_metrics(metrics: str_t) -> str_t:
 def rename_algorithms(algorithms: str_t) -> str_t:
     """
     Map algorithm identifier(s) to short display name(s).
+
     Parameters
     ----------
     algorithms : str_t

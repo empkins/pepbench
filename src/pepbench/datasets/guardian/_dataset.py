@@ -30,7 +30,7 @@ from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._base_pep_extraction_dataset import MetadataMixin, base_pep_extraction_docfiller
 from pepbench.datasets._helper import compute_reference_heartbeats, load_labeling_borders
 from pepbench.datasets.guardian._helper import _load_tfm_data
-from pepbench.utils._types import path_t, check_data_is_df
+from pepbench.utils._types import check_data_is_df, path_t
 
 __all__ = ["GuardianDataset"]
 

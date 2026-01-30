@@ -198,7 +198,7 @@ wheels = [
 [[package]]
 name = "biopsykit"
 version = "0.13.1"
-source = { git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main#da9054bb15bc73ded8b64b3857042b6b7c19300e" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
