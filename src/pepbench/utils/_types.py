@@ -63,7 +63,7 @@ from pepbench.utils.exceptions import ValidationError
 
 __all__ = [
     "arr_t",
-    "check_data_is_BasePepDatasetWithAnnotations",
+    "check_data_is_base_pep_dataset_with_annotations",
     "check_data_is_df",
     "check_data_is_series",
     "check_data_is_str_t",
@@ -153,7 +153,7 @@ def check_data_is_series(data: object) -> None:
 
 # Renamed to comply with naming conventions; keep old name as an alias for
 # backward compatibility.
-def check_data_is_BasePepDatasetWithAnnotations(data: object) -> None:
+def check_data_is_base_pep_dataset_with_annotations(data: object) -> None:
     """
     Raise ValidationError if data is not an instance of BasePepDatasetWithAnnotations.
 
