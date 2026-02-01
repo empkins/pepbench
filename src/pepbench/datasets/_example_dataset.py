@@ -10,12 +10,13 @@ from pathlib import Path
 import pandas as pd
 from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
-from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame
+from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame, HeartbeatSegmentationDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._helper import compute_reference_heartbeats
 from pepbench.utils._types import path_t
+from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 
 HERE = Path(__file__).parent
 EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
@@ -289,3 +290,20 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         reference_heartbeats = reference_ecg.reindex(["heartbeat"], level="channel")
         reference_heartbeats = compute_reference_heartbeats(reference_heartbeats)
         return reference_heartbeats
+
+    @property
+    def heartbeats(self) -> HeartbeatSegmentationDataFrame:
+        """Heartbeat segmentation computed from the ECG signal.
+
+        Uses :class:`~biopsykit.signals.ecg.segmentation.HeartbeatSegmentationNeurokit`
+        to extract heartbeat borders and returns the algorithm's heartbeat list.
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame` or :class:`~biopsykit.utils.dtypes.HeartbeatSegmentationDataFrame`
+            Heartbeat borders and related metadata (one row per heartbeat).
+        """
+        hb_algo = HeartbeatSegmentationNeurokit(variable_length=True)
+        hb_algo.extract(ecg=self.ecg, sampling_rate_hz=self.sampling_rate_ecg)
+        heartbeats = hb_algo.heartbeat_list_
+        return heartbeats
