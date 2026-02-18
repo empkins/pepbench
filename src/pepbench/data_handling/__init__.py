@@ -1,6 +1,7 @@
 """Module for various data handling helper functions.
 
 This package provides helpers for:
+
 - Adding a unique identifier column to results dataframes to track samples across datasets and enable reliable merging.
 - Computing improvement metrics and running the evaluation pipeline with optional outlier handling.
 - Producing performance summaries tailored to PEP estimation tasks for evaluation and reporting.
@@ -13,6 +14,7 @@ This package provides helpers for:
 - Merging metric outputs and reconciling per-sample results produced by multiple annotators into a unified view.
 - Converting series of RR intervals into instantaneous heart rate values.
 - Exposing miscellaneous low-level utility helpers used across the data handling code.
+
 """
 
 from pepbench.data_handling import utils

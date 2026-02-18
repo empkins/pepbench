@@ -1,4 +1,5 @@
-r"""PEP extraction pipeline utilities.
+r"""
+PEP extraction pipeline utilities.
 
 This module provides the :class:`~pepbench.pipelines._pipeline.PepExtractionPipeline` class which sequences the
 algorithms required to extract pre\-ejection period (PEP) from ECG and ICG
@@ -6,6 +7,7 @@ recordings. The pipeline handles heartbeat segmentation, Q\-peak detection,
 C/B point extraction on ICG, outlier correction and final PEP computation.
 
 Only the :class:`~pepbench.pipelines._pipeline.PepExtractionPipeline` class is exported from this module.
+
 """
 
 from typing import get_args

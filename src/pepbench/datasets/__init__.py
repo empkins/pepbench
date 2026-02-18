@@ -41,6 +41,7 @@ from pepbench.datasets.empkins import EmpkinsDataset
 from pepbench.datasets.guardian import GuardianDataset
 from pepbench.datasets.rebeat_icg import ReBeatIcgDataset
 from pepbench.datasets.time_window_icg import TimeWindowIcgDataset
+from pepbench.datasets._dataset_wrapper import WrapperDataset
 
 __all__ = [
     "BasePepDataset",
@@ -52,4 +53,5 @@ __all__ = [
     "PepLabelMixin",
     "ReBeatIcgDataset",
     "TimeWindowIcgDataset",
+    "WrapperDataset"
 ]
