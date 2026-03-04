@@ -11,7 +11,6 @@ from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFra
 
 from pepbench.datasets import BasePepDataset
 
-#TODO: explain how to use this dataset, e.g., how to load the data, how to access the signals and reference labels, etc.
 
 class WrapperDataset(BasePepDataset):
     """Example Dataset for Pepbench.
@@ -53,7 +52,7 @@ class WrapperDataset(BasePepDataset):
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
     ) -> None:
-        """Initialize the :class:`~pepbench.datasets.ExampleDataset`.
+        """Initialize the :class:`~pepbench.datasets.WrapperDataset`.
 
         Parameters
         ----------

@@ -4,7 +4,7 @@ Why use pepbench?
 What you'll need
 ----------------
 
-- A dataset with ECG and ICG signals (see :class:`~pepbench.datasets.ExampleDataset` or ).
+- A dataset with ECG and ICG signals (see :class:`~pepbench.datasets.ExampleDataset`, :class:`~pepbench.datasets.EmpkinsDataset` or :class:`~pepbench.datasets.GuardianDataset`).
 - Familiarity with NumPy / pandas. We assume :mod:`pepbench` is already installed—see the project's :doc:`Installation instructions <../README>` for installation and environment hints.
 - An algorithm selection for heartbeat segmentation, Q-peak extraction and B-point extraction (any algorithm listed in :doc:`../modules/algorithms/index`).
 - (Optional) Reference labels for Q-peaks / B-points to evaluate accuracy.
@@ -27,8 +27,8 @@ Goal
   Extract Q-peaks from ECG and B-points from ICG and compute PEP for each heartbeat.
 
 Inputs
-  - ECG and ICG signals (see ).
-  - Optional: reference heartbeats or labels when available.
+  - ECG and ICG signals (see :attr:`~pepbench.datasets.BasePepDataset.ecg`, :attr:`~pepbench.datasets.BasePepDataset.icg`).
+  - Optional: reference heartbeats or labels when available (:attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_pep`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_heartbeats`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_ecg` / :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_icg`)
 
 Typical pipeline
 : Use the provided pipelines to run a sequence of algorithms in the right order:
