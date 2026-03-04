@@ -1,6 +1,6 @@
 .. _user_guide_datasets:
 
-Datasets & Data Requirements
+Datasets & Requirements
 ============================
 
 pepbench is built around **object-oriented datasets** using the
@@ -36,7 +36,7 @@ Datasets that support evaluation additionally expose:
 * :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_pep` – reference PEP values (per sample or per beat)
 * :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_heartbeats` – reference heartbeat segmentation
 * :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_ecg` / :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_icg` – label annotations
-* :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.labeling_borders` – labeled sections of the continuous signal
+* Labeled sections of the continuous signal (dataset-specific; attribute name may vary, e.g. ``labeled_segments`` — DataFrame with ``start``, ``end``, ``label``; ``annotation_intervals`` — list of ``(start, end, label)`` tuples; ``label_mask`` — boolean Series aligned to the signal)
 
 The concrete attribute list for :class:`~pepbench.datasets.EmpkinsDataset` is documented in
 the API reference.
@@ -44,7 +44,7 @@ the API reference.
 EmpkinsDataset in a nutshell
 ----------------------------
 
-:class:`~pepbench.datasets.EmpkinsDataset` is the tpcp dataset class for
+:class:`~pepbench.datasets.EmpkinsDataset` is the :class:`tpcp.Dataset` class for
 the EmpkinS study. It provides:
 
 * Biopac-derived ECG and ICG channels (raw or preprocessed)
@@ -91,7 +91,7 @@ Each element of the dataset is a *datapoint* that exposes properties:
 Iterating over datapoints
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because EmpkinsDataset is a tpcp dataset, it is iterable:
+Because :class:`~pepbench.datasets.EmpkinsDataset` is a :class:`tpcp.Dataset`, it is iterable:
 
 .. code-block:: python
 
@@ -118,7 +118,7 @@ You can also iterate on *groups* (e.g., by participant) using
 Working with heartbeats
 -----------------------
 
-Heartbeats are stored as a DataFrame with one row per beat and
+Heartbeats are stored as a :class:`~pandas.DataFrame` with one row per beat and
 columns giving start and end indices plus the R-peak sample.
 
 .. code-block:: python
