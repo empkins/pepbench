@@ -3,20 +3,13 @@
 Provides access to ECG and ICG signals, reference labels and reference heartbeats
 for evaluation purposes.
 """
-import zipfile
 from collections.abc import Sequence
-from pathlib import Path
 
 import pandas as pd
-from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
-from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
-from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame, HeartbeatSegmentationDataFrame
-from biopsykit.utils.file_handling import get_subject_dirs
-
-from pepbench.datasets import BasePepDatasetWithAnnotations, BasePepDataset
-from pepbench.datasets._helper import compute_reference_heartbeats
-from pepbench.utils._types import path_t
 from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
+from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
+
+from pepbench.datasets import BasePepDataset
 
 #TODO: explain how to use this dataset, e.g., how to load the data, how to access the signals and reference labels, etc.
 
@@ -96,8 +89,6 @@ class WrapperDataset(BasePepDataset):
         :class:`~pandas.DataFrame`
             Dataset index as a pandas DataFrame
         """
-
-
         index = pd.DataFrame(["data"], columns=["index"])
         return index
 

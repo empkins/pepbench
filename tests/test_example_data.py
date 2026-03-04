@@ -59,7 +59,11 @@ class TestExampleData:
             "VP_001/reference_labels/VP_001_labeling_borders.csv",
             "VP_001/reference_labels/VP_001_reference_labels_ECG.csv",
             "VP_001/reference_labels/VP_001_reference_labels_ICG.csv",
-            # TODO: add more expected files as needed
+            "VP_002/vp_002_ecg_data.csv.gz",
+            "VP_002/vp_002_icg_data.csv.gz",
+            "VP_002/reference_labels/VP_002_labeling_borders.csv",
+            "VP_002/reference_labels/VP_002_reference_labels_ECG.csv",
+            "VP_002/reference_labels/VP_002_reference_labels_ICG.csv",
         ]
 
         for file_name in expected_files:

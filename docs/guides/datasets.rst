@@ -13,11 +13,11 @@ Available Dataset Classes
 
 pepbench currently provides two main datasets:
 
-* :class:`pepbench.datasets.EmpkinsDataset`
-* :class:`pepbench.datasets.GuardianDataset`
+* :class:`~pepbench.datasets.EmpkinsDataset`
+* :class:`~pepbench.datasets.GuardianDataset`
 
-Both are subclasses of :class:`pepbench.datasets.BasePepDataset` /
-:class:`pepbench.datasets.BasePepDatasetWithAnnotations` and therefore
+Both are subclasses of :class:`~pepbench.datasets.BasePepDataset` /
+:class:`~pepbench.datasets.BasePepDatasetWithAnnotations` and therefore
 implement a **unified interface** for PEP extraction.
 
 Core dataset attributes
@@ -25,26 +25,26 @@ Core dataset attributes
 
 All PEP extraction pipelines expect datasets to provide at least:
 
-* ``ecg`` – ECG signal as a pandas DataFrame
-* ``icg`` – ICG signal as a pandas DataFrame
-* ``sampling_rate_ecg`` – ECG sampling rate (Hz)
-* ``sampling_rate_icg`` – ICG sampling rate (Hz)
-* ``heartbeats`` – segmented heartbeats (start, end, R-peak per beat)
+* :attr:`~pepbench.datasets.BasePepDataset.ecg` – ECG signal as a pandas DataFrame
+* :attr:`~pepbench.datasets.BasePepDataset.icg` – ICG signal as a pandas DataFrame
+* :attr:`~pepbench.datasets.BasePepDataset.sampling_rate_ecg` – ECG sampling rate (Hz)
+* :attr:`~pepbench.datasets.BasePepDataset.sampling_rate_icg` – ICG sampling rate (Hz)
+* :attr:`~pepbench.datasets.BasePepDataset.heartbeats` – segmented heartbeats (start, end, R-peak per beat)
 
 Datasets that support evaluation additionally expose:
 
-* ``reference_pep`` – reference PEP values (per sample or per beat)
-* ``reference_heartbeats`` – reference heartbeat segmentation
-* ``reference_labels_ecg`` / ``reference_labels_icg`` – label annotations
-* ``labeling_borders`` – labeled sections of the continuous signal
+* :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_pep` – reference PEP values (per sample or per beat)
+* :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_heartbeats` – reference heartbeat segmentation
+* :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_ecg` / :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_icg` – label annotations
+* :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.labeling_borders` – labeled sections of the continuous signal
 
-The concrete attribute list for :class:`EmpkinsDataset` is documented in
+The concrete attribute list for :class:`~pepbench.datasets.EmpkinsDataset` is documented in
 the API reference.
 
 EmpkinsDataset in a nutshell
 ----------------------------
 
-:class:`pepbench.datasets.EmpkinsDataset` is the tpcp dataset class for
+:class:`~pepbench.datasets.EmpkinsDataset` is the tpcp dataset class for
 the EmpkinS study. It provides:
 
 * Biopac-derived ECG and ICG channels (raw or preprocessed)
@@ -103,7 +103,7 @@ Because EmpkinsDataset is a tpcp dataset, it is iterable:
        # ... run a pipeline or custom analysis
 
 You can also iterate on *groups* (e.g., by participant) using
-:meth:`EmpkinsDataset.groupby`:
+:meth:`~pepbench.datasets.EmpkinsDataset.groupby`:
 
 .. code-block:: python
 
@@ -137,8 +137,8 @@ columns giving start and end indices plus the R-peak sample.
 GuardianDataset overview
 ------------------------
 
-:class:`pepbench.datasets.GuardianDataset` follows the same interface as
-:class:`EmpkinsDataset`, but is based on the Guardian study data
+:class:`~pepbench.datasets.GuardianDataset` follows the same interface as
+:class:`~pepbench.datasets.EmpkinsDataset`, but is based on the Guardian study data
 (including ECG/ICG and metadata such as age, gender, BMI).
 
 The main conceptual difference for pepbench users is simply:
@@ -148,7 +148,15 @@ The main conceptual difference for pepbench users is simply:
 
 From the perspective of pipelines and evaluation, both datasets can be
 used interchangeably as long as they inherit from
-:class:`BasePepDatasetWithAnnotations`.
+:class:`~pepbench.datasets.BasePepDatasetWithAnnotations`.
+
+Example Dataset
+----------------
+Pepbench also provides a small :class:`~pepbench.datasets.ExampleDataset` for testing and demonstration purposes.
+It contains two patients' ECG/ICG signals with known PEP values and annotations, allowing you to quickly test pipelines without needing access to the full Empkins or Guardian datasets.
+
+- Hands-on usage: :download:`Example Dataset <../examples/_notebooks/Example_Dataset.ipynb>`.
+
 
 Summary checklist
 -----------------
@@ -158,5 +166,5 @@ To use a dataset with pepbench pipelines and challenges, make sure it:
 * exposes ``ecg``, ``icg``, ``sampling_rate_ecg``, ``sampling_rate_icg``
 * for evaluation: additionally exposes reference annotations
   (heartbeats, PEP, labels)
-* is a subclass of :class:`BasePepDataset` (or compatible interface)
+* is a subclass of :class:`~pepbench.datasets.BasePepDataset` (or compatible interface)
 * is *indexed deterministically* (important for reproducibility)

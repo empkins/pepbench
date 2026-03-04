@@ -1,6 +1,12 @@
 """
 Utility functions for data handling.
 
+This module provides utility functions for handling data from the
+:class:`~pepbench.datasets.guardian._dataset.EmpkinsDataset`
+and :class:`~pepbench.datasets.guardian._dataset.GuardianDataset`.
+The functions include reindexing and renaming of the data according to specific mappings for conditions and phases.
+The reindexing can be performed either before or after the data has been renamed, depending on the user's needs.
+
 """
 
 import pandas as pd

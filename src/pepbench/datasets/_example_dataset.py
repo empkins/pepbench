@@ -9,14 +9,14 @@ from pathlib import Path
 
 import pandas as pd
 from biopsykit.signals.ecg.preprocessing import EcgPreprocessingNeurokit
+from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 from biopsykit.signals.icg.preprocessing import IcgPreprocessingBandpass
-from biopsykit.utils.dtypes import EcgRawDataFrame, IcgRawDataFrame, HeartbeatSegmentationDataFrame
+from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from biopsykit.utils.file_handling import get_subject_dirs
 
 from pepbench.datasets import BasePepDatasetWithAnnotations
 from pepbench.datasets._helper import compute_reference_heartbeats
 from pepbench.utils._types import path_t
-from biopsykit.signals.ecg.segmentation import HeartbeatSegmentationNeurokit
 
 HERE = Path(__file__).parent
 EXAMPLE_DATA_PATH = HERE.joinpath("../../../example_data")
