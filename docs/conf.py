@@ -69,7 +69,10 @@ def all_but_ipynb(dir, contents):
     return result
 
 
-subprocess.run(["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"], check=True)
+try:
+    subprocess.run(["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"], check=True)
+except (subprocess.CalledProcessError, PermissionError):
+    print("Skipping ipykernel installation during docs build.")
 
 shutil.rmtree(EXAMPLE_NOTEBOOKS_DIR, ignore_errors=True)
 shutil.copytree(HERE.parent.joinpath("examples"), EXAMPLE_NOTEBOOKS_DIR, ignore=all_but_ipynb)
@@ -186,6 +189,15 @@ html_theme_options = {
     "show_prev_next": False,
 }
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "_static/logo/logo_pepbench.png"
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large.
+html_favicon = "_static/logo/favicon_pepbench.ico"
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -218,7 +230,7 @@ intersphinx_module_mapping = {
 
 user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0"
 
-# Sphinx Gallary
+# Sphinx Gallery
 sphinx_gallery_conf = {
     "examples_dirs": ["../examples"],
     "gallery_dirs": ["./auto_examples"],
