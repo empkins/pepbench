@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/_static/logo/logo_pepbench.png" alt="pepbench logo" width="320">
+</p>
+
 # PEPbench - The python package for automated pre-ejection period (PEP) extraction algorithms.
 
 [![PyPI](https://img.shields.io/pypi/v/pepbench)](https://pypi.org/project/pepbench/)
