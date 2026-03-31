@@ -52,6 +52,7 @@ EXAMPLE_NOTEBOOKS_DIR = HERE.joinpath("examples/_notebooks")
 
 with (HERE.parent / "README.md").open() as f:
     out = f.read()
+out = out.replace("./docs/_static/logo/", "./_static/logo/")  # change path to logo in copied README
 with (HERE / "README.md").open("w+") as f:
     f.write(out)
 

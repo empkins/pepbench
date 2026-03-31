@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/_static/logo/logo_pepbench.png" alt="pepbench logo" width="320">
+  <img src="./docs/_static/logo/logo_pepbench.png" alt="pepbench logo" width="320">
 </p>
 
 # PEPbench - The python package for automated pre-ejection period (PEP) extraction algorithms.
@@ -18,10 +18,10 @@ electrocardiogram (ECG) and impedance cardiography (ICG) signals. The package in
 algorithms for PEP extraction, as well as tools for the evaluation of these algorithms.
 
 
-- 💻 3 Q-peak and 10 B-point Detection [Algorithms](https://pepbench.readthedocs.io/en/latest/modules/index.html) from the literature
+- 💻 3 Q-peak and 12 B-point Detection [Algorithms](https://pepbench.readthedocs.io/en/latest/modules/index.html) from the literature
 - 📚 Extensive [documentation](https://pepbench.readthedocs.io/en/latest/)
 - 📝 Build to be [easily extendable](https://pepbench.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)
-- 📁 2 manually annotated [reference datasets](https://pepbench.readthedocs.io/en/latest/source/user_guide/datasets.html) for evaluation  
+- 📁 4 manually annotated [reference datasets](https://pepbench.readthedocs.io/en/latest/source/user_guide/datasets.html) for evaluation  
 - 📊 [Evaluation tools](https://pepbench.readthedocs.io/en/latest/source/user_guide/evaluation.html) for PEP extraction algorithms
 
 **Documentation:** [pepbench.readthedocs.io](https://pepbench.readthedocs.io/en/latest/README.html)
@@ -64,14 +64,17 @@ Note: We don't guarantee that the latest version on GitHub is stable.
     is subject to the paper "PEPbench – Open, Reproducible, and Systematic Benchmarking of Automated 
     Pre-Ejection Period Extraction Algorithms".
 
-    In this case, we recommend to cite the paper and the package as follows:
+    In this case, we recommend citing the paper and the package as follows:
 
     > PEP extraction was performed using the `pepbench` Python library pipeline (version {insert version you used}) 
     > as described in the paper [[1]] with the Q-peak extraction proposed by Martinez et al. [[2]] and the B-point 
     > extraction algorithm proposed by Drost et al. [[3]].
 
     ```
-    [1] <pepbench citation>
+    [1] Richer, R., Jorkowitz, J., Stühler, S., Abel, L., Kurz, M., Oesten, M., Griesshammer, S. G., Albrecht, N. C., 
+    Küderle, A., Ostgathe, C., Kölpin, A., Steigleder, T., Rohleder, N., & Eskofier, B. M. (2025). 
+    PEPbench – Open, Reproducible, and Systematic Benchmarking of Automated Pre‐Ejection Period Extraction Algorithms. 
+    Psychophysiology, 62(11), e70176. https://doi.org/10.1111/psyp.70176
     [2] Martinez, J. P., Almeida, R., Olmos, S., Rocha, A. P., & Laguna, P. (2004). A wavelet-based ECG delineator
     evaluation on standard databases. IEEE Transactions on Biomedical Engineering, 51(4), 570-581.
     https://doi.org/10.1109/TBME.2003.821031
@@ -82,15 +85,20 @@ Note: We don't guarantee that the latest version on GitHub is stable.
 2.  **Usage of individual algorithms**:
     If you are only interested in a specific algorithm, you can use the individual algorithms provided in the package. 
     If you are using individual algorithms in this way, we recommend citing the original papers the algorithms were 
-    proposed in and `pepbench` as a software library.  You can find the best references for each algorithm in the documentation of the respective algorithm.
+    proposed in and `pepbench` as a software library. You can find the best references for each algorithm in the 
+    documentation of the respective algorithm.
     
 
-    > B-points were extracted using the{name of algorithm} algorithm [[1]] as implemented in the `pepbench` Python 
+    > B-points were extracted using the {name of algorithm} algorithm [[1]] as implemented in the `pepbench` Python 
     library [[2]] (version {insert version you used}).
     
     ```
     [1] <algorithm citation>
-    [2] <pepbench citation>
+    [2] Richer, R., Jorkowitz, J., Stühler, S., Abel, L., Kurz, M., Oesten, M., Griesshammer, S. G., Albrecht, N. C., 
+    Küderle, A., Ostgathe, C., Kölpin, A., Steigleder, T., Rohleder, N., & Eskofier, B. M. (2025). 
+    PEPbench – Open, Reproducible, and Systematic Benchmarking of Automated Pre‐Ejection Period Extraction Algorithms. 
+    Psychophysiology, 62(11), e70176. https://doi.org/10.1111/psyp.70176
+
     ```
 
 
