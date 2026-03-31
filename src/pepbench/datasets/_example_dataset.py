@@ -3,6 +3,7 @@
 Provides access to ECG and ICG signals, reference labels and reference heartbeats
 for evaluation purposes.
 """
+
 import zipfile
 from collections.abc import Sequence
 from pathlib import Path
@@ -76,11 +77,9 @@ class ExampleDataset(BasePepDatasetWithAnnotations):
         # unzip the example dataset
         with zipfile.ZipFile(str(self.example_file_path)) as zf:
             zf.extractall(EXAMPLE_DATA_PATH)
-        super().__init__(groupby_cols=groupby_cols,
-                         subset_index=subset_index,
-                         return_clean=return_clean,
-                         only_labeled=only_labeled
-                         )
+        super().__init__(
+            groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean, only_labeled=only_labeled
+        )
 
     def create_index(self) -> pd.DataFrame:
         """Create the dataset index.

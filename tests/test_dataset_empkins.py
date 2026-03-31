@@ -1,8 +1,9 @@
-import pandas as pd
-import numpy as np
-import pytest
-from pathlib import Path
 import shutil
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
 
 from pepbench.datasets.empkins import EmpkinsDataset
 
@@ -48,6 +49,7 @@ def _make_minimal_structure(base_path: Path, participants=("VP_001",), use_examp
                             # use dataset PHASES constant to generate filenames
                             try:
                                 from pepbench.datasets.empkins import EmpkinsDataset as _ED
+
                                 phases = _ED.PHASES
                             except Exception:
                                 phases = ("Prep",)
@@ -295,8 +297,8 @@ def test_biopac_phase_cut(monkeypatch, tmp_path):
     df = pd.DataFrame({"ecg": np.arange(100)}, index=times)
 
     # monkeypatch the biopac loader and BiopacDataset.from_acq_file to return our df and sampling rate
-    import pepbench.datasets.empkins._helper as empkins_helper
     import pepbench.datasets.empkins._dataset as empkins_dataset
+    import pepbench.datasets.empkins._helper as empkins_helper
 
     monkeypatch.setattr(empkins_helper, "_load_biopac_data", lambda *a, **k: (df, 1000))
     monkeypatch.setattr(empkins_dataset, "_cached_get_biopac_data", lambda *a, **k: (df, 1000))

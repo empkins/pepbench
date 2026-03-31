@@ -47,8 +47,8 @@ def _get_fig_ax(kwargs: dict[str, Any]) -> tuple[plt.Figure, plt.Axes]:
         key: value
         for key, value in kwargs.items()
         if key
-           in list(inspect.signature(plt.subplots).parameters.keys())
-           + list(inspect.signature(plt.figure).parameters.keys())
+        in list(inspect.signature(plt.subplots).parameters.keys())
+        + list(inspect.signature(plt.figure).parameters.keys())
     }
     # remove the kwargs that are used for plt.subplots
     for key in kwargs_subplot:
@@ -87,8 +87,8 @@ def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]
         key: value
         for key, value in kwargs.items()
         if key
-           in list(inspect.signature(plt.subplots).parameters.keys())
-           + list(inspect.signature(plt.figure).parameters.keys())
+        in list(inspect.signature(plt.subplots).parameters.keys())
+        + list(inspect.signature(plt.figure).parameters.keys())
     }
 
     if axs is not None:
@@ -99,10 +99,10 @@ def _get_fig_axs(kwargs: dict[str, Any]) -> tuple[plt.Figure, Sequence[plt.Axes]
 
 
 def _add_ecg_r_peaks(
-        ecg_data: pd.DataFrame,
-        r_peaks: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    r_peaks: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ECG R-peak markers and vertical lines to an axis.
 
@@ -150,10 +150,10 @@ def _add_ecg_r_peaks(
 
 
 def _add_ecg_r_peak_artefacts(
-        ecg_data: pd.DataFrame,
-        r_peaks: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    r_peaks: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ECG R-peak artefact markers using artefact styling.
 
@@ -188,10 +188,10 @@ def _add_ecg_r_peak_artefacts(
 
 
 def _add_ecg_q_peaks(
-        ecg_data: pd.DataFrame,
-        q_peaks: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    q_peaks: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ECG Q-peak markers and vertical lines to an axis.
 
@@ -234,10 +234,10 @@ def _add_ecg_q_peaks(
 
 
 def _add_ecg_q_peak_artefacts(
-        ecg_data: pd.DataFrame,
-        q_peak_artefacts: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    q_peak_artefacts: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ECG Q-peak artefact markers using artefact styling.
 
@@ -272,10 +272,10 @@ def _add_ecg_q_peak_artefacts(
 
 
 def _add_icg_b_points(
-        icg_data: pd.DataFrame,
-        b_points: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    icg_data: pd.DataFrame,
+    b_points: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ICG B-point markers and (optionally) vertical lines.
 
@@ -319,10 +319,10 @@ def _add_icg_b_points(
 
 
 def _add_icg_b_point_artefacts(
-        icg_data: pd.DataFrame,
-        b_points: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    icg_data: pd.DataFrame,
+    b_points: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ICG B-point artefacts using artefact styling.
 
@@ -351,10 +351,10 @@ def _add_icg_b_point_artefacts(
 
 
 def _add_icg_c_points(
-        icg_data: pd.DataFrame,
-        c_points: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    icg_data: pd.DataFrame,
+    c_points: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Add ICG C-point markers and vertical lines.
 
@@ -403,13 +403,13 @@ def _add_icg_c_points(
 
 
 def _base_add_vlines(
-        x: pd.Series,
-        color: str,
-        alpha: float,
-        label: str,
-        linestyle: str,
-        ax: plt.Axes,
-        **kwargs: Any,
+    x: pd.Series,
+    color: str,
+    alpha: float,
+    label: str,
+    linestyle: str,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Draw vertical lines at specified x positions scaled to axis.
 
@@ -447,12 +447,12 @@ def _base_add_vlines(
 
 
 def _base_add_scatter(
-        x: pd.Series,
-        y: pd.Series,
-        color: str,
-        label: str,
-        marker: str,
-        ax: plt.Axes,
+    x: pd.Series,
+    y: pd.Series,
+    color: str,
+    label: str,
+    marker: str,
+    ax: plt.Axes,
 ) -> None:
     """Draw scatter markers at given positions.
 
@@ -483,11 +483,11 @@ def _base_add_scatter(
 
 
 def _add_pep_from_reference(
-        ecg_data: pd.DataFrame,
-        icg_data: pd.DataFrame,
-        labels: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    icg_data: pd.DataFrame,
+    labels: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Shade PEP intervals derived from reference annotations.
 
@@ -550,11 +550,11 @@ def _add_pep_from_reference(
 
 
 def _add_pep_from_results(
-        ecg_data: pd.DataFrame,
-        icg_data: pd.DataFrame,
-        labels: pd.DataFrame,
-        ax: plt.Axes,
-        **kwargs: Any,
+    ecg_data: pd.DataFrame,
+    icg_data: pd.DataFrame,
+    labels: pd.DataFrame,
+    ax: plt.Axes,
+    **kwargs: Any,
 ) -> None:
     """Shade PEP intervals derived from algorithm results.
 
@@ -662,9 +662,9 @@ def _handle_legend_one_axis(fig: plt.Figure, ax: plt.Axes, **kwargs: Any) -> Non
 
 
 def _handle_legend_two_axes(
-        fig: plt.Figure,
-        axs: Sequence[plt.Axes],
-        **kwargs: Any,
+    fig: plt.Figure,
+    axs: Sequence[plt.Axes],
+    **kwargs: Any,
 ) -> None:
     """Assemble and place a legend for two (or more) axes.
 
@@ -752,7 +752,6 @@ def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None)
         If the provided sequence is not an incrementing range.
     """
     if heartbeat_subsample is None:
-
         return None
     if len(heartbeat_subsample) == 1:
         return heartbeat_subsample
@@ -766,7 +765,7 @@ def _sanitize_heartbeat_subset(heartbeat_subsample: Sequence[int] | None = None)
 
 
 def _get_data(
-        datapoint: BasePepDataset, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
+    datapoint: BasePepDataset, *, normalize_time: bool, heartbeat_subset: Sequence[int] | None
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Extract and optionally normalize ECG/ICG data for plotting.
 
@@ -824,8 +823,8 @@ def _get_data(
 
 
 def _get_reference_labels(
-        datapoint: BasePepDatasetWithAnnotations,
-        heartbeat_subset: Sequence[int] | None = None,
+    datapoint: BasePepDatasetWithAnnotations,
+    heartbeat_subset: Sequence[int] | None = None,
 ) -> dict[str, pd.DataFrame]:
     """Collect and align reference labels to extracted heartbeats.
 
@@ -892,7 +891,7 @@ def _get_reference_labels(
     # compute the start_sample of the first heartbeat in the subset to get relative sample indices, corrected by the
     # offset between the reference heartbeat borders and the extracted heartbeat borders
     start_sample = reference_heartbeats["start_sample"].iloc[0] - (
-            reference_heartbeats["start_sample"].iloc[0] - heartbeats["start_sample"].iloc[0]
+        reference_heartbeats["start_sample"].iloc[0] - heartbeats["start_sample"].iloc[0]
     )
 
     # subtract start_sample to get relative sample indices
@@ -900,7 +899,7 @@ def _get_reference_labels(
 
 
 def _get_labels_from_challenge_results(
-        pep_results_per_sample: pd.DataFrame, heartbeat_subsample: Sequence[int]
+    pep_results_per_sample: pd.DataFrame, heartbeat_subsample: Sequence[int]
 ) -> dict[str, pd.DataFrame]:
     """Prepare labels from challenge result table.
 
@@ -1027,8 +1026,8 @@ def _get_annotation_bbox_no_edge() -> dict[str, Any]:
 
 
 def _get_bbox_coords(
-        artist: plt.Artist,
-        ax: plt.Axes,
+    artist: plt.Artist,
+    ax: plt.Axes,
 ) -> np.ndarray:
     """Get the data coordinates of an artist's bounding box.
 
@@ -1051,9 +1050,9 @@ def _get_bbox_coords(
 
 
 def add_fancy_patch_around(
-        ax: plt.Axes,
-        bb: Bbox,
-        **kwargs: dict[str, Any],
+    ax: plt.Axes,
+    bb: Bbox,
+    **kwargs: dict[str, Any],
 ) -> FancyBboxPatch:
     """Add a FancyBboxPatch around a bounding box.
 
@@ -1082,7 +1081,7 @@ def add_fancy_patch_around(
 
 
 def _get_heartbeats(
-        datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
+    datapoint: BasePepDatasetWithAnnotations, heartbeat_subset: Sequence[int] | None = None, normalize: bool = True
 ) -> pd.DataFrame:
     """Extract and optionally normalize heartbeat metadata.
 

@@ -30,6 +30,7 @@ Examples
 >>> print(t["runtime_s"])
 0.1234
 """
+
 import contextlib
 import time
 from collections.abc import Generator

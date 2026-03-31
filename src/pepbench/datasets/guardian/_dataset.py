@@ -14,6 +14,7 @@ Data layout expectations
   `data_raw/{participant}/tfm_data/reference_labels`.
 - Demographics and recording timestamps are expected under `metadata/`.
 """
+
 from collections.abc import Sequence
 from functools import lru_cache
 from itertools import product
@@ -112,8 +113,7 @@ class GuardianDataset(BasePepDatasetWithAnnotations, MetadataMixin):
 
     def __init__(
         self,
-        base_path:
-        path_t,
+        base_path: path_t,
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
         *,

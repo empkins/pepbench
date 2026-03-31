@@ -14,6 +14,7 @@ The primary public functions are:
 See :mod:`pepbench.io._io` for implementation details.
 
 """
+
 from pepbench.io._io import convert_hz_to_ms, load_challenge_results_from_folder
 
 __all__ = ["convert_hz_to_ms", "load_challenge_results_from_folder"]

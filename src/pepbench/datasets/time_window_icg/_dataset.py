@@ -109,15 +109,15 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     SUBSET_R_PEAK_DETECTION_ERRORS: ClassVar[Sequence[str]] = ["IDN_17"]
 
     def __init__(
-            self,
-            base_path: path_t,
-            groupby_cols: Sequence[str] | None = None,
-            subset_index: Sequence[str] | None = None,
-            *,
-            return_clean: bool = True,
-            use_cache: bool = True,
-            exclude_r_peak_detection_errors: bool = True,
-            only_labeled: bool = False,
+        self,
+        base_path: path_t,
+        groupby_cols: Sequence[str] | None = None,
+        subset_index: Sequence[str] | None = None,
+        *,
+        return_clean: bool = True,
+        use_cache: bool = True,
+        exclude_r_peak_detection_errors: bool = True,
+        only_labeled: bool = False,
     ) -> None:
         """Initialize the dataset.
 

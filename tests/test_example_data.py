@@ -1,7 +1,7 @@
 from contextlib import contextmanager
-import pytest
 from pathlib import Path
 
+import pytest
 from tpcp import Dataset
 
 from pepbench.example_data import get_example_dataset
@@ -26,12 +26,12 @@ class TestExampleData:
 
         # subset should expose an 'ecg' attribute and that object should have a plot method
         assert hasattr(subset, "ecg")
-        ecg_obj = getattr(subset, "ecg")
+        ecg_obj = subset.ecg
         assert callable(getattr(ecg_obj, "plot", None))
 
         # subset should expose 'reference_heartbeats' and it should be non-empty
         assert hasattr(subset, "reference_heartbeats")
-        rh = getattr(subset, "reference_heartbeats")
+        rh = subset.reference_heartbeats
         # support any iterable/sequence type: try len(), fallback to iterating once
         try:
             assert len(rh) > 0

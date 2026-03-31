@@ -1,18 +1,17 @@
+from collections import namedtuple
 
 import pandas as pd
 import pytest
-from collections import namedtuple
 
 from pepbench.annotations import (
     compute_annotation_differences,
     load_annotations_from_dataset,
     normalize_annotations_to_heartbeat_start,
 )
-from pepbench.annotations.stats import describe_annotation_differences, bin_annotation_differences
-from pepbench.utils.exceptions import ValidationError
-
-from pepbench.example_data import get_example_dataset
+from pepbench.annotations.stats import bin_annotation_differences, describe_annotation_differences
 from pepbench.datasets import BasePepDatasetWithAnnotations
+from pepbench.example_data import get_example_dataset
+from pepbench.utils.exceptions import ValidationError
 
 
 class TestAnnotationSyntheticData:
@@ -20,9 +19,7 @@ class TestAnnotationSyntheticData:
         # Build a DataFrame shaped like matched annotations:
         # - MultiIndex columns (rater, sample)
         # - MultiIndex index with levels including 'channel' and 'label'
-        cols = pd.MultiIndex.from_product(
-            [["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"]
-        )
+        cols = pd.MultiIndex.from_product([["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"])
 
         idx = pd.MultiIndex.from_tuples(
             [
@@ -53,9 +50,7 @@ class TestAnnotationSyntheticData:
 
     def test_compute_annotation_differences_multiindex_columns(self):
         # multi-index columns in the form (rater, sample_relative)
-        cols = pd.MultiIndex.from_product(
-            [["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"]
-        )
+        cols = pd.MultiIndex.from_product([["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"])
 
         idx = pd.MultiIndex.from_tuples(
             [
@@ -179,9 +174,8 @@ class TestAnnotationSyntheticData:
         assert ecg_rater1 == [10, 20]
         assert icg_rater2 == [12, 22]
 
-
     def test_Validation_Error(self):
-        """running should validate input type and raise ValidationError."""
+        """Running should validate input type and raise ValidationError."""
         with pytest.raises(ValidationError):
             compute_annotation_differences(["not", "a", "dataframe"])
         with pytest.raises(ValidationError):
@@ -210,11 +204,10 @@ class TestAnnotationModuleExampleData:
                 return df["sample_relative"].squeeze()
             # fallback: pick the first numeric column
             return df.select_dtypes("number").iloc[:, 0].squeeze()
-        else:
-            # single-level columns: prefer 'sample_relative' then numeric first column
-            if "sample_relative" in df.columns:
-                return df["sample_relative"].squeeze()
-            return df.select_dtypes("number").iloc[:, 0].squeeze()
+        # single-level columns: prefer 'sample_relative' then numeric first column
+        if "sample_relative" in df.columns:
+            return df["sample_relative"].squeeze()
+        return df.select_dtypes("number").iloc[:, 0].squeeze()
 
     # python
     def test_annotation_stats_with_example_vp_001(self):
@@ -261,9 +254,7 @@ class TestAnnotationModuleExampleData:
 
         # create a synthetic Artefact row so compute_annotation_differences can drop it
         idx_names = paired.index.names
-        extra_idx = pd.MultiIndex.from_tuples(
-            [(hb_val, "heartbeat", "Artefact")], names=idx_names
-        )
+        extra_idx = pd.MultiIndex.from_tuples([(hb_val, "heartbeat", "Artefact")], names=idx_names)
         extra = pd.DataFrame([[0, 0]], index=extra_idx, columns=paired.columns)
         paired = pd.concat([paired, extra])
 
@@ -308,4 +299,3 @@ class TestAnnotationModuleExampleData:
 
 if __name__ == "__main__":
     pytest.main([__file__])
-

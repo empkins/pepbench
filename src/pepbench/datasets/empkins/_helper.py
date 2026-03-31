@@ -11,6 +11,7 @@ Expected layout under the dataset root:
 - `data_per_subject/{participant_id}/{condition}/biopac/raw/biopac_data_{participant_id}_{condition}.acq`
 - `data_per_subject/{participant_id}/{condition}/timelog/processed/{participant_id}_{condition}_processed_timelog.csv`
 """
+
 from pathlib import Path
 
 import pandas as pd

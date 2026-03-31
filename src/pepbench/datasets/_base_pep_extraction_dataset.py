@@ -18,6 +18,7 @@ Classes
     interface for evaluation datasets with annotations.
 
 """
+
 import pandas as pd
 from biopsykit.utils.dtypes import EcgRawDataFrame, HeartbeatSegmentationDataFrame, IcgRawDataFrame
 from tpcp import Dataset
@@ -453,4 +454,3 @@ class BasePepDatasetWithAnnotations(BasePepDataset, PepLabelMixin):
 
         points = points.sort_index()
         return points
-
