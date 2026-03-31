@@ -197,8 +197,8 @@ wheels = [
 
 [[package]]
 name = "biopsykit"
-version = "0.13.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.13.2"
+source = { git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main#c0ea4fc47c4057c5762e5a6ed05b1a51471ae19a" }
 dependencies = [
     { name = "bioread" },
     { name = "fau-colors" },
@@ -220,10 +220,6 @@ dependencies = [
     { name = "ts2vg" },
     { name = "xlrd" },
     { name = "xlsxwriter" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/86/21/7070e5912e1fa83ccfb082b4cfc54445f1632fc4f972ec874df6ec88b779/biopsykit-0.13.1.tar.gz", hash = "sha256:f295ead17b77c1708abc8c7a6039868e63435e8995c3be6e422a086d49aa9fc3", size = 273144, upload-time = "2025-06-24T12:06:28.02Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/22/c03d9528308d72e23ad3d2beaf401f69c7c7fe584fab6c590448413707d9/biopsykit-0.13.1-py3-none-any.whl", hash = "sha256:1b8ea4f07a1196d0628d1437b6938e0541558bc4810cd59e46c83a04013276a7", size = 366425, upload-time = "2025-06-24T12:06:26.21Z" },
 ]
 
 [[package]]
@@ -1771,8 +1767,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "biopsykit", git = "https://github.com/mad-lab-fau/BioPsyKit.git?branch=main" },
+    { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "jinja2", specifier = ">=3.1.4,<4" },
     { name = "lv", specifier = ">=0.0.6" },
     { name = "notebook", specifier = ">=7.5.0" },
@@ -3137,9 +3133,9 @@ wheels = [
 
 [[package]]
 name = "xlsxwriter"
-version = "1.4.5"
+version = "3.2.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/15/72/75b6c904ebabb3fc22965dd78e080252d5950af652a34cd3e0ed538ab1ff/XlsxWriter-1.4.5.tar.gz", hash = "sha256:0956747859567ec01907e561a7d8413de18a7aae36860f979f9da52b9d58bc19", size = 270337, upload-time = "2021-07-30T13:24:44.942Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/2c/c06ef49dc36e7954e55b802a8b231770d286a9758b3d936bd1e04ce5ba88/xlsxwriter-3.2.9.tar.gz", hash = "sha256:254b1c37a368c444eac6e2f867405cc9e461b0ed97a3233b2ac1e574efb4140c", size = 215940, upload-time = "2025-09-16T00:16:21.63Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/34/c0f14cd35304bd1ffeaf9bdb88d1a8b3d7153714dd2540a5f6341acf25ff/XlsxWriter-1.4.5-py2.py3-none-any.whl", hash = "sha256:f9335f1736e2c4fd80e940fe1b6d92d967bf454a1e5d639b0b7a4459ade790cc", size = 149747, upload-time = "2021-07-30T13:24:42.6Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/0c/3662f4a66880196a590b202f0db82d919dd2f89e99a27fadef91c4a33d41/xlsxwriter-3.2.9-py3-none-any.whl", hash = "sha256:9a5db42bc5dff014806c58a20b9eae7322a134abb6fce3c92c181bfb275ec5b3", size = 175315, upload-time = "2025-09-16T00:16:20.108Z" },
 ]
