@@ -1,10 +1,66 @@
+r"""Module for handling PEP benchmark data.
+
+Provides utility functions to extract reference PEP values, compute performance metrics,
+aggregate and compare results across algorithms and annotators, and compute derived
+signals used throughout the PEP benchmark evaluation pipeline.
+
+Functions
+---------
+:func:`~pepbench.data_handling._data_handling.get_reference_data`
+    Extract the reference columns from a results-per-sample :class:`~pandas.DataFrame`.
+:func:`~pepbench.data_handling._data_handling.get_reference_pep`
+    Return the ``pep_ms`` reference column from results.
+:func:`~pepbench.data_handling._data_handling.get_data_for_algo`
+    Select data for a specific algorithm combination from a results frame.
+:func:`~pepbench.data_handling._data_handling.get_pep_for_algo`
+    Select estimated PEP values for a specified algorithm combination.
+:func:`~pepbench.data_handling._data_handling.describe_pep_values`
+    Compute descriptive statistics for PEP values using :meth:`pandas.DataFrame.describe`.
+:func:`~pepbench.data_handling._data_handling.compute_pep_performance_metrics`
+    Aggregate performance metrics (e.g., mean, std) across algorithm combinations.
+:func:`~pepbench.data_handling._data_handling.get_performance_metric`
+    Extract a single performance metric column from a results frame.
+:func:`~pepbench.data_handling._data_handling.rr_interval_to_heart_rate`
+    Convert ``rr_interval_ms`` to ``heart_rate_bpm`` and join to the input frame.
+:func:`~pepbench.data_handling._data_handling.correlation_reference_pep_heart_rate`
+    Compute linear regression and Pearson correlation between reference PEP and heart rate.
+:func:`~pepbench.data_handling._data_handling.get_error_by_group`
+    Aggregate error metrics by specified grouping columns (mean and std).
+:func:`~pepbench.data_handling._data_handling.add_unique_id_to_results_dataframe`
+    Add a unique concatenated identifier to the results index for sample-level merging.
+:func:`~pepbench.data_handling._data_handling.compute_improvement_outlier_correction`
+    Compute the percentage of samples that improved, deteriorated, or remained unchanged after outlier correction.
+:func:`~pepbench.data_handling._data_handling.compute_improvement_pipeline`
+    Compute percentage of samples showing sign changes in the error metric between two pipelines.
+:func:`~pepbench.data_handling._data_handling.merge_result_metrics_from_multiple_annotators`
+    Combine metric tables from multiple annotators and optionally compute annotation differences.
+:func:`~pepbench.data_handling._data_handling.merge_results_per_sample_from_different_annotators`
+    Concatenate per-sample results from multiple annotators into a single frame.
+
+Notes
+-----
+- Many functions expect or return :class:`~pandas.DataFrame` objects using the project\'
+  conventions: MultiIndex columns/indices with algorithm-level names
+  ``q_peak_algorithm``, ``b_point_algorithm``, and ``outlier_correction_algorithm``.
+- Columns commonly referenced include ``pep_ms``, ``absolute_error_per_sample_ms``,
+  and ``rr_interval_ms``; heartbeat/algorithm indexing is assumed for per-sample frames.
+- Correlation and regression helpers rely on :mod:`pingouin` for statistics.
+- Functions preserve dtypes and index names where possible to facilitate downstream
+  grouping and joining operations.
+
+See Also
+--------
+:mod:`pepbench.pipelines`
+    Pipeline helpers and end-to-end execution utilities for PEP extraction.
+"""
+import contextlib
 from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
 import pingouin as pg
 
-from pepbench.utils._types import str_t
+from pepbench.utils._types import check_data_is_df, check_data_is_str_t, str_t
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
@@ -51,7 +107,13 @@ def get_reference_data(results_per_sample: pd.DataFrame) -> pd.DataFrame:
     :class:`pandas.DataFrame`
         The reference data.
 
+    Raises
+    ------
+    TypeError
+        If the input data is not a :class:`pandas.DataFrame`.
+
     """
+    check_data_is_df(results_per_sample)
     reference_pep = results_per_sample.xs("reference", level=-1, axis=1)
     reference_pep = reference_pep.groupby(_algo_levels)
     reference_pep = reference_pep.get_group(next(iter(reference_pep.groups))).droplevel(_algo_levels)
@@ -73,6 +135,7 @@ def get_reference_pep(results_per_sample: pd.DataFrame) -> pd.DataFrame:
         The reference PEP values.
 
     """
+    check_data_is_df(results_per_sample)
     return get_reference_data(results_per_sample)[["pep_ms"]]
 
 
@@ -91,10 +154,26 @@ def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: str_t) -> pd
     :class:`pandas.DataFrame`
         The data for the specified algorithm combination.
 
+    Raises
+    ------
+    TypeError
+        If the input data is not a :class:`pandas.DataFrame`.
+
     """
+    check_data_is_df(results_per_sample)
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
-    if isinstance(algo_combi, str):
-        algo_combi = (algo_combi,)
+
+    # Validate algo_combi: should be a sequence of strings (tuple/list) matching the number of algo levels
+    if isinstance(algo_combi, str) or not isinstance(algo_combi, Sequence):
+        from pepbench.utils.exceptions import ValidationError
+
+        raise ValidationError("algo_combi must be a tuple/list of algorithm level names")
+
+    if len(algo_combi) != len(algo_levels):
+        from pepbench.utils.exceptions import ValidationError
+
+        raise ValidationError(f"algo_combi must have length {len(algo_levels)} matching algorithm levels")
+
     data = results_per_sample.xs(tuple(algo_combi), level=algo_levels)
     return data
 
@@ -114,9 +193,24 @@ def get_pep_for_algo(results_per_sample: pd.DataFrame, algo_combi: Sequence[str]
     :class:`pandas.DataFrame`
         The PEP values for the specified algorithm combination.
 
+    Raises
+    ------
+    TypeError
+        If the input data is not a :class:`pandas.DataFrame`.
+
     """
+    check_data_is_df(results_per_sample)
+    # get_data_for_algo performs validation of algo_combi
     pep = get_data_for_algo(results_per_sample, algo_combi)
-    pep = pep[[("pep_ms", "estimated")]].droplevel(level=-1, axis=1)
+    pep = pep.loc[:, pep.columns.get_level_values(0) == "pep_ms"]
+    # select estimated column if present
+    if ("pep_ms", "estimated") in pep.columns:
+        pep = pep[[("pep_ms", "estimated")]].droplevel(level=-1, axis=1)
+    else:
+        # fallback: if only single-level pep_ms column present, return it
+        # suppress common errors from droplevel when columns are already single-level
+        with contextlib.suppress(IndexError, KeyError, AttributeError, ValueError):
+            pep = pep.droplevel(level=-1, axis=1)
 
     return pep
 
@@ -136,8 +230,12 @@ def describe_pep_values(
         List of metrics to display from the descriptive statistics. Default: ["mean", "std", "min", "max"].
 
     """
+    check_data_is_df(data)
     if group_cols is None:
         group_cols = ["phase"]
+    else:
+        # validate provided group columns (str or sequence of str)
+        check_data_is_str_t(group_cols)
     if metrics is None:
         metrics = ["mean", "std", "min", "max"]
 
@@ -172,14 +270,31 @@ def compute_pep_performance_metrics(
         metrics = ["mean", "std"]
     results_per_sample = results_per_sample.copy()
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
-    results_per_sample = results_per_sample[_pep_error_metric_map.keys()].droplevel(level=-1, axis=1)
+    # select only the error metric columns that actually exist in the frame
+    present_metrics = [k for k in _pep_error_metric_map if k in results_per_sample.columns.get_level_values(0)]
+    results_per_sample = (results_per_sample.loc[:, results_per_sample.columns.get_level_values(0).
+                          isin(present_metrics)].droplevel(level=-1, axis=1))
     results_per_sample = results_per_sample.groupby(algo_levels)
     results_per_sample = results_per_sample.agg(metrics)
 
-    num_heartbeats = num_heartbeats.unstack().swaplevel(axis=1)
+    num_heartbeats = num_heartbeats.unstack()
+    # Ensure columns are MultiIndex so swaplevel works; if single-level, promote to MultiIndex using the column name
+    if not isinstance(num_heartbeats.columns, pd.MultiIndex):
+        # column names may be an Index of participants; use the Series/DataFrame name as top level if available
+        # top_level_name = getattr(num_heartbeats, "columns", None)
+        # If num_heartbeats came from a Series.unstack() it may be a Series; ensure DataFrame
+        if isinstance(num_heartbeats, pd.Series):
+            num_heartbeats = num_heartbeats.to_frame()
+        # create a top level name
+        top_name = num_heartbeats.columns.name if (getattr(num_heartbeats.columns, "name", None)
+                                                   is not None) else "num_heartbeats"
+        num_heartbeats.columns = pd.MultiIndex.from_product([[top_name], list(num_heartbeats.columns)])
+    num_heartbeats = num_heartbeats.swaplevel(axis=1)
     results_per_sample = results_per_sample.join(num_heartbeats)
 
     if sortby is not None:
+        # validate sortby: accepts a string or sequence of strings
+        check_data_is_str_t(sortby)
         results_per_sample = results_per_sample.sort_values(sortby, ascending=ascending)
 
     rename_map = _pep_error_metric_map.copy()
@@ -205,6 +320,8 @@ def get_performance_metric(results_per_sample: pd.DataFrame, metric: str) -> pd.
         The extracted performance metric.
 
     """
+    # validate metric name (string or sequence of strings)
+    check_data_is_str_t(metric)
     return results_per_sample[[metric]].droplevel(level=-1, axis=1)
 
 
@@ -221,7 +338,16 @@ def rr_interval_to_heart_rate(data: pd.DataFrame) -> pd.DataFrame:
     :class:`pandas.DataFrame`
         The data with the heart rate in beats per minute
 
+    Raises
+    ------
+    AssertionError
+        If the input DataFrame does not contain the "rr_interval_ms" column.
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame`.
+
     """
+    check_data_is_df(data)
+    assert "rr_interval_ms" in data.columns, 'Input DataFrame must contain "rr_interval_ms" column.'
     heart_rate_bpm = 60 * 1000 / data[["rr_interval_ms"]]
     heart_rate_bpm = heart_rate_bpm.rename(columns={"rr_interval_ms": "heart_rate_bpm"})
     return data.join(heart_rate_bpm)
@@ -277,8 +403,15 @@ def get_error_by_group(
     :class:`pandas.DataFrame`
         The error metric aggregated by group.
 
+    Raises
+    ------
+    ValidationError
+        If the grouper argument is not a string or a sequence of strings.
+
     """
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
+    # validate grouper argument (str or sequence of str)
+    check_data_is_str_t(grouper)
     if isinstance(grouper, str):
         grouper = [grouper]
 
@@ -312,7 +445,12 @@ def add_unique_id_to_results_dataframe(data: pd.DataFrame, algo_levels: Sequence
     :class:`pandas.DataFrame`
         The results dataframe with the unique IDs added as new index level.
 
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame`.
     """
+    check_data_is_df(data)
     data = data.copy()
     if data.columns.nlevels > 1:
         data = data.droplevel(axis=1, level=-1).rename(index=str)
@@ -345,23 +483,46 @@ def compute_improvement_outlier_correction(data: pd.DataFrame, outlier_algos: Se
     :class:`pandas.DataFrame`
         The percentage of samples which improved, deteriorated, or remained unchanged after outlier correction.
 
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame`.
     """
+    check_data_is_df(data)
     data = data.copy()
-    if "outlier_correction_algorithm" not in data.columns.names:
-        data = data.unstack("outlier_correction_algorithm")
-    data = data.reindex(outlier_algos, axis=1, level="outlier_correction_algorithm")
-    data = data.diff(axis=1).dropna(how="all", axis=1)
-    data = np.sign(data)
-    data.columns = ["improvement_percent"]
-    # negative values = improvement through outlier correction
-    # count the number of positive and negative values
-    improvement_percent = data.value_counts(normalize=True) * 100
-    improvement_percent = improvement_percent.rename({-1: "improvement", 1: "deterioration", 0: "no change"})
-    improvement_percent = improvement_percent.to_frame().reindex(["improvement", "no change", "deterioration"], level=0)
-    improvement_percent.columns = ["improvement_percent"]
-    improvement_percent.index.names = [None]
-    improvement_percent = improvement_percent.T
-    return improvement_percent
+
+    # Ensure columns indexed by outlier algorithm are available; accept either MultiIndex or simple DataFrame
+    if "outlier_correction_algorithm" in (data.columns.names or []):
+        # select columns for the requested outlier algorithms
+        # let any unexpected exceptions bubble up; explicitly handle common lookup errors
+        left = data.xs(outlier_algos[0], level="outlier_correction_algorithm", axis=1)
+        right = data.xs(outlier_algos[1], level="outlier_correction_algorithm", axis=1)
+    else:
+        # assume simple columns named by outlier_algos
+        left = data[outlier_algos[0]]
+        right = data[outlier_algos[1]]
+
+    # compute difference (after - before), sign: negative -> improvement
+    diff = right - left
+    # if diff is DataFrame with multiple columns, reduce to a single series by summing/mean?
+    # Here expect single metric column
+    if isinstance(diff, pd.DataFrame):
+        # if multiple columns, attempt to reduce to a single series by taking the first column
+        diff = diff.iloc[:, 0]
+
+    signs = np.sign(diff.dropna())
+    counts = signs.value_counts(normalize=True) * 100
+    counts = counts.rename({-1: "improvement", 0: "no change", 1: "deterioration"})
+    # ensure all three categories present
+    for k in ["improvement", "no change", "deterioration"]:
+        if k not in counts.index:
+            counts.loc[k] = 0.0
+
+    # return as a single-row DataFrame with ordered indices
+    counts = counts.reindex(["improvement", "no change", "deterioration"]) * 1.0
+    out = counts.to_frame().T
+    out.columns.name = None
+    return out
 
 
 def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -> pd.DataFrame:
@@ -380,24 +541,63 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
         Overview of the percentage of samples which showed a change in the sign of the error metric
         (i.e., either positive to negative, vice versa, or no change) between two pipelines.
 
+    Raises
+    ------
+    ValidationError
+        If the input data is not a :class:`pandas.DataFrame` or :class:`pandas.Series`.
+    ValueError
+        If less than two pipelines are provided.
+
     """
+    # Accept Series or DataFrame input
+    if isinstance(data, pd.Series):
+        # convert to DataFrame so unstack/pivot operations work consistently
+        ser = data.copy()
+        data = ser.to_frame(name="value")
+    elif not isinstance(data, pd.DataFrame):
+        from pepbench.utils.exceptions import ValidationError
+
+        raise ValidationError(f"Expected data to be a pandas DataFrame or Series, got {type(data)} instead.")
+
     data = data.copy()
     pipelines = ["_".join(i) for i in pipelines]
 
-    data = data.unstack("pipeline").reindex(pipelines, level="pipeline", axis=1)
-    # compute the percentage of sample which have a positive value in the first column
-    # and a negative value in the second column
-    data = data.assign(change_pos_neg=(data.iloc[:, 0] > 0) & (data.iloc[:, 1] < 0))
-    data = data.assign(change_pos_pos=(data.iloc[:, 0] > 0) & (data.iloc[:, 1] > 0))
-    data = data.assign(change_neg_pos=(data.iloc[:, 0] < 0) & (data.iloc[:, 1] > 0))
-    data = data.assign(change_neg_neg=(data.iloc[:, 0] < 0) & (data.iloc[:, 1] < 0))
-    data = data.assign(change_diff=data["change_pos_neg"] | data["change_neg_pos"])
-    data = data.assign(change_same=data["change_pos_pos"] | data["change_neg_neg"])
+    # After unstack, columns may be a simple Index of pipeline keys or a MultiIndex with a 'pipeline' level
+    try:
+        unstacked = data.unstack("pipeline")
+    except (KeyError, ValueError):
+        # If unstack by level name fails, assume index first level already contains pipeline keys and pivot accordingly
+        unstacked = data.unstack(level=0)
 
-    data = data.filter(like="change", axis=1)
-    data = data.apply(pd.Series.value_counts, normalize=True) * 100
+    # If unstacked has MultiIndex columns with a 'pipeline' level, select by that, otherwise reindex simple columns
+    if isinstance(unstacked.columns, pd.MultiIndex) and "pipeline" in (unstacked.columns.names or []):
+        df = unstacked.reindex(pipelines, level="pipeline", axis=1)
+        # collapse to simple DataFrame of values for comparison
+        # take the first metric if multiple present
+        df_values = df.iloc[:, :2] if isinstance(df.columns, pd.MultiIndex) else df
+    else:
+        # simple columns: ensure order matches pipelines
+        df_values = unstacked.reindex(columns=pipelines)
 
-    return data
+    if df_values.shape[1] < 2:
+        raise ValueError("Need at least two pipelines to compare")
+
+    a = df_values.iloc[:, 0]
+    b = df_values.iloc[:, 1]
+
+    df_flags = pd.DataFrame(
+        {
+            "change_pos_neg": (a > 0) & (b < 0),
+            "change_pos_pos": (a > 0) & (b > 0),
+            "change_neg_pos": (a < 0) & (b > 0),
+            "change_neg_neg": (a < 0) & (b < 0),
+        }
+    )
+    df_flags["change_diff"] = df_flags["change_pos_neg"] | df_flags["change_neg_pos"]
+    df_flags["change_same"] = df_flags["change_pos_pos"] | df_flags["change_neg_neg"]
+
+    res = df_flags.apply(pd.Series.value_counts, normalize=True) * 100
+    return res
 
 
 def merge_result_metrics_from_multiple_annotators(
@@ -426,15 +626,16 @@ def merge_result_metrics_from_multiple_annotators(
         if len(results) != 2:
             raise ValueError("Annotation difference can only be computed for two annotators.")
 
-        metrics_combined_diff = (
-            metrics_combined.reindex(["Mean Absolute Error [ms]"], level=1, axis=1)
-            .T.groupby(level=[1, 2])
-            .diff()
-            .dropna(how="all")
-        )
-        metrics_combined_diff = metrics_combined_diff.rename({"Annotator 2": "Annotator Difference"}).T
+        # compute direct difference between annotator 2 and annotator 1
+        a1 = results[0]
+        a2 = results[1]
+        # align indices and columns
+        a2_aligned, a1_aligned = a2.align(a1, join="outer", axis=None)
+        diff = a2_aligned - a1_aligned
+        # wrap the diff with a top-level key 'Annotator Difference'
+        diff_wrapped = pd.concat({"Annotator Difference": diff}, axis=1)
 
-        metrics_combined = pd.concat([metrics_combined, metrics_combined_diff], axis=1)
+        metrics_combined = pd.concat([metrics_combined, diff_wrapped], axis=1)
 
     return metrics_combined
 

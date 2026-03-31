@@ -1,3 +1,21 @@
+"""ReBeat ICG dataset utilities and dataset class.
+
+This module provides the ReBeatIcgDataset class for loading and accessing
+ECG/ICG recordings, labeling borders, reference heartbeats/labels, and
+participant metadata for the ReBeat ICG dataset. The class follows the
+pepbench dataset API and provides convenience features like optional
+preprocessing, caching, exclusion filters, and selection by participant,
+phase, and label period.
+
+Notes
+-----
+Expected layout under the dataset root:
+- Raw and filtered MATLAB files: `01_RawData` / `02_FilteredData`
+- Expert annotations: `03_ExpertAnnotations`
+- Labeling and heartbeat borders: `04_LabelingAndHeartBeatBorders`
+Metadata and file naming conventions follow the export of the ReBeat ICG project.
+"""
+
 import re
 from collections.abc import Sequence
 from functools import lru_cache
@@ -23,6 +41,42 @@ _cached_get_mat_data = lru_cache(maxsize=10)(_load_mat_data)
 
 @base_pep_extraction_docfiller
 class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
+    """Dataset class for the ReBeat ICG dataset.
+
+    Provides access to ECG/ICG signals (raw or filtered), preprocessed signals,
+    labeling borders, reference heartbeats and reference labels for ECG and ICG,
+    and participant metadata where applicable.
+
+    Parameters
+    ----------
+    base_path : path-like
+        Path to the root directory of the ReBeat ICG dataset.
+    groupby_cols : sequence of str, optional
+        Columns to group the dataset index by.
+    subset_index : sequence of str, optional
+        Subset of the dataset index to operate on.
+    return_clean : bool, optional
+        If True, use filtered/cleaned recordings when available. Default is True.
+    exclude_annotation_errors : bool, optional
+        If True, exclude known participant/phase combinations with annotation errors.
+        Default is True.
+    use_cache : bool, optional
+        If True, cache loading of MAT files. Default is True.
+    only_labeled : bool, optional
+        If True, operate on labeled segments (use labeling borders). Default is False.
+
+    Attributes
+    ----------
+    SAMPLING_RATE : int
+        Representative sampling rate (Hz) of the dataset.
+    PHASES : dict
+        Mapping of phase short codes to descriptive names.
+    PHASES_INVERSE : dict
+        Inverse mapping of `PHASES`.
+    SUBSET_ANNOTATION_ERRORS : sequence
+        Known participant/phase tuples to optionally exclude due to annotation errors.
+    """
+
     base_path: Path
     use_cache: bool
 
@@ -78,10 +132,26 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         )
 
     def _sanitize_params(self) -> None:
+        """Sanitize and validate input parameters."""
         # ensure pathlib
         self.base_path = Path(self.base_path)
 
     def create_index(self) -> pd.DataFrame:
+        """Create the dataset index DataFrame.
+
+        Constructs the index depending on whether `only_labeled` is enabled. When
+        `only_labeled` is True the index contains `participant`, `phase`, and
+        `label_period` entries derived from the labeling borders folder. Otherwise, the
+        index is built from available raw/filtered MAT files and contains `participant`
+        and `phase`.
+
+        Returns
+        -------
+         :class:`~pandas.DataFrame`
+            Dataset index. Columns are either `participant`, `phase` (and optionally
+            `label_period`) depending on `only_labeled`.
+
+        """
         self._sanitize_params()
 
         if self.only_labeled:
@@ -122,6 +192,16 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         return index
 
     def _find_data_to_exclude(self) -> Sequence[tuple[str, str]]:
+        """Determine participant/phase tuples to exclude.
+
+        Considers the `exclude_annotation_errors` flag and returns any configured
+        subsets that should be excluded from the index.
+
+        Returns
+        -------
+        sequence of tuple
+            Participant/phase tuples to exclude.
+        """
         data_to_exclude = []
         if self.exclude_annotation_errors:
             data_to_exclude.extend(self.SUBSET_ANNOTATION_ERRORS)
@@ -154,6 +234,20 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def data(self) -> pd.DataFrame:
+        """Load raw or filtered ECG and ICG data for the current single selection.
+
+        Returns
+        -------
+         :class:`~pandas.DataFrame`
+            DataFrame with columns `ecg` and `icg_der` indexed by a pandas
+            TimedeltaIndex representing time since recording start.
+
+        Raises
+        ------
+        ValueError
+            If accessed for more than a single participant/phase/label period when
+            single-selection is required.
+        """
         if not self.is_single(None):
             if self.only_labeled:
                 error_msg = "Data can only be accessed for a single participant, phase, and label period."
@@ -190,10 +284,38 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def ecg(self) -> EcgRawDataFrame:
+        """ECG channel for the current selection.
+
+        Returns
+        -------
+        :class:`~biopsykit.utils.dtypes.EcgRawDataFrame`
+            ECG single-channel DataFrame (may be raw or filtered depending on
+            `return_clean`) indexed by time.
+
+        Raises
+        ------
+        ValueError
+            If the dataset selection is not a single participant/phase/label period.
+        """
         return self.data[["ecg"]]
 
     @property
     def icg(self) -> IcgRawDataFrame:
+        """ICG channel for the current selection.
+
+        If `return_clean` is True the ICG is preprocessed using
+        `biopsykit.signals.icg.preprocessing.IcgPreprocessingBandpass`.
+
+        Returns
+        -------
+        :class:`~pepbench.datasets.rebeat_icg._dataset.IcgRawDataFrame`
+            ICG single-channel DataFrame (cleaned or raw) indexed by time.
+
+        Raises
+        ------
+        ValueError
+            If the dataset selection is not a single participant/phase/label period.
+        """
         icg = self.data[["icg_der"]]
         if self.return_clean:
             algo = IcgPreprocessingBandpass()
@@ -205,10 +327,12 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
     def heartbeats(self) -> pd.DataFrame:
         """Segment heartbeats from the ECG data and return the heartbeat borders.
 
+        Uses `biopsykit.signals.ecg.segmentation.HeartbeatSegmentationNeurokit`.
+
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Heartbeats as a pandas DataFrame.
+            Heartbeats as a DataFrame describing onset/offset and segmentation info.
 
         """
         heartbeat_algo = HeartbeatSegmentationNeurokit()
@@ -223,8 +347,13 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Labeling borders as :class:`~pandas.DataFrame`.
+            Labeling borders as a DataFrame with integer sample columns such as
+            `start_sample` and `end_sample`.
 
+        Raises
+        ------
+        ValueError
+            If labeling border folder or the expected CSV file is missing.
         """
         labeling_border_folder = self.base_path.joinpath("04_LabelingAndHeartBeatBorders")
         if not labeling_border_folder.exists():
@@ -245,13 +374,18 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_heartbeats(self) -> pd.DataFrame:
-        """Return the reference heartbeats.
+        """
+        Return reference heartbeats for the datapoint.
+
+        The returned DataFrame contains columns ``heartbeat_index``, ``start_sample`` and
+        ``end_sample`` describing heartbeat boundaries in sample indices.
 
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Reference heartbeats as a pandas DataFrame
-
+            Reference heartbeat table indexed by ``heartbeat_id`` and containing sample
+            indices for heartbeat boundaries. Indices are adjusted relative to the
+            labeling period.
         """
         reference_heartbeat_folder = self.base_path.joinpath("04_LabelingAndHeartBeatBorders")
         if not reference_heartbeat_folder.exists():
@@ -280,13 +414,18 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_icg(self) -> pd.DataFrame:
-        """Return the reference labels for the ICG data.
+        """
+        Return reference labels for ICG events.
+
+        The DataFrame contains event sample indices such as ``b_point_sample`` and ``c_point_sample``
+        as well as metadata columns (e.g., ``nan_reason``) when events are missing.
 
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Reference labels for the ICG data as a pandas DataFrame
-
+            Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
+            and a `sample_relative` column containing sample indices relative to the
+            labeling segment.
         """
         heartbeats = self.reference_heartbeats[["start_sample", "end_sample"]]
         b_points = self._load_b_point_annotations()
@@ -315,13 +454,18 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
 
     @property
     def reference_labels_ecg(self) -> pd.DataFrame:
-        """Return the reference labels for the ECG data.
+        """
+        Return reference labels for ECG events.
+
+        The DataFrame contains ECG event columns such as ``r_peak_sample`` and ``q_peak_sample``
+        indexed by heartbeat or event identifiers.
 
         Returns
         -------
         :class:`~pandas.DataFrame`
-            Reference labels for the ECG data as a pandas DataFrame
-
+            Multi-indexed DataFrame with index names (`heartbeat_id`, `channel`, `label`)
+            and a `sample_relative` column containing sample indices relative to the
+            labeling segment.
         """
         ecg = self.ecg
         q_peak_algo = QPeakExtractionVanLien2013(time_interval_ms=32)
@@ -339,6 +483,21 @@ class ReBeatIcgDataset(BasePepDatasetWithAnnotations):
         return res
 
     def _load_b_point_annotations(self) -> pd.DataFrame:
+        """Load expert B-point annotations for the current selection.
+
+        Parameters
+        ----------
+        file_path : path-like
+            Path to the MAT file containing expert B-point annotations. (Internal use:
+            the dataset calls the helper function which accepts an optional cached
+            loader.)
+
+        Returns
+        -------
+        :class:`~pandas.DataFrame
+            DataFrame with B-point annotations including `sample_relative` and any
+            annotation metadata.
+        """
         p_id = self.index["participant"][0]
         phase = self.index["phase"][0]
         file_path = self.base_path.joinpath(

@@ -38,6 +38,17 @@ These examples demonstrate how to combine Q-Peak and B-Point detection algorithm
 
     _notebooks/PEP_Extraction_Pipeline_Example
 
+Evaluation
+==========
+This example demonstrates how to evaluate the performance of a detection algorithm using a dataset with known annotations.
+
+.. nbgallery::
+    :caption: Evaluation
+    :name: evaluation
+    :glob:
+
+    _notebooks/Evaluation_Example
+
 
 Evaluation Challenges
 =====================

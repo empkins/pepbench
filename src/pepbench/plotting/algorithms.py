@@ -85,7 +85,7 @@ def plot_q_peak_extraction_martinez2004_neurokit(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -224,7 +224,7 @@ def plot_q_peak_extraction_scipy_findpeaks_neurokit(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -350,7 +350,7 @@ def plot_q_peak_extraction_vanlien2013(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -538,7 +538,7 @@ def plot_q_peak_extraction_forounzafar2018(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -706,7 +706,7 @@ def plot_b_point_extraction_stern1985(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -903,7 +903,7 @@ def plot_b_point_extraction_sherwood1990(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -1090,7 +1090,7 @@ def plot_b_point_extraction_debski1993_second_derivative(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -1285,7 +1285,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -1483,7 +1483,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -1696,7 +1696,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -1903,7 +1903,7 @@ def plot_b_point_extraction_lozano2007_linear_regression(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -2098,7 +2098,7 @@ def plot_b_point_extraction_lozano2007_quadratic_regression(
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -2291,7 +2291,7 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -2488,7 +2488,7 @@ def plot_b_point_extraction_pale2021(  # noqa: PLR0915
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint :  :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -2774,7 +2774,7 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.
@@ -3103,7 +3103,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
 
     Parameters
     ----------
-    datapoint : BasePepDatasetWithAnnotations
+    datapoint : :class:`~pepbench.datasets._base_pep_extraction_dataset.BasePepDatasetWithAnnotations`
         Datapoint to plot.
     heartbeat_subset : list of int, optional
         List of heartbeat_ids to plot. If None, all heartbeats are plotted.

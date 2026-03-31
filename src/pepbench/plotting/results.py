@@ -1,4 +1,39 @@
-"""Module for plotting PEP benchmark results."""
+r"""
+PEP benchmark plotting utilities.
+
+This module contains high-level plotting helpers for visualising PEP (pre-ejection period)
+benchmark results. Functions are built on top of ``matplotlib`` and ``seaborn`` and expect
+data in a ``pandas.DataFrame`` with the project conventions (algorithm pipeline levels in the
+index/columns). The routines include single\-figure summaries, grouped/residual analyses,
+regressions against covariates and detailed waveform comparisons.
+
+Key capabilities
+----------------
+- Reference value plots: boxplots and violinplots of reference PEP values (``boxplot_reference_pep``,
+  ``violinplot_reference_pep``).
+- Algorithm performance: box/violin plots comparing algorithm pipelines on a performance metric
+  (``boxplot_algorithm_performance``, ``violinplot_algorithm_performance``).
+- Residual analyses: Bland\-Altman style and grouped residual plots by participant, phase, HR, BMI, age
+  (``residual_plot_pep``, ``residual_plot_pep_participant``, ``residual_plot_pep_phase``,
+  ``residual_plot_pep_heart_rate``, ``residual_plot_pep_bmi``, ``residual_plot_pep_age``).
+- Regression plots: regression of PEP or error metrics against covariates with optional
+  groupwise correlation coefficients (``regplot_pep_heart_rate``, ``regplot_error_heart_rate``,
+  ``regplot_error_bmi``, ``regplot_error_age``).
+- Paired comparisons: repeated\-measures paired plots for outlier correction and pipeline comparisons
+  using pingouin helpers (``paired_plot_error_outlier_correction``, ``paired_plot_error_pep_pipeline``).
+- Miscellaneous: heart rate histogram and detailed Q\-wave waveform comparisons with insets
+  (``histplot_heart_rate``, ``plot_q_wave_detection_waveform_detailed_comparison``).
+
+Usage notes
+-----------
+- Most plotting functions accept a ``pandas.DataFrame`` prepared by the package's data handling
+  utilities (see ``pepbench.data_handling``). Many functions accept an ``algorithm`` argument that
+  can be a single string or a sequence of strings describing a pipeline.
+- Keyword arguments are forwarded to underlying ``seaborn``/``matplotlib`` calls; functions will
+  filter unsupported kwargs where appropriate.
+- Return values are typically a tuple of (``matplotlib.figure.Figure``, ``matplotlib.axes.Axes``)
+  or a figure and a sequence of axes for multi\-panel plots.
+"""
 
 import inspect
 from collections.abc import Callable, Sequence

@@ -248,7 +248,7 @@ from sphinxext.githublink import make_linkcode_resolve
 
 linkcode_resolve = make_linkcode_resolve(
     "pepbench",
-    "https://github.com/empkins/pepbench/blob/{revision}/{package}/{path}#L{lineno}",
+    "https://github.com/empkins/pepbench/blob/{revision}/src/{package}/{path}#L{lineno}",
 )
 
 nbsphinx_epilog = r"""
@@ -276,4 +276,5 @@ intersphinx_mapping = {
     "biopsykit": ("https://biopsykit.readthedocs.io/en/latest/", None),
     "scikit-learn": ("https://scikit-learn.org/stable/", None),
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
+    "tpcp": ("https://tpcp.readthedocs.io/en/latest/", None),
 }
