@@ -7,6 +7,8 @@ import inspect
 
 # -- Path setup --------------------------------------------------------------
 import os
+import socket
+import warnings
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -20,9 +22,21 @@ from datetime import datetime
 from pathlib import Path
 
 import toml
+from sphinx.deprecation import RemovedInSphinx90Warning
 
 __location__ = os.path.join(os.getcwd(), os.path.dirname(inspect.getfile(inspect.currentframe())))
 HERE = Path(__file__)
+
+DOCS_CACHE_DIR = HERE.parent / "_build" / ".cache"
+MPL_CACHE_DIR = DOCS_CACHE_DIR / "matplotlib"
+XDG_CACHE_DIR = DOCS_CACHE_DIR / "xdg"
+MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+XDG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
+os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
+
+warnings.filterwarnings("ignore", message=r"Container node skipped: type=document", module="recommonmark.parser")
+warnings.filterwarnings("ignore", category=RemovedInSphinx90Warning)
 
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent))
@@ -71,7 +85,12 @@ def all_but_ipynb(dir, contents):
 
 
 try:
-    subprocess.run(["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"], check=True)
+    subprocess.run(
+        ["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 except (subprocess.CalledProcessError, PermissionError):
     print("Skipping ipykernel installation during docs build.")
 
@@ -172,7 +191,7 @@ pygments_style = "sphinx"
 extensions.append("recommonmark")
 
 # The suffix of source filenames.
-source_suffix = [".rst", ".md"]
+source_suffix = {".rst": "restructuredtext", ".md": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -279,3 +298,17 @@ intersphinx_mapping = {
     "nilspodlib": ("https://nilspodlib.readthedocs.io/en/latest/", None),
     "tpcp": ("https://tpcp.readthedocs.io/en/latest/", None),
 }
+
+
+def _internet_available() -> bool:
+    try:
+        socket.getaddrinfo("docs.python.org", 443)
+    except OSError:
+        return False
+    return True
+
+
+if _internet_available():
+    intersphinx_mapping = intersphinx_module_mapping
+else:
+    intersphinx_mapping = {}

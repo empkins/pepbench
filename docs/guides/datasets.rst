@@ -83,14 +83,14 @@ The practical difference is in study design and signal characteristics
 (e.g., protocol and sampling specifics), not in the programming interface.
 
 Example Dataset
-----------------
+---------------
 Pepbench also provides a small :class:`~pepbench.datasets.ExampleDataset` for testing and demonstration purposes.
 It contains two patients' ECG/ICG signals with known PEP values and annotations, allowing you to quickly test pipelines without needing access to the full Empkins or Guardian datasets.
 
 * Hands-on notebook: :download:`Example Dataset <../examples/_notebooks/Example_Dataset.ipynb>`
 
 Integration of Own Data
---------------------------
+-----------------------
 
 If you already have ECG and ICG signals loaded in memory and want to use them with pepbench pipelines
 without creating a full custom dataset class, the :class:`~pepbench.datasets.WrapperDataset` is the ideal
@@ -135,8 +135,10 @@ Use :class:`~pepbench.datasets.WrapperDataset` when you want quick integration
 without implementing indexing/grouping over many files.
 
 .. _user_guide_creating_custom_datasets:
+.. _custom_dataset_basics:
+
 Create your Own Dataset Class
---------------------------
+-----------------------------
 If you have a larger collection of ECG/ICG recordings or want to integrate with pepbench's indexing and grouping features, it's best to create a custom dataset class by subclassing :class:`~pepbench.datasets.BasePepDataset` or :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`.
 This allows you to implement the required properties and methods while leveraging the full power of the tpcp framework for indexing, grouping, and iteration.
 
@@ -152,7 +154,7 @@ Creating a custom dataset class is recommended when:
 * You want to provide a reusable interface for your data that works with all pepbench pipelines
 
 Step-by-Step Implementation Guide
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **1. Choose Your Base Class**
 

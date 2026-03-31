@@ -76,17 +76,14 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     only_labeled : bool, optional
         If ``True``, restrict the dataset to entries that have labels.
 
-    Class attributes
-    ----------------
+    Attributes
+    ----------
     SAMPLING_RATE : int
         Sampling rate of raw signals in Hz (default: 2000).
     PHASES : sequence of str
         Known experiment phases (default: ``["Baseline", "EmotionInduction"]``).
     SUBSET_R_PEAK_DETECTION_ERRORS : sequence of str
         Participant-phase pairs to exclude by default due to R-peak detection errors.
-
-    Attributes
-    ----------
     base_path : pathlib.Path
         Normalized dataset base path.
     use_cache : bool

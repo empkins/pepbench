@@ -30,7 +30,7 @@ Signal Amplitudes
 Signal amplitude units (for ECG/ICG traces) are dataset-dependent and are not enforced by pepbench; common dataset units are volts (V) or millivolts (mV). pepbench algorithms expect that the amplitude unit is consistent within a dataset.
 
 Naming Conventions in pepbench
------------------------------
+------------------------------
 The codebase uses a few naming conventions / column suffixes to indicate units and facilitate automatic dtype coercion:
 
 - Columns/suffixes ending with ``_ms``: values expressed in milliseconds (ms). Examples from the codebase: ``pep_ms``, ``rr_interval_ms``, ``error_per_sample_ms``.
@@ -67,7 +67,7 @@ All sample-based columns are expressed in samples relative to the start of the r
 each heartbeat). Durations can be obtained using the sampling rate (``fs``) and converted to seconds or milliseconds.
 
 Required/Recommended columns and units
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - ``start_sample`` (int): inclusive start index (samples) of the heartbeat in the recording.
 - ``end_sample`` (int): exclusive end index (samples) of the heartbeat in the recording (pepbench uses half-open
   intervals [start, end)).
@@ -175,4 +175,3 @@ For long-term use and clearer integration we highly encourage creating a custom 
 :class:`~pepbench.datasets.BasePepDataset` (or
 :class:`~pepbench.datasets.BasePepDatasetWithAnnotations` when reference labels are required).
 This simplifies many tasks and provides a clean abstraction for your data.
-

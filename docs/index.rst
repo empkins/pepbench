@@ -7,7 +7,7 @@ Welcome to the documentation of **pepbench** – your Python framework for the a
 pre-ejection period (PEP) from electrocardiogram (ECG) and impedance cardiography (ICG) signals.
 
 This documentation will help you to get up to speed quickly. Take a look at the :ref:`User Guide<user-guide>`, and the
-:ref:`Example Gallery<examples>` sections for a guide on how to use **pepbench**.
+:ref:`Example Gallery<examples_gallery>` sections for a guide on how to use **pepbench**.
 
 .. toctree::
    :maxdepth: 1

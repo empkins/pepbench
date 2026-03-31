@@ -21,18 +21,22 @@ This short guide shows three common usages of pepbench:
 Each section contains a concise explanation, expected inputs/outputs, a minimal example using concrete algorithm classes, and pointers to related documentation.
 
 1) Compute PEP
----------------
+--------------
 
-Goal
-  Extract Q-peaks from ECG and B-points from ICG and compute PEP for each heartbeat.
+**Goal**
 
-Inputs
-  - ECG and ICG signals (see :attr:`~pepbench.datasets.BasePepDataset.ecg`, :attr:`~pepbench.datasets.BasePepDataset.icg`).
-  - Optional: reference heartbeats or labels when available (:attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_pep`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_heartbeats`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_ecg` / :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_icg`)
+Extract Q-peaks from ECG and B-points from ICG and compute PEP for each heartbeat.
 
-Typical pipeline
-: Use the provided pipelines to run a sequence of algorithms in the right order:
-  - heartbeat segmentation -> Q-peak extraction -> C-point (optional) -> B-point extraction -> outlier correction -> PEP computation.
+**Inputs**
+
+- ECG and ICG signals (see :attr:`~pepbench.datasets.BasePepDataset.ecg`, :attr:`~pepbench.datasets.BasePepDataset.icg`).
+- Optional: reference heartbeats or labels when available (:attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_pep`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_heartbeats`, :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_ecg` / :attr:`~pepbench.datasets.BasePepDatasetWithAnnotations.reference_labels_icg`)
+
+**Typical pipeline**
+
+Use the provided pipelines to run a sequence of algorithms in the right order:
+
+- heartbeat segmentation -> Q-peak extraction -> C-point (optional) -> B-point extraction -> outlier correction -> PEP computation.
 
 Minimal example
 
@@ -56,30 +60,35 @@ Minimal example
     pipeline.run(datapoint)
     pep_results = pipeline.pep_results_
 
-Notes and tuning
-: - Many B-point algorithms accept parameters for smoothing, derivative thresholds or minimum peak prominence — tune these to your signal quality.
-  - If ICG or ECG are noisy, consider applying preprocessing from :mod:`pepbench.algorithms.preprocessing`.
-  - Use the reference pipelines (see section 2) to validate outputs when labels exist.
+**Notes and tuning**
+
+- Many B-point algorithms accept parameters for smoothing, derivative thresholds or minimum peak prominence. Tune these to your signal quality.
+- If ICG or ECG are noisy, consider applying preprocessing from :mod:`pepbench.algorithms.preprocessing`.
+- Use the reference pipelines (see section 2) to validate outputs when labels exist.
 
 2) Compare algorithm performance (what detects what better/worse)
-----------------------------------------------------------------
+-----------------------------------------------------------------
 
-Goal
-: Evaluate and compare algorithm performance using datasets that provide reference labels (Q-peaks, B-points, or PEP).
+**Goal**
 
-Inputs
-: - A labeled dataset (example datasets: `example_data/Empkins_Dataset` or any dataset implementing the project's dataset interface).
-  - A list of algorithms to evaluate for the same detection task.
+Evaluate and compare algorithm performance using datasets that provide reference labels (Q-peaks, B-points, or PEP).
 
-Recommended metrics
-: - True positives / false positives / false negatives per heartbeat (match heartbeats first).
-  - Mean absolute error (ms) of detected event timing vs. reference.
-  - Coverage (how many heartbeats could be processed) and failure modes (NaNs / rejected beats).
+**Inputs**
 
-Evaluation workflow (concise)
-: 1. Use a reference pipeline that plugs either reference B-points or reference Q-peaks (see :class:`pepbench.pipelines.PepExtractionPipelineReferenceBPoints` and :class:`pepbench.pipelines.PepExtractionPipelineReferenceQPeaks`).
-  2. For each algorithm, run the pipeline on all labeled datapoints and collect per-heartbeat differences.
-  3. Aggregate results across subjects and report distributions (boxplots, mean/median error).
+- A labeled dataset (for example :class:`~pepbench.datasets.ExampleDataset` or any dataset implementing the project's dataset interface).
+- A list of algorithms to evaluate for the same detection task.
+
+**Recommended metrics**
+
+- True positives / false positives / false negatives per heartbeat (match heartbeats first).
+- Mean absolute error (ms) of detected event timing vs. reference.
+- Coverage (how many heartbeats could be processed) and failure modes (NaNs / rejected beats).
+
+**Evaluation workflow (concise)**
+
+1. Use a reference pipeline that plugs either reference B-points or reference Q-peaks (see :class:`pepbench.pipelines.PepExtractionPipelineReferenceBPoints` and :class:`pepbench.pipelines.PepExtractionPipelineReferenceQPeaks`).
+2. For each algorithm, run the pipeline on all labeled datapoints and collect per-heartbeat differences.
+3. Aggregate results across subjects and report distributions (boxplots, mean/median error).
 
 Minimal example
 
@@ -100,25 +109,29 @@ Minimal example
 
     # loop over labeled datapoints and collect ref_pipeline.pep_results_
 
-Interpretation tips
-: - Inspect matched vs. unmatched heartbeats to identify whether mismatches arise from heartbeat segmentation, Q-peak detection, or B-point localization.
-  - Use visualization helpers in :doc:`../modules/plotting/index` (or :mod:`pepbench.plotting.algorithms`) to inspect per-beat overlays.
+**Interpretation tips**
+
+- Inspect matched vs. unmatched heartbeats to identify whether mismatches arise from heartbeat segmentation, Q-peak detection, or B-point localization.
+- Use visualization helpers in :doc:`../modules/plotting/index` (or :mod:`pepbench.plotting.algorithms`) to inspect per-beat overlays.
 
 3) Insert your own algorithms and benchmark (plug-in / benchmarking)
-------------------------------------------------------------------
+---------------------------------------------------------------------
 
-Goal
-: Add a custom algorithm implementation and compare it to existing algorithms using the project's pipelines and benchmarking notebooks.
+**Goal**
 
-Contract (simple)
-: - Input: signals (ECG or ICG as required) and sampling_rate_hz.
-  - Output: an algorithm class exposing a public method like ``extract(...)`` and an attribute ``points_`` (consistent with existing algorithm implementations).
-  - Error modes: should raise a clear exception on invalid input and return empty/NaN results if no events found.
+Add a custom algorithm implementation and compare it to existing algorithms using the project's pipelines and benchmarking notebooks.
 
-How to implement
-: 1. Follow the interface of the existing base classes in :mod:`pepbench.algorithms` (see source under ``src/pepbench/algorithms``). Implement ``extract(...)`` and set ``points_`` to a DataFrame with the expected columns (e.g. ``q_peak_sample`` or ``b_point_sample``).
-  2. Optionally provide a ``clone()`` or follow the pattern used by other algorithms so pipelines can safely copy instances.
-  3. Add a minimal unit test under ``tests/`` exercising its happy path and one edge case.
+**Contract (simple)**
+
+- Input: signals (ECG or ICG as required) and `sampling_rate_hz`.
+- Output: an algorithm class exposing a public method like ``extract(...)`` and an attribute ``points_`` (consistent with existing algorithm implementations).
+- Error modes: raise a clear exception on invalid input and return empty/NaN results if no events are found.
+
+**How to implement**
+
+1. Follow the interface of the existing base classes in :mod:`pepbench.algorithms` (see source under ``src/pepbench/algorithms``). Implement ``extract(...)`` and set ``points_`` to a DataFrame with the expected columns (for example ``q_peak_sample`` or ``b_point_sample``).
+2. Optionally provide a ``clone()`` or follow the pattern used by other algorithms so pipelines can safely copy instances.
+3. Add a minimal unit test under ``tests/`` exercising its happy path and one edge case.
 
 Minimal example (skeleton)
 
@@ -134,10 +147,11 @@ Minimal example (skeleton)
 
     # use MyQPeakAlgo in the same pipelines as built-ins to benchmark
 
-Benchmarking tips
-: - Reuse the existing benchmarking notebooks under ``experiments/pep_algorithm_benchmarking`` for batch runs and plotting.
-  - Compare across algorithms using the same heartbeat segmentation and dataset to isolate differences to the extraction step.
-  - Automate parameter sweeps (grid search) when tuning algorithm hyperparameters and record results per parameter set.
+**Benchmarking tips**
+
+- Reuse the existing benchmarking notebooks under ``experiments/pep_algorithm_benchmarking`` for batch runs and plotting.
+- Compare across algorithms using the same heartbeat segmentation and dataset to isolate differences to the extraction step.
+- Automate parameter sweeps (grid search) when tuning algorithm hyperparameters and record results per parameter set.
 
 See also
 --------
@@ -148,7 +162,7 @@ See also
 - Source: ``src/pepbench/algorithms`` and ``src/pepbench/pipelines`` for implementation patterns and interfaces
 
 Acknowledgements and next steps
-------------------------------
+-------------------------------
 
 This guide is a compact starting point. Consider adding:
 
