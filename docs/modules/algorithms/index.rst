@@ -7,6 +7,18 @@ Algorithms
     :no-members:
     :no-inherited-members:
 
+Preprocessing Algorithms
+++++++++++++++++++++++++
+
+.. currentmodule:: pepbench.algorithms.preprocessing
+
+.. autosummary::
+   :toctree: generated/preprocessing
+   :template: class.rst
+
+   EcgPreprocessingNeurokit
+   IcgPreprocessingBandpass
+
 Q-Peak Extraction Algorithms
 ++++++++++++++++++++++++++++
 

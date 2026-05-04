@@ -1,7 +1,7 @@
 .. _user_guide_datasets:
 
-Datasets & Requirements
-=======================
+Datasets
+========
 
 pepbench uses `tpcp <https://pypi.org/project/tpcp/>`_ dataset classes.
 Each datapoint provides ECG/ICG signals plus metadata required by pipelines
@@ -136,7 +136,7 @@ without implementing indexing/grouping over many files.
 
 .. _user_guide_creating_custom_datasets:
 Create your Own Dataset Class
---------------------------
+------------------------------
 If you have a larger collection of ECG/ICG recordings or want to integrate with pepbench's indexing and grouping features, it's best to create a custom dataset class by subclassing :class:`~pepbench.datasets.BasePepDataset` or :class:`~pepbench.datasets.BasePepDatasetWithAnnotations`.
 This allows you to implement the required properties and methods while leveraging the full power of the tpcp framework for indexing, grouping, and iteration.
 
