@@ -53,5 +53,5 @@ __all__ = [
     "PepLabelMixin",
     "ReBeatIcgDataset",
     "TimeWindowIcgDataset",
-    "WrapperDataset"
+    "WrapperDataset",
 ]

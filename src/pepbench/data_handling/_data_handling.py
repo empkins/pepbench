@@ -53,6 +53,7 @@ See Also
 :mod:`pepbench.pipelines`
     Pipeline helpers and end-to-end execution utilities for PEP extraction.
 """
+
 import contextlib
 from collections.abc import Sequence
 
@@ -272,8 +273,9 @@ def compute_pep_performance_metrics(
     algo_levels = [s for s in results_per_sample.index.names if s in _algo_levels]
     # select only the error metric columns that actually exist in the frame
     present_metrics = [k for k in _pep_error_metric_map if k in results_per_sample.columns.get_level_values(0)]
-    results_per_sample = (results_per_sample.loc[:, results_per_sample.columns.get_level_values(0).
-                          isin(present_metrics)].droplevel(level=-1, axis=1))
+    results_per_sample = results_per_sample.loc[
+        :, results_per_sample.columns.get_level_values(0).isin(present_metrics)
+    ].droplevel(level=-1, axis=1)
     results_per_sample = results_per_sample.groupby(algo_levels)
     results_per_sample = results_per_sample.agg(metrics)
 
@@ -286,8 +288,11 @@ def compute_pep_performance_metrics(
         if isinstance(num_heartbeats, pd.Series):
             num_heartbeats = num_heartbeats.to_frame()
         # create a top level name
-        top_name = num_heartbeats.columns.name if (getattr(num_heartbeats.columns, "name", None)
-                                                   is not None) else "num_heartbeats"
+        top_name = (
+            num_heartbeats.columns.name
+            if (getattr(num_heartbeats.columns, "name", None) is not None)
+            else "num_heartbeats"
+        )
         num_heartbeats.columns = pd.MultiIndex.from_product([[top_name], list(num_heartbeats.columns)])
     num_heartbeats = num_heartbeats.swaplevel(axis=1)
     results_per_sample = results_per_sample.join(num_heartbeats)

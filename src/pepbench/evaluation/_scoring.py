@@ -54,38 +54,20 @@ def score_pep_evaluation(pipeline: BasePepExtractionPipeline, datapoint: BasePep
         summation aggregator), or
       - returned as per-sample results (unaggregated) for downstream per-sample aggregation.
 
-    The following metrics are computed and returned (grouped by treatment):
+    The following metrics are computed and returned:
 
-    First averaged over the datapoint and then aggregated (mean, std) on the total dataset
-    --------------------------------------------------------------------------------------
-    * ``pep_reference_ms``: Mean reference PEP in milliseconds.
-    * ``pep_estimated_ms``: Mean estimated PEP in milliseconds.
-    * ``error_ms``: Mean signed error (reference - estimated) in milliseconds.
-    * ``absolute_error_ms``: Mean absolute error in milliseconds.
-    * ``absolute_relative_error_percent``: Mean absolute relative error in percent.
-
-    Passed on as single values per datapoint (aggregated by summation across dataset)
-    ---------------------------------------------------------------------------------
-    * ``num_pep_total``: Total number of PEPs in this datapoint.
-    * ``num_pep_valid``: Number of valid (non-NaN) estimated PEPs.
-    * ``num_pep_invalid``: Number of invalid (NaN) estimated PEPs.
-
-    Passed through without aggregation (per-datapoint scalar)
-    --------------------------------------------------------
-    * ``pearson_r``: Pearson correlation coefficient between reference and estimated PEPs
-      for matched heartbeats (NaNs excluded).
-
-    Passed as per-sample values (no aggregation here)
-    -------------------------------------------------
-    * ``pep_estimation_per_sample``: The merged per-sample DataFrame with estimated and
-      reference values for each matched heartbeat.
-
-    Direct per-sample aggregations (aggregated across *all* samples without intermediate
-    per-datapoint averaging)
-    ------------------------------------------------------------------------------------
-    * ``error_per_sample_ms``: Mean error per sample (aggregated directly across samples).
-    * ``absolute_error_per_sample_ms``: Mean absolute error per sample.
-    * ``absolute_relative_error_per_sample_percent``: Mean absolute relative error per sample.
+    - Datapoint-level values that are typically aggregated across the dataset later:
+      ``pep_reference_ms``, ``pep_estimated_ms``, ``error_ms``, ``absolute_error_ms``,
+      ``absolute_relative_error_percent``.
+    - Datapoint-level counters intended for summation across the dataset:
+      ``num_pep_total``, ``num_pep_valid``, ``num_pep_invalid``.
+    - A datapoint-level scalar passed through without aggregation:
+      ``pearson_r``.
+    - Per-sample values kept unaggregated for downstream processing:
+      ``pep_estimation_per_sample``.
+    - Metrics aggregated directly across all matched samples:
+      ``error_per_sample_ms``, ``absolute_error_per_sample_ms``,
+      ``absolute_relative_error_per_sample_percent``.
 
     Parameters
     ----------

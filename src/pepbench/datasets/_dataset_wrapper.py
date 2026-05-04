@@ -3,6 +3,7 @@
 Provides access to ECG and ICG signals, reference labels and reference heartbeats
 for evaluation purposes.
 """
+
 from collections.abc import Sequence
 
 import pandas as pd

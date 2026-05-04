@@ -13,6 +13,7 @@ Notes
   ICG, ICG derivative and ECG.
 - Time indexing and sampling-rate handling are performed by the caller.
 """
+
 import re
 
 import numpy as np

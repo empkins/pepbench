@@ -1,4 +1,4 @@
-.. _examples:
+.. _examples_gallery:
 
 ===============
 Example Gallery
@@ -37,6 +37,18 @@ These examples demonstrate how to combine Q-Peak and B-Point detection algorithm
     :glob:
 
     _notebooks/PEP_Extraction_Pipeline_Example
+
+
+Dataset
+=======
+This example demonstrates how to load and inspect the packaged example dataset.
+
+.. nbgallery::
+    :caption: Example Dataset
+    :name: example-dataset
+    :glob:
+
+    _notebooks/Example_Dataset
 
 Evaluation
 ==========

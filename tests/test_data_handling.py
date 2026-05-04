@@ -1,27 +1,27 @@
 import lv
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 from joblib.testing import raises
-from pepbench.utils.exceptions import ValidationError
 
 from pepbench.data_handling import (
-    get_reference_data,
-    get_reference_pep,
-    get_data_for_algo,
-    get_pep_for_algo,
-    describe_pep_values,
-    rr_interval_to_heart_rate,
     add_unique_id_to_results_dataframe,
-    merge_result_metrics_from_multiple_annotators,
-    merge_results_per_sample_from_different_annotators,
-    get_error_by_group,
-    correlation_reference_pep_heart_rate,
-    get_performance_metric,
-    compute_pep_performance_metrics,
     compute_improvement_outlier_correction,
     compute_improvement_pipeline,
+    compute_pep_performance_metrics,
+    correlation_reference_pep_heart_rate,
+    describe_pep_values,
+    get_data_for_algo,
+    get_error_by_group,
+    get_pep_for_algo,
+    get_performance_metric,
+    get_reference_data,
+    get_reference_pep,
+    merge_result_metrics_from_multiple_annotators,
+    merge_results_per_sample_from_different_annotators,
+    rr_interval_to_heart_rate,
 )
+from pepbench.utils.exceptions import ValidationError
 
 
 @pytest.fixture
@@ -165,7 +165,10 @@ def test_merge_result_metrics_and_per_sample_merge():
     # merged should contain both annotators as top-level columns
     assert any("Annotator" in str(lv) for lv in merged.columns.get_level_values(0))
     # per-sample: create two small per-sample frames and merge
-    idx = pd.MultiIndex.from_tuples([("q1", "b1", "out1", "subj1", 0)], names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm", "participant", "heartbeat"])
+    idx = pd.MultiIndex.from_tuples(
+        [("q1", "b1", "out1", "subj1", 0)],
+        names=["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm", "participant", "heartbeat"],
+    )
     df1 = pd.DataFrame([[120.0]], index=idx, columns=pd.MultiIndex.from_tuples([("pep_ms", "estimated")]))
     df2 = pd.DataFrame([[118.0]], index=idx, columns=pd.MultiIndex.from_tuples([("pep_ms", "estimated")]))
     combined = merge_results_per_sample_from_different_annotators([df1, df2])
@@ -176,7 +179,9 @@ def test_merge_result_metrics_and_per_sample_merge():
 
 def test_get_error_by_group(sample_results_per_sample):
     # use absolute_error_per_sample_ms column
-    err = get_error_by_group(sample_results_per_sample, error_metric="absolute_error_per_sample_ms", grouper="participant")
+    err = get_error_by_group(
+        sample_results_per_sample, error_metric="absolute_error_per_sample_ms", grouper="participant"
+    )
     # should have 'metric' level in columns and mean/std for groups
     assert "metric" in err.columns.names
     # rows should correspond to participants present
@@ -238,7 +243,10 @@ def test_merge_result_metrics_annotation_difference_and_error():
     a2 = pd.DataFrame({"Mean Absolute Error [ms]": [6.0], "Mean Error [ms]": [0.0]}, index=["algoA"])
     merged_with_diff = merge_result_metrics_from_multiple_annotators([a1, a2], add_annotation_difference=True)
     # should contain "Annotator Difference" as a top-level column (after concatenation)
-    assert any("Annotator Difference" in str(lv) or "Annotator Difference" in str(c) for c in merged_with_diff.columns.get_level_values(0)) or "Annotator Difference" in merged_with_diff.columns.get_level_values(0).astype(str)
+    assert any(
+        "Annotator Difference" in str(lv) or "Annotator Difference" in str(c)
+        for c in merged_with_diff.columns.get_level_values(0)
+    ) or "Annotator Difference" in merged_with_diff.columns.get_level_values(0).astype(str)
 
     # three annotators: computing difference should raise ValueError
     a3 = pd.DataFrame({"Mean Absolute Error [ms]": [7.0], "Mean Error [ms]": [0.1]}, index=["algoA"])
@@ -250,7 +258,12 @@ def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
     # create a reasonable num_heartbeats DataFrame indexed by algo levels + participant so unstack() inside function works
     algo_levels = ["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
     # count heartbeats per (algo_levels + participant) as a DataFrame indexed by algo_levels + participant
-    num_hb = sample_results_per_sample[("pep_ms", "reference")].groupby(level=[*algo_levels, "participant"]).count().to_frame(name="num_heartbeats")
+    num_hb = (
+        sample_results_per_sample[("pep_ms", "reference")]
+        .groupby(level=[*algo_levels, "participant"])
+        .count()
+        .to_frame(name="num_heartbeats")
+    )
     # call function; ensure it returns a DataFrame and renamed columns exist
     perf = compute_pep_performance_metrics(sample_results_per_sample, num_heartbeats=num_hb)
     assert isinstance(perf, pd.DataFrame)
@@ -270,9 +283,9 @@ def test_compute_improvement_outlier_correction_signs():
     # rows are samples; values chosen to produce negative/positive/zero diffs
     df = pd.DataFrame(
         [
-            [5.0, 2.0],   # diff = -3 -> sign -1 (improvement)
-            [2.0, 2.0],   # diff = 0 -> sign 0 (no change)
-            [1.0, 4.0],   # diff = 3 -> sign 1 (deterioration)
+            [5.0, 2.0],  # diff = -3 -> sign -1 (improvement)
+            [2.0, 2.0],  # diff = 0 -> sign 0 (no change)
+            [1.0, 4.0],  # diff = 3 -> sign 1 (deterioration)
         ],
         columns=cols,
     )
@@ -299,8 +312,12 @@ def test_compute_improvement_pipeline_sign_changes():
     # sample 2: a_b >0, c_d >0 -> pos->pos
     # sample 3: a_b <0, c_d <0 -> neg->neg
     values = [
-        1.0, 1.0,  -1.0,  # pipeline a_b for samples 1,2,3
-        -1.0, 2.0, -2.0,  # pipeline c_d for samples 1,2,3
+        1.0,
+        1.0,
+        -1.0,  # pipeline a_b for samples 1,2,3
+        -1.0,
+        2.0,
+        -2.0,  # pipeline c_d for samples 1,2,3
     ]
     s = pd.Series(values, index=index)
     res = compute_improvement_pipeline(s, pipelines=pipelines)

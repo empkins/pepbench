@@ -52,5 +52,5 @@ __all__ = [
     "merge_result_metrics_from_multiple_annotators",
     "merge_results_per_sample_from_different_annotators",
     "rr_interval_to_heart_rate",
-    "utils"
+    "utils",
 ]

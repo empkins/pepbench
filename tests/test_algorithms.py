@@ -1,5 +1,6 @@
-from contextlib import contextmanager
 import importlib
+from contextlib import contextmanager
+
 import pytest
 
 from pepbench import algorithms as alg_pkg
@@ -10,8 +11,8 @@ from pepbench.example_data import get_example_dataset
 def does_not_raise():
     yield
 
-class TestAlgorithms:
 
+class TestAlgorithms:
     def test_algorithms_package_exports(self):
         expected_submodules = [
             "ecg",
@@ -22,7 +23,6 @@ class TestAlgorithms:
         ]
         for name in expected_submodules:
             assert hasattr(alg_pkg, name), f"pepbench.algorithms is missing submodule {name}"
-
 
     def test_submodule_all_members_callable(self):
         submodules = [
@@ -41,7 +41,6 @@ class TestAlgorithms:
                 assert attr is not None, f"{item} listed in {sub}.__all__ but not importable"
                 assert callable(attr), f"{item} in {sub} is not callable"
 
-
     def test_preprocessing_classes_instantiable(self):
         mod = importlib.import_module("pepbench.algorithms.preprocessing")
         names = getattr(mod, "__all__", [])
@@ -55,7 +54,6 @@ class TestAlgorithms:
                     assert instance is not None
             except TypeError:
                 pytest.skip(f"{cls_name} requires constructor arguments; skipping instantiation check")
-
 
     def test_example_data_and_ecg_algorithm_instantiation(self):
         dataset = get_example_dataset()
@@ -79,7 +77,10 @@ class TestAlgorithms:
                 # try next algorithm
                 continue
         else:
-            pytest.skip("No ECG algorithm could be instantiated without arguments; skipping runtime instantiation checks")
+            pytest.skip(
+                "No ECG algorithm could be instantiated without arguments; skipping runtime instantiation checks"
+            )
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

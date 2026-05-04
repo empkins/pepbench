@@ -172,9 +172,7 @@ def check_data_is_base_pep_dataset_with_annotations(data: object) -> None:
     from pepbench.datasets._base_pep_extraction_dataset import BasePepDatasetWithAnnotations
 
     if not isinstance(data, BasePepDatasetWithAnnotations):
-        raise ValidationError(
-            f"Expected data to be a BasePepDatasetWithAnnotations, got {type(data)} instead."
-        )
+        raise ValidationError(f"Expected data to be a BasePepDatasetWithAnnotations, got {type(data)} instead.")
 
 
 # Helper subroutines to reduce complexity of `is_str_t` and keep behavior explicit

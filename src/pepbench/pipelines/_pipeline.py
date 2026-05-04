@@ -45,12 +45,13 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
 
     Notes
     -----
-    - The pipeline sets the `handle_missing_events` parameter on algorithms that
-    implement `CanHandleMissingEventsMixin` when the pipeline's
-    `handle_missing_events` is not ``None``.
-    - Negative PEP handling is performed by the outlier correction algorithm and
+    The pipeline sets the ``handle_missing_events`` parameter on algorithms that
+    implement ``CanHandleMissingEventsMixin`` when the pipeline's
+    ``handle_missing_events`` is not ``None``.
+
+    Negative PEP handling is performed by the outlier correction algorithm and
     controlled via ``handle_negative_pep`` which must correspond to one of the
-    values defined in `biopsykit.signals.pep._pep_extraction.NEGATIVE_PEP_HANDLING`.
+    values defined in ``biopsykit.signals.pep._pep_extraction.NEGATIVE_PEP_HANDLING``.
     """
 
     @base_pep_pipeline_docfiller
@@ -78,11 +79,9 @@ class PepExtractionPipeline(BasePepExtractionPipeline):
 
         Notes
         -----
-        +
-        +        - Sampling rates used are taken from the datapoint (``sampling_rate_ecg`` and
-        +          ``sampling_rate_icg``).
-        +        - Outlier correction is applied to B/C points; the final PEP computation uses
-        +          B\-points after outlier correction.
+        Sampling rates are taken from the datapoint (``sampling_rate_ecg`` and
+        ``sampling_rate_icg``). Outlier correction is applied to B/C points, and
+        the final PEP computation uses the B-points after outlier correction.
         """
         if self.handle_negative_pep not in get_args(NEGATIVE_PEP_HANDLING):
             raise ValueError(

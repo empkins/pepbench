@@ -186,15 +186,15 @@ def _match_heartbeat_lists(
 
     Examples
     --------
-    >>> ref = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=['start', 'end']).rename_axis('hb_id')
-    >>> ext = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=['start', 'end']).rename_axis('hb_id')
+    >>> ref = pd.DataFrame([[10, 21], [20, 34], [31, 40]], columns=["start", "end"]).rename_axis("hb_id")
+    >>> ext = pd.DataFrame([[10, 20], [21, 30], [31, 40], [50, 60]], columns=["start", "end"]).rename_axis("hb_id")
     >>> matches = match_heartbeat_lists(
     ...     heartbeats_reference=ref,
     ...     heartbeats_extracted=ext,
     ...     sampling_rate_hz=500,
     ...     tolerance_ms=10,
     ... )
-    >>> matches['match_type'].unique()
+    >>> matches["match_type"].unique()
     array(['tp', 'fp', 'fn'], dtype=object)
     """
     if suffix_a == suffix_b:

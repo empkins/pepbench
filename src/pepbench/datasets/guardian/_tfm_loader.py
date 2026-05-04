@@ -6,6 +6,7 @@ class, which can load TFM data from .mat files, downsample the data to a common
 sampling rate, and organize the data into a structured format for further
 analysis.
 """
+
 from typing import ClassVar
 
 import numpy as np

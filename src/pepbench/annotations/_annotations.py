@@ -17,6 +17,7 @@ Functions
 :func:`~pepbench.annotations._annotations.normalize_annotations_to_heartbeat_start`
     Normalize annotation times to the heartbeat start for each rater.
 """
+
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -33,7 +34,7 @@ __all__ = [
 
 
 def load_annotations_from_dataset(
-        dataset_01: BasePepDatasetWithAnnotations, dataset_02: BasePepDatasetWithAnnotations
+    dataset_01: BasePepDatasetWithAnnotations, dataset_02: BasePepDatasetWithAnnotations
 ) -> pd.DataFrame:
     """Load and align annotations from two datasets.
 
@@ -94,7 +95,7 @@ def load_annotations_from_dataset(
 
 
 def match_annotations(
-        annotations_01: pd.DataFrame, annotations_02: pd.DataFrame, sampling_rate_hz: float
+    annotations_01: pd.DataFrame, annotations_02: pd.DataFrame, sampling_rate_hz: float
 ) -> pd.DataFrame:
     """Match annotations between two raters/datasets and return paired annotations.
 
@@ -225,7 +226,7 @@ def compute_annotation_differences(annotations: pd.DataFrame, sampling_rate_hz: 
 
 
 def normalize_annotations_to_heartbeat_start(
-        annotations: pd.DataFrame, sampling_rate_hz: float | None = None
+    annotations: pd.DataFrame, sampling_rate_hz: float | None = None
 ) -> pd.DataFrame:
     """Normalize annotation times to the heartbeat start for each rater.
 

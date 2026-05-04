@@ -1,7 +1,8 @@
-import pandas as pd
-import numpy as np
-import pytest
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import pytest
 
 from pepbench.datasets.guardian import GuardianDataset
 
@@ -96,7 +97,7 @@ def test_tfm_ecg_icg_with_monkeypatched_loader(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "pepbench.datasets.guardian._dataset._cached_get_tfm_data",
-        lambda path, date: {phase: dummy_df for phase in ds.PHASES},
+        lambda path, date: dict.fromkeys(ds.PHASES, dummy_df),
     )
 
     ecg = ds.ecg  # should select ecg_2 and rename to 'ecg'
@@ -165,7 +166,9 @@ def test_tfm_phase_cut_only_labeled(monkeypatch, tmp_path):
     )
 
     # create labeling borders with start/end that should trim the data
-    dummy_borders = pd.DataFrame({"sample_absolute": [10, 50], "description": ["Pause start", "Pause end"]}, index=[10, 50])
+    dummy_borders = pd.DataFrame(
+        {"sample_absolute": [10, 50], "description": ["Pause start", "Pause end"]}, index=[10, 50]
+    )
     monkeypatch.setattr("pepbench.datasets.guardian._dataset.load_labeling_borders", lambda fp: dummy_borders)
 
     # accessing tfm_data should return a cut DataFrame for phase 'Pause'
@@ -202,8 +205,12 @@ def test_reference_labels_and_pep(tmp_path):
 
     # build pep_reference from these labeled values
     pep_reference = heartbeats.copy()
-    pep_reference.columns = [f"heartbeat_{col}" if col != "r_peak_sample" else "r_peak_sample" for col in heartbeats.columns]
-    pep_reference = pep_reference.assign(q_peak_sample=q_peaks["sample_relative"], b_point_sample=b_points["sample_relative"], nan_reason=pd.NA)
+    pep_reference.columns = [
+        f"heartbeat_{col}" if col != "r_peak_sample" else "r_peak_sample" for col in heartbeats.columns
+    ]
+    pep_reference = pep_reference.assign(
+        q_peak_sample=q_peaks["sample_relative"], b_point_sample=b_points["sample_relative"], nan_reason=pd.NA
+    )
     pep_reference = pep_reference.assign(pep_sample=pep_reference["b_point_sample"] - pep_reference["q_peak_sample"])
     pep_reference = pep_reference.assign(pep_ms=pep_reference["pep_sample"] / ds.sampling_rate_ecg * 1000)
 

@@ -24,6 +24,14 @@ import toml
 __location__ = os.path.join(os.getcwd(), os.path.dirname(inspect.getfile(inspect.currentframe())))
 HERE = Path(__file__)
 
+DOCS_CACHE_DIR = HERE.parent / "_build" / ".cache"
+MPL_CACHE_DIR = DOCS_CACHE_DIR / "matplotlib"
+XDG_CACHE_DIR = DOCS_CACHE_DIR / "xdg"
+MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+XDG_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
+os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
+
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent))
 sys.path.insert(0, os.path.abspath("."))
@@ -52,6 +60,7 @@ EXAMPLE_NOTEBOOKS_DIR = HERE.joinpath("examples/_notebooks")
 
 with (HERE.parent / "README.md").open() as f:
     out = f.read()
+out = out.replace("./docs/_static/logo/", "./_static/logo/")  # change path to logo in copied README
 with (HERE / "README.md").open("w+") as f:
     f.write(out)
 
@@ -69,7 +78,15 @@ def all_but_ipynb(dir, contents):
     return result
 
 
-subprocess.run(["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"], check=True)
+try:
+    subprocess.run(
+        ["python", "-m", "ipykernel", "install", "--user", "--name", "pepbench"],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+except (subprocess.CalledProcessError, PermissionError):
+    print("Skipping ipykernel installation during docs build.")
 
 shutil.rmtree(EXAMPLE_NOTEBOOKS_DIR, ignore_errors=True)
 shutil.copytree(HERE.parent.joinpath("examples"), EXAMPLE_NOTEBOOKS_DIR, ignore=all_but_ipynb)
@@ -168,7 +185,7 @@ pygments_style = "sphinx"
 extensions.append("recommonmark")
 
 # The suffix of source filenames.
-source_suffix = [".rst", ".md"]
+source_suffix = {".rst": "restructuredtext", ".md": "restructuredtext"}
 
 # The master toctree document.
 master_doc = "index"
@@ -185,6 +202,15 @@ html_theme_options = {
     "github_url": URL,
     "show_prev_next": False,
 }
+
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "_static/logo/logo_pepbench.png"
+
+# The name of an image file (within the static path) to use as favicon of the
+# docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# pixels large.
+html_favicon = "_static/logo/favicon_pepbench.ico"
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -218,7 +244,7 @@ intersphinx_module_mapping = {
 
 user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:25.0) Gecko/20100101 Firefox/25.0"
 
-# Sphinx Gallary
+# Sphinx Gallery
 sphinx_gallery_conf = {
     "examples_dirs": ["../examples"],
     "gallery_dirs": ["./auto_examples"],

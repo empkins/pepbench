@@ -123,7 +123,7 @@ base_pep_pipeline_docfiller = make_filldoc(
         ``pep_results_`` :class:`~biopsykit.signals.pep.PepResultDataFrame`
              Results from the PEP extraction step.
          """,
-     },
+    },
     doc_summary="Decorator to fill common parts of the docstring for subclasses of :class:`BasePepExtractionPipeline`.",
 )
 

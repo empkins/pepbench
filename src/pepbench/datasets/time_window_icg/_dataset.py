@@ -76,17 +76,14 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     only_labeled : bool, optional
         If ``True``, restrict the dataset to entries that have labels.
 
-    Class attributes
-    ----------------
+    Attributes
+    ----------
     SAMPLING_RATE : int
         Sampling rate of raw signals in Hz (default: 2000).
     PHASES : sequence of str
         Known experiment phases (default: ``["Baseline", "EmotionInduction"]``).
     SUBSET_R_PEAK_DETECTION_ERRORS : sequence of str
         Participant-phase pairs to exclude by default due to R-peak detection errors.
-
-    Attributes
-    ----------
     base_path : pathlib.Path
         Normalized dataset base path.
     use_cache : bool
@@ -109,15 +106,15 @@ class TimeWindowIcgDataset(BasePepDatasetWithAnnotations):
     SUBSET_R_PEAK_DETECTION_ERRORS: ClassVar[Sequence[str]] = ["IDN_17"]
 
     def __init__(
-            self,
-            base_path: path_t,
-            groupby_cols: Sequence[str] | None = None,
-            subset_index: Sequence[str] | None = None,
-            *,
-            return_clean: bool = True,
-            use_cache: bool = True,
-            exclude_r_peak_detection_errors: bool = True,
-            only_labeled: bool = False,
+        self,
+        base_path: path_t,
+        groupby_cols: Sequence[str] | None = None,
+        subset_index: Sequence[str] | None = None,
+        *,
+        return_clean: bool = True,
+        use_cache: bool = True,
+        exclude_r_peak_detection_errors: bool = True,
+        only_labeled: bool = False,
     ) -> None:
         """Initialize the dataset.
 

@@ -14,6 +14,7 @@ Notes
 - The function relies on :class:`~pepbench.datasets.guardian._tfm_loader.TFMLoader`.
 - Returned DataFrames use the ``local_datetime`` index.
 """
+
 import pandas as pd
 
 from pepbench.datasets.guardian._tfm_loader import TFMLoader

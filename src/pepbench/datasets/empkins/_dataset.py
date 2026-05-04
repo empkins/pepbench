@@ -1,4 +1,5 @@
 """Module for the EmpkinS dataset class."""
+
 from collections.abc import Sequence
 from functools import cached_property, lru_cache
 from itertools import product
@@ -20,8 +21,6 @@ from pepbench.datasets.empkins._helper import _load_biopac_data, _load_timelog
 from pepbench.utils._types import check_data_is_df, path_t
 
 _cached_get_biopac_data = lru_cache(maxsize=4)(_load_biopac_data)
-
-
 
 
 # cache_dir = "./cachedir"
@@ -78,16 +77,16 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
     GENDER_MAPPING: ClassVar[dict[int, str]] = {1: "Female", 2: "Male"}
 
     def __init__(
-            self,
-            base_path: path_t,
-            groupby_cols: Sequence[str] | None = None,
-            subset_index: Sequence[str] | None = None,
-            *,
-            return_clean: bool = True,
-            exclude_missing_data: bool = False,
-            use_cache: bool = True,
-            only_labeled: bool = False,
-            label_type: str = "rater_01",
+        self,
+        base_path: path_t,
+        groupby_cols: Sequence[str] | None = None,
+        subset_index: Sequence[str] | None = None,
+        *,
+        return_clean: bool = True,
+        exclude_missing_data: bool = False,
+        use_cache: bool = True,
+        only_labeled: bool = False,
+        label_type: str = "rater_01",
     ) -> None:
         """Initialize a new ``EmpkinsDataset`` instance.
 
