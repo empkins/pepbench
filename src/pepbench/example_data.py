@@ -7,7 +7,7 @@ from pathlib import Path
 from pepbench import __version__
 from pepbench.datasets._example_dataset import ExampleDataset
 
-LOCAL_EXAMPLE_PATH = Path(__file__).parent.parent.parent.joinpath("example_data")
+LOCAL_EXAMPLE_PATH = Path(__file__).parent.joinpath("example_data")
 
 PEPPI = None
 
@@ -32,6 +32,7 @@ if not LOCAL_EXAMPLE_PATH.exists():
     # Get registry file from package_data
     # The registry file can be recreated by running the task `poe update_example_data`
     registry_file = LOCAL_EXAMPLE_PATH.joinpath("_example_data_registry.txt")
+    
     # Load this registry file if it exists
     if registry_file.exists():
         PEPPI.load_registry(registry_file)
