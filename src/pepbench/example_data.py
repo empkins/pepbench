@@ -32,8 +32,13 @@ if not LOCAL_EXAMPLE_PATH.exists():
     # Get registry file from package_data
     # The registry file can be recreated by running the task `poe update_example_data`
     registry_file = LOCAL_EXAMPLE_PATH.joinpath("_example_data_registry.txt")
-    # Load this registry file
-    PEPPI.load_registry(registry_file)
+    # Load this registry file if it exists
+    if registry_file.exists():
+        PEPPI.load_registry(registry_file)
+    else:
+        # Fallback: manually set registry with just the example dataset
+        # This allows the pooch to download the file even without the registry
+        PEPPI.registry = {"example_dataset.zip": "30274e286dcfd27e57ceb7bf80f6c607c7739424433ded1c87bd50ee85887741"}
 
 
 def _pooch_get_folder(folder_path: Path) -> Path:
