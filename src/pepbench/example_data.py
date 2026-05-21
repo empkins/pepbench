@@ -32,7 +32,7 @@ if not LOCAL_EXAMPLE_PATH.exists():
     # Get registry file from package_data
     # The registry file can be recreated by running the task `poe update_example_data`
     registry_file = LOCAL_EXAMPLE_PATH.joinpath("_example_data_registry.txt")
-    
+
     # Load this registry file if it exists
     if registry_file.exists():
         PEPPI.load_registry(registry_file)
