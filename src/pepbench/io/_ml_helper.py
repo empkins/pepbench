@@ -5,10 +5,9 @@ import numpy as np
 
 from pepbench.utils._types import path_t
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
-import shap
 
 __all__ = ["load_preprocessed_training_data", "compute_mae_std_from_permuter", "compute_mae_std_from_metric_summary", "compute_abs_error", "compute_error",
-           "impute_missing_values", "compute_shap_values"]
+           "impute_missing_values"]
 
 
 def load_preprocessed_training_data(
