@@ -7,7 +7,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "biopsykit>=0.13.1",
+    "biopsykit>=0.14.0",
     "tpcp>=2",
     # required by pandas' Styler.to_latex, used in pepbench.export
     "jinja2>=3.1.4,<4",
