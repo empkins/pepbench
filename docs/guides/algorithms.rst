@@ -81,6 +81,10 @@ exist. pepbench includes algorithms such as:
 * :class:`pepbench.algorithms.icg.BPointExtractionLozano2007QuadraticRegression`
 * :class:`pepbench.algorithms.icg.BPointExtractionDebski1993SecondDerivative`
 * :class:`pepbench.algorithms.icg.BPointExtractionStern1985`
+* :class:`pepbench.algorithms.icg.BPointExtractionSherwood1990`
+* :class:`pepbench.algorithms.icg.BPointExtractionMiljkovic2022`
+* :class:`pepbench.algorithms.icg.BPointExtractionPale2021`
+* :class:`pepbench.algorithms.icg.BPointExtractionAbelStuehler2026`
 
 The underlying papers differ in how they define the B-point on the
 dZ/dt curve (local minima, isoelectric crossings, derivative extremes,
@@ -94,6 +98,10 @@ Very coarse guidance (always check the paper for your use case):
 * **Lozano2007 variants** – regression-based methods; often suggested for noisy data and ambulatory settings.
 * **Debski1993** – early derivative-based method; among the first to define B-point via second-derivative zero crossings.
 * **Stern1985** – classic local-minimum approach in dZ/dt.
+* **Sherwood1990** – classic guideline-based method; places the B-point at the last zero crossing of dZ/dt before the C-point.
+* **Miljkovic2022** – applies a weighted time window to the segment before the C-point, which amplifies the B-point and makes it easier to locate.
+* **Pale2021** – real-time, low-complexity method; searches a C-point-based window for the local minimum closest to the C-point or a slope-threshold crossing, with fallbacks if neither is found.
+* **AbelStuehler2026** – machine-learning-based method; a Random Forest regressor combines the RR interval and the estimates of the 12 classical algorithms above into one B-point per heartbeat. Uses a pretrained model that is downloaded on first use. **Recommended** based on our results: it reduced the mean absolute error by 54.7% compared to the best-performing classical algorithm (Drost2022), reaching 8.13 ± 12.12 ms, which is below the inter-rater error of 8.35 ± 14.78 ms (evaluated on over 11,000 heartbeats from 39 young, healthy participants).
 
 
 C-point extraction and heartbeat segmentation

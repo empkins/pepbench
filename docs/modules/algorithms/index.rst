@@ -30,6 +30,7 @@ B-Point Extraction Algorithms
    :toctree: generated/icg
    :template: class.rst
 
+    BPointExtractionAbelStuehler2026
     BPointExtractionArbol2017IsoelectricCrossings
     BPointExtractionArbol2017SecondDerivative
     BPointExtractionArbol2017ThirdDerivative
@@ -38,6 +39,8 @@ B-Point Extraction Algorithms
     BPointExtractionForouzanfar2018
     BPointExtractionLozano2007LinearRegression
     BPointExtractionLozano2007QuadraticRegression
+    BPointExtractionMiljkovic2022
+    BPointExtractionPale2021
     BPointExtractionSherwood1990
     BPointExtractionStern1985
 
