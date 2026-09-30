@@ -100,12 +100,11 @@ ML-based B-point regression model available via `biopsykit`'s
 `pepbench` itself free of large result/model artifacts and experiment-only dependencies while still pinning a
 released `pepbench` version, so the experiments stay reproducible against a stable library release.
 
-The ML-based B-point extraction approach (`BPointExtractionAbelStuehler2026`) is described in an upcoming
-publication (in preparation):
+The ML-based B-point extraction approach (`BPointExtractionAbelStuehler2026`) is described in:
 
-> [PLACEHOLDER] Abel, L., et al. (in preparation). *<Title TBD>*. <Journal/Conference TBD>.
-
-Citation details will be added here once available.
+> Abel L, Stühler S, Steigleder T, Ostgathe C, Rohleder N, Eskofier BM and Richer R (2026) Beat-to-beat aortic
+> valve opening detection from impedance cardiography using machine learning. *Frontiers in Digital Health*
+> (accepted, in press). Article number and DOI to be added once assigned.
 
 
 ## Contributing
