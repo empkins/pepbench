@@ -149,7 +149,8 @@ Minimal example (skeleton)
 
 **Benchmarking tips**
 
-- Reuse the existing benchmarking notebooks under ``experiments/pep_algorithm_benchmarking`` for batch runs and plotting.
+- Reuse the existing benchmarking notebooks in ``pep_algorithm_benchmarking/`` of the
+  `pepbench-experiments <https://github.com/empkins/pepbench-experiments>`_ repository for batch runs and plotting.
 - Compare across algorithms using the same heartbeat segmentation and dataset to isolate differences to the extraction step.
 - Automate parameter sweeps (grid search) when tuning algorithm hyperparameters and record results per parameter set.
 
