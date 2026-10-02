@@ -212,7 +212,7 @@ class EmpkinsDataset(BasePepDatasetWithAnnotations, MetadataMixin):
         else:
             raise ValueError("Biopac data can only be accessed for one single participant and condition at once!")
 
-        data, fs = self._get_biopac_data(participant, condition, phase)
+        data, _fs = self._get_biopac_data(participant, condition, phase)
 
         if self.only_labeled:
             biopac_data_dict = {}

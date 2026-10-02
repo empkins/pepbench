@@ -37,7 +37,7 @@ def load_labeling_borders(file_path: path_t) -> pd.DataFrame:
         using :func:`ast.literal_eval`, sets ``timestamp`` as the index and sorts the index.
     """
     data = pd.read_csv(file_path)
-    data = data.assign(description=data["description"].apply(lambda s: ast.literal_eval(s)))
+    data = data.assign(description=data["description"].apply(ast.literal_eval))
 
     data = data.set_index("timestamp").sort_index()
     return data

@@ -18,7 +18,7 @@ electrocardiogram (ECG) and impedance cardiography (ICG) signals. The package in
 algorithms for PEP extraction, as well as tools for the evaluation of these algorithms.
 
 
-- 💻 3 Q-peak and 12 B-point Detection [Algorithms](https://pepbench.readthedocs.io/en/latest/modules/index.html) from the literature
+- 💻 3 Q-peak and 12 B-point Detection [Algorithms](https://pepbench.readthedocs.io/en/latest/modules/index.html) from the literature, plus our own machine-learning-based B-point extraction model (`BPointExtractionAbelStuehler2026`) - see [Research Experiments](#research-experiments) below
 - 📚 Extensive [documentation](https://pepbench.readthedocs.io/en/latest/)
 - 📝 Build to be [easily extendable](https://pepbench.readthedocs.io/en/latest/source/user_guide/create_own_algorithm.html)
 - 📁 4 manually annotated [reference datasets](https://pepbench.readthedocs.io/en/latest/source/user_guide/datasets.html) for evaluation  
@@ -101,6 +101,22 @@ Note: We don't guarantee that the latest version on GitHub is stable.
 
     ```
 
+
+
+## Research Experiments
+
+The notebooks and scripts used to train, benchmark, and evaluate the algorithms in this package (including the
+ML-based B-point regression model available via `biopsykit`'s
+[`BPointExtractionAbelStuehler2026`](https://github.com/mad-lab-fau/BioPsyKit)) live in a separate repository,
+[pepbench-experiments](https://github.com/empkins/pepbench-experiments), rather than in this one. This keeps
+`pepbench` itself free of large result/model artifacts and experiment-only dependencies while still pinning a
+released `pepbench` version, so the experiments stay reproducible against a stable library release.
+
+The ML-based B-point extraction approach (`BPointExtractionAbelStuehler2026`) is described in:
+
+> Abel L, Stühler S, Steigleder T, Ostgathe C, Rohleder N, Eskofier BM and Richer R (2026) Beat-to-beat aortic
+> valve opening detection from impedance cardiography using machine learning. *Frontiers in Digital Health*
+> (accepted, in press). Article number and DOI to be added once assigned.
 
 
 ## Contributing

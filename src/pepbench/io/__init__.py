@@ -15,6 +15,18 @@ See :mod:`pepbench.io._io` for implementation details.
 
 """
 
-from pepbench.io._io import convert_hz_to_ms, load_challenge_results_from_folder
+from pepbench.io._io import (
+    compute_abs_error,
+    convert_hz_to_ms,
+    load_best_performing_algos_b_point,
+    load_best_performing_algos_q_wave,
+    load_challenge_results_from_folder,
+)
 
-__all__ = ["convert_hz_to_ms", "load_challenge_results_from_folder"]
+__all__ = [
+    "compute_abs_error",
+    "convert_hz_to_ms",
+    "load_best_performing_algos_b_point",
+    "load_best_performing_algos_q_wave",
+    "load_challenge_results_from_folder",
+]

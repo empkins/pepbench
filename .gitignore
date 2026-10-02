@@ -244,3 +244,12 @@ $RECYCLE.BIN/
 
 # debug folder
 _debug
+
+# b_point_ml_experiments: generated model/result artifacts too large for GitHub (>50MB)
+experiments/b_point_ml_experiments/models/b-point/rr-interval/*/*.pkl
+experiments/b_point_ml_experiments/models/b-point/permuter_summary/merged_b_point_permuter.csv
+experiments/b_point_ml_experiments/models/b-point/permuter_summary/merged_b_point_permuter_paper.json
+experiments/b_point_ml_experiments/results/merged_ml_results_b_point_error_metrics_long.csv
+experiments/b_point_ml_experiments/results/merged_ml_results_b_point_error_metrics_long_rr_only.csv
+experiments/b_point_ml_experiments/results/merged_ml_results_b_point_paper_long.csv
+experiments/b_point_ml_experiments/results/merged_ml_results_b_point_error_metrics.csv

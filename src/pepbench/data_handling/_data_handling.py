@@ -62,6 +62,7 @@ import pandas as pd
 import pingouin as pg
 
 from pepbench.utils._types import check_data_is_df, check_data_is_str_t, str_t
+from pepbench.utils.exceptions import ValidationError
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
@@ -166,13 +167,9 @@ def get_data_for_algo(results_per_sample: pd.DataFrame, algo_combi: str_t) -> pd
 
     # Validate algo_combi: should be a sequence of strings (tuple/list) matching the number of algo levels
     if isinstance(algo_combi, str) or not isinstance(algo_combi, Sequence):
-        from pepbench.utils.exceptions import ValidationError
-
         raise ValidationError("algo_combi must be a tuple/list of algorithm level names")
 
     if len(algo_combi) != len(algo_levels):
-        from pepbench.utils.exceptions import ValidationError
-
         raise ValidationError(f"algo_combi must have length {len(algo_levels)} matching algorithm levels")
 
     data = results_per_sample.xs(tuple(algo_combi), level=algo_levels)
@@ -560,8 +557,6 @@ def compute_improvement_pipeline(data: pd.DataFrame, pipelines: Sequence[str]) -
         ser = data.copy()
         data = ser.to_frame(name="value")
     elif not isinstance(data, pd.DataFrame):
-        from pepbench.utils.exceptions import ValidationError
-
         raise ValidationError(f"Expected data to be a pandas DataFrame or Series, got {type(data)} instead.")
 
     data = data.copy()

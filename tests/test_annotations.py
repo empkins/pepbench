@@ -1,4 +1,7 @@
+"""Tests for the :mod:`pepbench.annotations` module."""
+
 from collections import namedtuple
+from collections.abc import Sequence
 
 import pandas as pd
 import pytest
@@ -15,7 +18,10 @@ from pepbench.utils.exceptions import ValidationError
 
 
 class TestAnnotationSyntheticData:
-    def test_compute_annotation_differences_simple_samples_and_ms(self):
+    """Tests for annotation helpers using synthetic data."""
+
+    def test_compute_annotation_differences_simple_samples_and_ms(self) -> None:
+        """Test computing annotation differences in samples and milliseconds."""
         # Build a DataFrame shaped like matched annotations:
         # - MultiIndex columns (rater, sample)
         # - MultiIndex index with levels including 'channel' and 'label'
@@ -48,7 +54,8 @@ class TestAnnotationSyntheticData:
         assert "difference_ms" in res_ms.columns
         assert pytest.approx(res_ms["difference_ms"].tolist()) == [20.0, -50.0]
 
-    def test_compute_annotation_differences_multiindex_columns(self):
+    def test_compute_annotation_differences_multiindex_columns(self) -> None:
+        """Test computing annotation differences with MultiIndex columns."""
         # multi-index columns in the form (rater, sample_relative)
         cols = pd.MultiIndex.from_product([["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"])
 
@@ -75,7 +82,8 @@ class TestAnnotationSyntheticData:
         # 100 - 95 = 5, 200 - 205 = -5
         assert res["difference_samples"].tolist() == [5, -5]
 
-    def test_describe_and_bin_annotation_differences(self):
+    def test_describe_and_bin_annotation_differences(self) -> None:
+        """Test describing and binning annotation differences."""
         # create a tiny differences dataframe in milliseconds
         diffs = pd.DataFrame({"difference_ms": [1, 5, 12]})
 
@@ -95,19 +103,18 @@ class TestAnnotationSyntheticData:
         assert "annotation_bins" in binned_labelled.columns
         assert pd.api.types.is_categorical_dtype(binned_labelled["annotation_bins"].dtype)
 
-    def test_load_annotations_from_dataset_concatenates_signals(self, monkeypatch):
+    def test_load_annotations_from_dataset_concatenates_signals(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that ECG and ICG annotations are concatenated along a ``signal`` index level."""
+
         # create simple stubbed match_annotations that returns deterministic small DataFrames
-        def fake_match_annotations(ann01, ann02, sampling_rate_hz):
+        def fake_match_annotations(ann01: object, *_args: object) -> pd.DataFrame:
             cols = pd.MultiIndex.from_product(
                 [["rater_01", "rater_02"], ["sample_relative"]], names=["rater", "sample"]
             )
             idx = pd.Index([0, 1], name="heartbeat_id")
             # produce different values for the two calls by checking a marker in ann01 (we'll pass a flag)
             marker = getattr(ann01, "_marker", "ecg")
-            if marker == "ecg":
-                data = [[10, 12], [20, 22]]
-            else:
-                data = [[30, 32], [40, 42]]
+            data = [[10, 12], [20, 22]] if marker == "ecg" else [[30, 32], [40, 42]]
             return pd.DataFrame(data, index=idx, columns=cols)
 
         monkeypatch.setattr("pepbench.annotations._annotations.match_annotations", fake_match_annotations)
@@ -116,7 +123,7 @@ class TestAnnotationSyntheticData:
         GroupLabel = namedtuple("GroupLabel", ["participant"])
 
         class SimpleSubset:
-            def __init__(self, marker, participant_label="VP_001"):
+            def __init__(self, marker: str, participant_label: str = "VP_001") -> None:
                 # annotation objects are only passed to fake_match_annotations;
                 # attach a marker attribute so fake_match_annotations can differentiate ECG/ICG
                 self.reference_labels_ecg = type("A", (), {"_marker": marker})()
@@ -125,7 +132,14 @@ class TestAnnotationSyntheticData:
 
         # Create a lightweight dataset that is actually an instance of BasePepDatasetWithAnnotations
         class TestDataset(BasePepDatasetWithAnnotations):
-            def __init__(self, subset, sampling_rate_ecg=100, groupby_cols=None, subset_index=None, return_clean=True):
+            def __init__(
+                self,
+                subset: SimpleSubset,
+                sampling_rate_ecg: int = 100,
+                groupby_cols: Sequence[str] | None = None,
+                subset_index: pd.DataFrame | None = None,
+                return_clean: bool = True,
+            ) -> None:
                 # set minimal attributes referenced by BasePepDataset/TPCP checks before calling super()
                 self._subsets = [subset]
                 self._sampling_rate_ecg = sampling_rate_ecg
@@ -136,7 +150,7 @@ class TestAnnotationSyntheticData:
                 # now call the base initializer (forward expected parameters)
                 super().__init__(groupby_cols=groupby_cols, subset_index=subset_index, return_clean=return_clean)
 
-            def groupby(self, _):
+            def groupby(self, _: object) -> list[SimpleSubset]:
                 # load_annotations_from_dataset calls groupby(None); return sequence of subset objects
                 return list(self._subsets)
 
@@ -145,7 +159,7 @@ class TestAnnotationSyntheticData:
                 return self._sampling_rate_ecg
 
             @property
-            def group_labels(self):
+            def group_labels(self) -> list[type]:
                 # override to return the prepared private attribute without attempting to set the base property
                 return self._group_labels
 
@@ -163,7 +177,8 @@ class TestAnnotationSyntheticData:
         assert res.columns.name == "rater"
         # ensure both signals present in the index level "signal"
         signals = list(res.index.get_level_values("signal").unique())
-        assert "ECG" in signals and "ICG" in signals
+        assert "ECG" in signals
+        assert "ICG" in signals
 
         # check values were concatenated and accessible via the index:
         # extract ECG rows and ICG rows using index-level lookup and then the rater column.
@@ -174,7 +189,7 @@ class TestAnnotationSyntheticData:
         assert ecg_rater1 == [10, 20]
         assert icg_rater2 == [12, 22]
 
-    def test_Validation_Error(self):
+    def test_validation_error(self) -> None:
         """Running should validate input type and raise ValidationError."""
         with pytest.raises(ValidationError):
             compute_annotation_differences(["not", "a", "dataframe"])
@@ -189,6 +204,8 @@ class TestAnnotationSyntheticData:
 
 
 class TestAnnotationModuleExampleData:
+    """Tests for annotation helpers using the example dataset."""
+
     @staticmethod
     def _extract_sample_series(df: pd.DataFrame) -> pd.Series:
         """Try common shapes for example annotation tables and return a sample-relative series."""
@@ -197,7 +214,7 @@ class TestAnnotationModuleExampleData:
             # try direct selection by name if present as a column label
             try:
                 return df.xs("sample_relative", level="sample", axis=1).squeeze()
-            except Exception:
+            except (KeyError, ValueError):
                 pass
             # try selecting a column named 'sample_relative'
             if "sample_relative" in df.columns:
@@ -209,29 +226,9 @@ class TestAnnotationModuleExampleData:
             return df["sample_relative"].squeeze()
         return df.select_dtypes("number").iloc[:, 0].squeeze()
 
-    # python
-    def test_annotation_stats_with_example_vp_001(self):
-        dataset = get_example_dataset()
-        # get the example subset for participant VP_001
-        try:
-            subset = dataset.get_subset(participant="VP_001")
-        except Exception:
-            pytest.skip("Could not load example subset VP_001; skipping annotation runtime tests")
-
-        # Safely retrieve possible annotation attributes without using DataFrame truthiness
-        ann_df = getattr(subset, "reference_labels_ecg", None)
-        if ann_df is None:
-            ann_df = getattr(subset, "reference_labels", None)
-
-        # If missing or not a DataFrame, skip the runtime test
-        if ann_df is None or not isinstance(ann_df, pd.DataFrame):
-            pytest.skip("No ECG reference annotations found on example subset; skipping annotation runtime tests")
-
-        # extract a sample-relative series and build a paired rater table by shifting one rater
-        samples = self._extract_sample_series(ann_df)
-        if samples.empty:
-            pytest.skip("Extracted sample series is empty; skipping annotation runtime tests")
-
+    @staticmethod
+    def _build_paired_table(samples: pd.Series) -> pd.DataFrame:
+        """Build a paired two-rater table from a sample series, including a synthetic Artefact row."""
         # take a small slice to keep test deterministic
         samples = samples.head(6).astype(int)
         paired = pd.concat({"rater_01": samples, "rater_02": samples + 2}, axis=1)
@@ -248,7 +245,7 @@ class TestAnnotationModuleExampleData:
         # determine heartbeat id for synthetic Artefact row (robust to index naming)
         try:
             hb_val = paired.index.get_level_values("heartbeat_id")[0]
-        except Exception:
+        except KeyError:
             first_idx = paired.index[0]
             hb_val = first_idx[0] if isinstance(first_idx, tuple) else first_idx
 
@@ -257,6 +254,32 @@ class TestAnnotationModuleExampleData:
         extra_idx = pd.MultiIndex.from_tuples([(hb_val, "heartbeat", "Artefact")], names=idx_names)
         extra = pd.DataFrame([[0, 0]], index=extra_idx, columns=paired.columns)
         paired = pd.concat([paired, extra])
+        return paired
+
+    def test_annotation_stats_with_example_vp_001(self) -> None:
+        """Test annotation differences, stats and binning on the example dataset."""
+        dataset = get_example_dataset()
+        # get the example subset for participant VP_001
+        try:
+            subset = dataset.get_subset(participant="VP_001")
+        except (KeyError, ValueError):
+            pytest.skip("Could not load example subset VP_001; skipping annotation runtime tests")
+
+        # Safely retrieve possible annotation attributes without using DataFrame truthiness
+        ann_df = getattr(subset, "reference_labels_ecg", None)
+        if ann_df is None:
+            ann_df = getattr(subset, "reference_labels", None)
+
+        # If missing or not a DataFrame, skip the runtime test
+        if ann_df is None or not isinstance(ann_df, pd.DataFrame):
+            pytest.skip("No ECG reference annotations found on example subset; skipping annotation runtime tests")
+
+        # extract a sample-relative series and build a paired rater table by shifting one rater
+        samples = self._extract_sample_series(ann_df)
+        if samples.empty:
+            pytest.skip("Extracted sample series is empty; skipping annotation runtime tests")
+
+        paired = self._build_paired_table(samples)
 
         # compute differences in samples
         diffs_samples = compute_annotation_differences(paired)

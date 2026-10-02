@@ -105,7 +105,6 @@ __all__ = [
     "create_algorithm_result_table",
     "create_nan_reason_table",
     "create_outlier_correction_table",
-    "create_reference_pep_table",
 ]
 
 
@@ -211,8 +210,10 @@ def create_algorithm_result_table(data: pd.DataFrame, collapse_algo_levels: bool
 
     if "Invalid PEPs" in data.columns:
         formatted_data[r"Invalid PEPs"] = data.apply(
-            lambda row: f"{int(row[('Invalid PEPs', 'total')])} "
-            rf"({(row[('Invalid PEPs', 'total')] / row[('Total PEPs', 'total')] * 100):.1f} \%)",
+            lambda row: (
+                f"{int(row[('Invalid PEPs', 'total')])} "
+                rf"({(row[('Invalid PEPs', 'total')] / row[('Total PEPs', 'total')] * 100):.1f} \%)"
+            ),
             axis=1,
         )
 

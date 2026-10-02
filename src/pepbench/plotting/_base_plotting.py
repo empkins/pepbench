@@ -42,6 +42,7 @@ from biopsykit.signals.icg.event_extraction import BaseBPointExtraction, CPointE
 from fau_colors import cmaps
 from matplotlib import pyplot as plt
 from matplotlib import transforms
+from pingouin.utils import _check_dataframe
 from scipy import stats
 
 from pepbench.datasets import BasePepDataset, BasePepDatasetWithAnnotations
@@ -776,6 +777,7 @@ def _plot_signals_two_axes(
 def _plot_blandaltman(  # noqa: PLR0915
     x: pd.Series | np.ndarray | list,
     y: pd.Series | np.ndarray | list,
+    *,
     agreement: float = 1.96,
     xaxis: str = "mean",
     confidence: float = 0.95,
@@ -1021,6 +1023,7 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
     dv: str,
     within: str,
     subject: str,
+    *,
     order: Sequence[str] | None = None,
     boxplot: bool = True,
     boxplot_in_front: bool = False,
@@ -1135,8 +1138,6 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
         >>> df = df.query("Group == 'Control'")
         >>> fig, ax = pg._plot_paired(data=df, dv="Scores", within="Time", subject="Subject", boxplot_in_front=True)
     """
-    from pingouin.utils import _check_dataframe
-
     # Set default colors
     if colors is None:
         colors = ["green", "grey", "indianred"]
@@ -1258,7 +1259,7 @@ def _plot_paired(  # noqa: PLR0915, PLR0912, C901
 
         # Set alpha to patch of boxplot but not to whiskers
         for patch in ax.artists:
-            r, g, b, a = patch.get_facecolor()
+            r, g, b, _ = patch.get_facecolor()
             patch.set_facecolor((r, g, b, 0.75))
     else:
         # If no boxplot, axis needs manual styling as in Seaborn pointplot

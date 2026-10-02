@@ -18,12 +18,19 @@ See Also
 
 from collections.abc import Sequence
 
+import numpy as np
 import pandas as pd
 
 from pepbench.evaluation import ChallengeResults
 from pepbench.utils._types import path_t
 
-__all__ = ["convert_hz_to_ms", "load_challenge_results_from_folder"]
+__all__ = [
+    "compute_abs_error",
+    "convert_hz_to_ms",
+    "load_best_performing_algos_b_point",
+    "load_best_performing_algos_q_wave",
+    "load_challenge_results_from_folder",
+]
 
 
 def load_challenge_results_from_folder(
@@ -152,6 +159,101 @@ def load_challenge_results_from_folder(
     return ChallengeResults(dict_agg_mean_std, dict_agg_total, dict_single, dict_per_sample)
 
 
+def load_best_performing_algos_b_point(
+    folder_path: path_t,
+    n_best: int | None = 5,
+    outlier_correction: bool | None = False,
+) -> pd.DataFrame:
+    """
+    Load the best performing B-Point Detection algorithms from folder based on their mean absolute error.
+
+    Parameters
+    ----------
+    folder_path : str or :class:`pathlib.Path`
+        The folder path containing the results.
+    n_best: int, optional
+        The amount of algorithms that should be returned. Default: ``5``
+    outlier_correction: bool, optional
+        Specifies whether the outlier correction algorithms should be taken into account. Default: ```False``
+
+    Returns
+    -------
+    pd.Dataframe
+        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe.
+
+    """
+    assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
+
+    if type(n_best) is not int:
+        raise TypeError(f"Expected type int, received type {type(n_best)}!")
+
+    result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
+    dict_agg_mean_std = {}
+
+    for file in result_files_agg_mean_std:
+        file_paras = file.stem.split("_")
+        algo_types = tuple(file_paras[3:6])
+        data = pd.read_csv(file, index_col=0)
+        data.index.name = "metric"
+        dict_agg_mean_std[algo_types] = data
+
+    agg_mean_std = pd.concat(
+        dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+    ).droplevel("q_wave_algorithm")
+
+    if outlier_correction is False:
+        agg_mean_std = agg_mean_std.xs(key="none", level="outlier_correction_algorithm", drop_level=True)
+
+    best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
+
+    return best_agg_mean_std
+
+
+def load_best_performing_algos_q_wave(
+    folder_path: path_t,
+    n_best: int | None = 5,
+) -> pd.DataFrame:
+    """
+    Load the best performing B-Point Detection algorithms from folder based on their mean absolute error.
+
+    Parameters
+    ----------
+    folder_path : str or :class:`pathlib.Path`
+        The folder path containing the results.
+    n_best: int, optional
+        The amount of algorithms that should be returned. Default: ``5``
+
+    Returns
+    -------
+    pd.Dataframe
+        The n_best algorihtms with the lowest mean absolute error as a pd.Dataframe.
+
+    """
+    assert folder_path.is_dir(), f"Folder '{folder_path}' does not exist!"
+
+    if type(n_best) is not int:
+        raise TypeError(f"Expected type int, received type {type(n_best)}!")
+
+    result_files_agg_mean_std = sorted(folder_path.glob("*_agg_mean_std.csv"))
+    dict_agg_mean_std = {}
+
+    for file in result_files_agg_mean_std:
+        file_paras = file.stem.split("_")
+        algo_types = tuple(file_paras[3:6])
+        data = pd.read_csv(file, index_col=0)
+        data.index.name = "metric"
+        dict_agg_mean_std[algo_types] = data
+
+    agg_mean_std = pd.concat(
+        dict_agg_mean_std, names=["q_wave_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
+    ).droplevel(["b_point_algorithm", "outlier_correction_algorithm"])
+    agg_mean_std = agg_mean_std.drop(index="scipy-findpeaks")
+
+    best_agg_mean_std = agg_mean_std.xs(key="absolute_error_ms", level="metric").nsmallest(n_best, "mean")
+
+    return best_agg_mean_std
+
+
 def convert_hz_to_ms(sampling_frequency: float) -> float:
     """Convert a sampling frequency in Hertz to a period in milliseconds.
 
@@ -172,3 +274,29 @@ def convert_hz_to_ms(sampling_frequency: float) -> float:
     """
     conversion_factor = 1000 / sampling_frequency
     return conversion_factor
+
+
+def compute_abs_error(
+    predicted_labels: np.array,
+    true_labels: np.array,
+) -> np.ndarray:
+    """
+    Compute the absolute error of the B-Point extraction algorithms against the labeled reference data.
+
+    Parameters
+    ----------
+    input data: pd.DataFrame
+        Dataframe containing the automatically extracted B-Point locations and the labeled reference data
+    reference: pd.Series
+        Series containing the column against which the absolute error should be calculated
+
+    Returns
+    -------
+    pd.DataFrame
+        The absolute errors of the extracted B-Point locations against the labeled reference data
+    """
+    # if reference.name in input_data.columns:
+    #    input_data = input_data.drop(columns=reference.name)
+
+    abs_error = np.abs(predicted_labels - true_labels)
+    return abs_error

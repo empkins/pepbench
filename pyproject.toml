@@ -1,20 +1,21 @@
 [project]
 name = "pepbench"
-version = "0.2.0"
+version = "0.3.0"
 description = "A python package to benchmark different pre-ejection period (PEP) extraction algorithms."
 authors = [{ name = "Robert Richer", email = "robert.richer@fau.de" }]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "biopsykit>=0.13.1",
+    "biopsykit>=0.14.0",
     "tpcp>=2",
+    # required by pandas' Styler.to_latex, used in pepbench.export
     "jinja2>=3.1.4,<4",
     "pooch>=1.8.2",
+    # required by neurokit2's wavelet ECG delineation (used by the Martinez2004 Q-peak algorithm), which the
+    # neurokit2 versions allowed by biopsykit use without declaring it as a dependency
     "pywavelets>=1.8.0",
-    "notebook>=7.5.0",
-    "lv>=0.0.6",
-    "ipykernel>=6.29.5",
+    "pandas>=2.0.0",
 ]
 
 [dependency-groups]
@@ -37,6 +38,9 @@ dev = [
     "nbsphinx>=0.9.7",
     "pingouin>=0.5.2",
 ]
+
+[tool.uv]
+python-preference = "managed"
 
 [tool.uv.sources]
 biopsykit = { git = "https://github.com/mad-lab-fau/BioPsyKit.git", branch = "main" }

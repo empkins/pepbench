@@ -791,7 +791,7 @@ def plot_b_point_extraction_stern1985(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -991,7 +991,7 @@ def plot_b_point_extraction_sherwood1990(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1373,7 +1373,7 @@ def plot_b_point_extraction_arbol2017_isoelectric_crossings(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1570,7 +1570,7 @@ def plot_b_point_extraction_arbol2017_second_derivative(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -1783,7 +1783,7 @@ def plot_b_point_extraction_arbol2017_third_derivative(
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -2377,7 +2377,7 @@ def plot_b_point_extraction_drost2022(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
     algo_params_c_point = {key: val for key, val in algo_params.items() if key in ["window_c_correction"]}
@@ -2577,7 +2577,7 @@ def plot_b_point_extraction_pale2021(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
 
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
@@ -2862,7 +2862,7 @@ def plot_b_point_extraction_miljkovic2022(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 
@@ -3191,7 +3191,7 @@ def plot_b_point_extraction_forouzanfar2018(  # noqa: PLR0915
         algo_params = {}
 
     heartbeat_subset = _sanitize_heartbeat_subset(heartbeat_subset)
-    ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
+    _ecg_data, icg_data = _get_data(datapoint, normalize_time=normalize_time, heartbeat_subset=heartbeat_subset)
     heartbeats = _get_heartbeats(datapoint, heartbeat_subset)
     heartbeat_borders = _get_heartbeat_borders(icg_data, heartbeats)
 

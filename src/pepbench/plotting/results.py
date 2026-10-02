@@ -225,7 +225,7 @@ def _plot_helper_algorithm_performance(
     data = data.replace(_algorithm_mapping)
 
     algo_levels = [s for s in data.columns if s in _algo_level_mapping]
-    data = data.assign(algorithm=data[algo_levels].apply(lambda x: "\n".join(x), axis=1))
+    data = data.assign(algorithm=data[algo_levels].apply("\n".join, axis=1))
 
     # filter kwargs for sns.boxplot
     if "boxplot" in plot_func.__name__:
@@ -402,7 +402,7 @@ def residual_plot_pep_heart_rate(
     kwargs.setdefault("rect", (0, 0, 0.85, 1))
     kwargs.setdefault("base_color", "Spectral_r")
 
-    histogram, bin_edges = np.histogram(data["heart_rate_bpm"].dropna(), bins=bins)
+    _histogram, bin_edges = np.histogram(data["heart_rate_bpm"].dropna(), bins=bins)
 
     kwargs["num_groups"] = len(bin_edges) - 1
 
@@ -451,7 +451,7 @@ def residual_plot_pep_bmi(
     kwargs.setdefault("rect", (0, 0, 0.85, 1))
     kwargs.setdefault("base_color", "Spectral_r")
 
-    histogram, bin_edges = np.histogram(data["BMI"].dropna(), bins=bins)
+    _histogram, bin_edges = np.histogram(data["BMI"].dropna(), bins=bins)
     kwargs["num_groups"] = len(bin_edges) - 1
 
     # add category for heart rate
@@ -499,7 +499,7 @@ def residual_plot_pep_age(
     kwargs.setdefault("rect", (0, 0, 0.85, 1))
     kwargs.setdefault("base_color", "Spectral_r")
 
-    histogram, bin_edges = np.histogram(data["Age"].dropna(), bins=bins)
+    _histogram, bin_edges = np.histogram(data["Age"].dropna(), bins=bins)
     kwargs["num_groups"] = len(bin_edges) - 1
 
     # add category for age
@@ -1122,6 +1122,7 @@ def _format_pep_pipeline(algo_levels: Sequence[str]) -> str:
 def plot_q_wave_detection_waveform_detailed_comparison(
     datapoint_01: pd.DataFrame,
     datapoint_02: pd.DataFrame,
+    *,
     base_plot_func: Callable,
     plot_func_01_params: dict,
     plot_func_02_params: dict,

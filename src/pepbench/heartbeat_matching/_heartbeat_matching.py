@@ -132,6 +132,7 @@ def match_heartbeat_lists(
 def _match_heartbeat_lists(
     heartbeat_list_a: pd.DataFrame,
     heartbeat_list_b: pd.DataFrame,
+    *,
     match_cols: str | Sequence[str],
     tolerance_samples: int | float = 0,
     one_to_one: bool = True,
