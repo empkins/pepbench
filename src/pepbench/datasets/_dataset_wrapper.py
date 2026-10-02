@@ -50,6 +50,7 @@ class WrapperDataset(BasePepDataset):
         icg: IcgRawDataFrame,
         sampling_rate_ecg: int,
         sampling_rate_icg: int,
+        *,
         groupby_cols: Sequence[str] | None = None,
         subset_index: Sequence[str] | None = None,
     ) -> None:

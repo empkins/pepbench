@@ -404,6 +404,7 @@ def _add_icg_c_points(
 
 def _base_add_vlines(
     x: pd.Series,
+    *,
     color: str,
     alpha: float,
     label: str,
@@ -449,6 +450,7 @@ def _base_add_vlines(
 def _base_add_scatter(
     x: pd.Series,
     y: pd.Series,
+    *,
     color: str,
     label: str,
     marker: str,

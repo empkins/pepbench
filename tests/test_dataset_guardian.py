@@ -1,3 +1,5 @@
+"""Tests for :class:`~pepbench.datasets.guardian.GuardianDataset`."""
+
 from pathlib import Path
 
 import numpy as np
@@ -7,9 +9,11 @@ import pytest
 from pepbench.datasets.guardian import GuardianDataset
 
 
-def _make_minimal_structure(base_path: Path, participants=("GDN0001",)):
-    """
-    Create minimal folder layout expected by GuardianDataset.create_index:
+def _make_minimal_structure(base_path: Path, participants: tuple[str, ...] = ("GDN0001",)) -> None:
+    """Create minimal folder layout expected by GuardianDataset.create_index.
+
+    The layout consists of:
+
       - metadata/dataset_overview.csv  (semicolon-separated)
       - metadata/demographics.csv
       - metadata/recording_timestamps.xlsx
@@ -42,7 +46,8 @@ def _make_minimal_structure(base_path: Path, participants=("GDN0001",)):
     recording_dates.to_excel(meta_dir.joinpath("recording_timestamps.xlsx"), index=False)
 
 
-def test_create_index_and_constants(tmp_path):
+def test_create_index_and_constants(tmp_path: Path) -> None:
+    """Test that the index covers all participants and phases."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001", "GDN0002"))
 
@@ -58,7 +63,8 @@ def test_create_index_and_constants(tmp_path):
     assert "Pause" in ds.PHASES
 
 
-def test_metadata_age_gender_bmi(tmp_path):
+def test_metadata_age_gender_bmi(tmp_path: Path) -> None:
+    """Test the metadata, age, gender and BMI properties."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001",))
 
@@ -78,7 +84,8 @@ def test_metadata_age_gender_bmi(tmp_path):
     assert pytest.approx(bmi_df.loc["GDN0001", "BMI"], rel=1e-3) == 70.0 / ((175.0 / 100) ** 2)
 
 
-def test_tfm_ecg_icg_with_monkeypatched_loader(tmp_path, monkeypatch):
+def test_tfm_ecg_icg_with_monkeypatched_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that ECG and ICG channels are selected from the TFM data."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001",))
 
@@ -97,7 +104,7 @@ def test_tfm_ecg_icg_with_monkeypatched_loader(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "pepbench.datasets.guardian._dataset._cached_get_tfm_data",
-        lambda path, date: dict.fromkeys(ds.PHASES, dummy_df),
+        lambda *_args, **_kwargs: dict.fromkeys(ds.PHASES, dummy_df),
     )
 
     ecg = ds.ecg  # should select ecg_2 and rename to 'ecg'
@@ -109,7 +116,8 @@ def test_tfm_ecg_icg_with_monkeypatched_loader(tmp_path, monkeypatch):
     assert list(icg["icg_der"]) == list(dummy_df["icg_der"])
 
 
-def test_labeling_borders_monkeypatched(tmp_path, monkeypatch):
+def test_labeling_borders_monkeypatched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that labeling borders are read through the border loader."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001",))
 
@@ -126,7 +134,7 @@ def test_labeling_borders_monkeypatched(tmp_path, monkeypatch):
 
     monkeypatch.setattr(
         "pepbench.datasets.guardian._dataset.load_labeling_borders",
-        lambda file_path: dummy_borders,
+        lambda *_args, **_kwargs: dummy_borders,
     )
 
     borders = ds.labeling_borders
@@ -135,7 +143,8 @@ def test_labeling_borders_monkeypatched(tmp_path, monkeypatch):
     assert any(borders["description"].str.contains("Pause"))
 
 
-def test_create_index_exclude_missing(tmp_path):
+def test_create_index_exclude_missing(tmp_path: Path) -> None:
+    """Test that excluded participants are removed from the index."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001", "GDN0002"))
 
@@ -145,10 +154,11 @@ def test_create_index_exclude_missing(tmp_path):
     ds.data_to_exclude = tuple(("GDN0002", ph) for ph in ds.PHASES)
 
     idx = ds.create_index()
-    assert "GDN0002" not in idx["participant"].values
+    assert "GDN0002" not in idx["participant"].to_numpy()
 
 
-def test_tfm_phase_cut_only_labeled(monkeypatch, tmp_path):
+def test_tfm_phase_cut_only_labeled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test that TFM data is cut to the labeled borders."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001",))
 
@@ -162,14 +172,16 @@ def test_tfm_phase_cut_only_labeled(monkeypatch, tmp_path):
     # monkeypatch loader to return full-phase dict
     monkeypatch.setattr(
         "pepbench.datasets.guardian._dataset._cached_get_tfm_data",
-        lambda path, date: {phase: dummy.copy() for phase in ds.PHASES},
+        lambda *_args, **_kwargs: {phase: dummy.copy() for phase in ds.PHASES},
     )
 
     # create labeling borders with start/end that should trim the data
     dummy_borders = pd.DataFrame(
         {"sample_absolute": [10, 50], "description": ["Pause start", "Pause end"]}, index=[10, 50]
     )
-    monkeypatch.setattr("pepbench.datasets.guardian._dataset.load_labeling_borders", lambda fp: dummy_borders)
+    monkeypatch.setattr(
+        "pepbench.datasets.guardian._dataset.load_labeling_borders", lambda *_args, **_kwargs: dummy_borders
+    )
 
     # accessing tfm_data should return a cut DataFrame for phase 'Pause'
     data = ds.tfm_data
@@ -178,17 +190,19 @@ def test_tfm_phase_cut_only_labeled(monkeypatch, tmp_path):
     assert data.index.max() <= 50
 
 
-def test_tfm_requires_single_selection(tmp_path):
+def test_tfm_requires_single_selection(tmp_path: Path) -> None:
+    """Test that accessing TFM data for multiple participants raises an error."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001", "GDN0002"))
     ds = GuardianDataset(base_path=base)
 
     # tfm_data should raise if multiple participants are selected
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="TFM data can only be accessed for a single participant"):
         _ = ds.tfm_data
 
 
-def test_reference_labels_and_pep(tmp_path):
+def test_reference_labels_and_pep(tmp_path: Path) -> None:
+    """Test computing the reference PEP from heartbeats, Q-peaks and B-points."""
     base = tmp_path / "guardian"
     _make_minimal_structure(base, participants=("GDN0001",))
 

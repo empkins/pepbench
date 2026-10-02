@@ -1,8 +1,10 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""Configuration file for the Sphinx documentation builder.
+
+This file only contains a selection of the most common options. For a full
+list see the documentation:
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""
+
 import inspect
 
 # -- Path setup --------------------------------------------------------------
@@ -21,7 +23,7 @@ from pathlib import Path
 
 import toml
 
-__location__ = os.path.join(os.getcwd(), os.path.dirname(inspect.getfile(inspect.currentframe())))
+__location__ = Path.cwd() / Path(inspect.getfile(inspect.currentframe())).parent
 HERE = Path(__file__)
 
 DOCS_CACHE_DIR = HERE.parent / "_build" / ".cache"
@@ -34,8 +36,8 @@ os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
 
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent.parent))
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.join(__location__, "../src/pepbench"))
+sys.path.insert(0, str(Path().resolve()))
+sys.path.insert(0, str(__location__ / "../src/pepbench"))
 
 
 URL = "https://github.com/empkins/pepbench"
@@ -49,7 +51,7 @@ project = info["name"]
 author = ", ".join([k["name"] for k in info["authors"]])
 release = info["version"]
 
-copyright = (
+copyright = (  # noqa: A001 (name required by Sphinx)
     f"2024 - {datetime.now().year}, Machine Learning and Data Analytics (MaD) Lab, Friedrich-Alexander-Universität "
     "Erlangen-Nürnberg (FAU)"
 )
@@ -70,10 +72,11 @@ with (HERE / "CHANGELOG.md").open("w+") as f:
     f.write(out)
 
 
-def all_but_ipynb(dir, contents):
+def all_but_ipynb(directory: str, contents: list[str]) -> list[str]:
+    """Return all files in ``contents`` that are not Jupyter notebooks (used as ``ignore`` for copytree)."""
     result = []
     for c in contents:
-        if os.path.isfile(os.path.join(dir, c)) and (not c.endswith(".ipynb")):
+        if Path(directory, c).is_file() and (not c.endswith(".ipynb")):
             result += [c]
     return result
 
@@ -258,7 +261,7 @@ sphinx_gallery_conf = {
 }
 
 
-from sphinxext.githublink import make_linkcode_resolve
+from sphinxext.githublink import make_linkcode_resolve  # noqa: E402 (needs the sys.path setup above)
 
 linkcode_resolve = make_linkcode_resolve(
     "pepbench",

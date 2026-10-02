@@ -1,4 +1,4 @@
-"""This file is copied from sklearn.
+"""Sphinx linkcode resolver, copied from sklearn.
 
 The original source is licenced under BSD 3-Clause and can be obtained from here:
 
@@ -9,13 +9,15 @@ import inspect
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from functools import partial
 from operator import attrgetter
+from pathlib import Path
 
 REVISION_CMD = "git rev-parse --short HEAD"
 
 
-def _get_git_revision():
+def _get_git_revision() -> str | None:
     try:
         revision = subprocess.check_output(REVISION_CMD.split()).strip()
     except (subprocess.CalledProcessError, OSError):
@@ -24,7 +26,7 @@ def _get_git_revision():
     return revision.decode("utf-8")
 
 
-def _linkcode_resolve(domain, info, package, url_fmt, revision):
+def _linkcode_resolve(domain: str, info: dict, package: str, url_fmt: str, revision: str | None) -> str | None:
     """Determine a link to online source for a class/method/function.
 
     This is called by sphinx.ext.linkcode
@@ -56,26 +58,26 @@ def _linkcode_resolve(domain, info, package, url_fmt, revision):
 
     try:
         fn = inspect.getsourcefile(obj)
-    except Exception:
+    except TypeError:
         fn = None
     if not fn:
         try:
             fn = inspect.getsourcefile(sys.modules[obj.__module__])
-        except Exception:
+        except (KeyError, AttributeError, TypeError):
             fn = None
     if not fn:
         return None
 
-    fn = os.path.relpath(fn, start=os.path.dirname(__import__(package).__file__))
+    fn = os.path.relpath(fn, start=Path(__import__(package).__file__).parent)
     try:
         lineno = inspect.getsourcelines(obj)[1]
-    except Exception:
+    except (OSError, TypeError):
         lineno = ""
     return url_fmt.format(revision=revision, package=package, path=fn, lineno=lineno)
 
 
-def make_linkcode_resolve(package, url_fmt):
-    """Returns a linkcode_resolve function for the given URL format.
+def make_linkcode_resolve(package: str, url_fmt: str) -> Callable[[str, dict], str | None]:
+    """Return a linkcode_resolve function for the given URL format.
 
     revision is a git commit reference (hash or name)
 

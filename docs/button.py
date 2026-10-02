@@ -1,4 +1,6 @@
-from typing import NoReturn
+"""Sphinx directive that renders a download button."""
+
+from typing import Any, ClassVar, NoReturn
 
 import jinja2
 from docutils import nodes
@@ -15,14 +17,16 @@ BUTTON_TEMPLATE = jinja2.Template(
 
 
 # placeholder node for document graph
-class button_node(nodes.General, nodes.Element):
-    pass
+class ButtonNode(nodes.General, nodes.Element):
+    """Placeholder node for a button in the document graph."""
 
 
 class ButtonDirective(Directive):
+    """Directive that inserts a download button with a ``text`` and a ``link`` option."""
+
     required_arguments = 0
 
-    option_spec = {
+    option_spec: ClassVar[dict[str, Any]] = {
         "text": unchanged,
         "link": unchanged,
     }
@@ -30,20 +34,22 @@ class ButtonDirective(Directive):
     # this will execute when your directive is encountered
     # it will insert a button_node into the document that will
     # get visited during the build phase
-    def run(self):
+    def run(self) -> list[nodes.Node]:
+        """Create the button node."""
         env = self.state.document.settings.env
         app = env.app
 
         app.add_css_file("button.css")
 
-        node = button_node()
+        node = ButtonNode()
         node["text"] = self.options["text"]
         node["link"] = self.options["link"]
         return [node]
 
 
 # build phase visitor emits HTML to append to output
-def html_visit_button_node(self, node) -> NoReturn:
+def html_visit_button_node(self: Any, node: ButtonNode) -> NoReturn:
+    """Render the button node as HTML."""
     html = BUTTON_TEMPLATE.render(text=node["text"], link=node["link"])
 
     self.body.append(html)
@@ -53,8 +59,9 @@ def html_visit_button_node(self, node) -> NoReturn:
 # if you want to be pedantic, define text, latex, manpage visitors too..
 
 
-def setup(app):
-    app.add_node(button_node, html=(html_visit_button_node, None))
+def setup(app: Any) -> dict[str, Any]:
+    """Register the button node and directive with Sphinx."""
+    app.add_node(ButtonNode, html=(html_visit_button_node, None))
     app.add_directive("button", ButtonDirective)
 
     return {

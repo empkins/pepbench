@@ -1,18 +1,70 @@
+"""Tests for :class:`~pepbench.datasets.empkins.EmpkinsDataset`."""
+
 import shutil
 from pathlib import Path
 
+import biopsykit.io.biopac as bk_biopac
 import numpy as np
 import pandas as pd
 import pytest
 
+import pepbench.datasets.empkins._dataset as empkins_dataset
+import pepbench.datasets.empkins._helper as empkins_helper
 from pepbench.datasets.empkins import EmpkinsDataset
 
+_CONDITIONS = ("tsst", "ftsst")
 
-def _make_minimal_structure(base_path: Path, participants=("VP_001",), use_example_data: bool = True):
-    """
-    Create minimal folder layout expected by EmpkinsDataset.create_index:
-      - data_per_subject/{participant}/{condition}
-    and a metadata/demographics.csv file.
+
+def _copy_reference_labels(item: Path, cond_dst: Path, participant: str, cond: str) -> None:
+    """Create per-phase per-channel reference label files expected by EmpkinsDataset."""
+    target_base = cond_dst.joinpath("biopac/reference_labels/rater_01")
+    target_base.mkdir(parents=True, exist_ok=True)
+    # find available example reference files (ECG/ICG)
+    example_files = {child.name: child for child in item.iterdir() if child.is_file()}
+    # use dataset PHASES constant to generate filenames
+    for phase in EmpkinsDataset.PHASES:
+        for fname, child in example_files.items():
+            # map example filename to channel
+            if "ECG" in fname.upper():
+                channel = "ecg"
+            elif "ICG" in fname.upper():
+                channel = "icg"
+            else:
+                channel = fname
+            # construct expected filename
+            out_name = f"reference_labels_{participant}_{cond}_{phase.lower()}_{channel}.csv"
+            shutil.copy2(child, target_base.joinpath(out_name))
+
+
+def _copy_example_participant(src: Path, dst: Path, participant: str) -> None:
+    """Copy an example_data participant folder into every condition subfolder of ``dst``."""
+    # create participant dir
+    if dst.exists():
+        shutil.rmtree(dst)
+    dst.mkdir(parents=True, exist_ok=True)
+    # Ensure condition subfolders exist and copy example contents into each condition
+    for cond in _CONDITIONS:
+        cond_dst = dst.joinpath(cond)
+        if cond_dst.exists():
+            shutil.rmtree(cond_dst)
+        cond_dst.mkdir(parents=True, exist_ok=True)
+        # copy files and directories from src into cond_dst
+        for item in src.iterdir():
+            # special-case reference_labels: copy into cond/biopac/reference_labels/rater_01
+            if item.name == "reference_labels" and item.is_dir():
+                _copy_reference_labels(item, cond_dst, participant, cond)
+            elif item.is_dir():
+                shutil.copytree(item, cond_dst.joinpath(item.name))
+            else:
+                shutil.copy2(item, cond_dst.joinpath(item.name))
+
+
+def _make_minimal_structure(
+    base_path: Path, participants: tuple[str, ...] = ("VP_001",), use_example_data: bool = True
+) -> None:
+    """Create minimal folder layout expected by EmpkinsDataset.create_index.
+
+    The layout consists of ``data_per_subject/{participant}/{condition}`` and a ``metadata/demographics.csv`` file.
 
     If use_example_data is True, copy the corresponding directories from the repository's
     `example_data/` directory (inside the project root) into the temporary test folder.
@@ -20,65 +72,15 @@ def _make_minimal_structure(base_path: Path, participants=("VP_001",), use_examp
     data_per_subject = base_path.joinpath("data_per_subject")
     data_per_subject.mkdir(parents=True, exist_ok=True)
 
-    if use_example_data:
-        # copy example_data participant folders into the temporary test directory
-        repo_example = Path(__file__).resolve().parents[1].joinpath("example_data")
-        for p in participants:
-            src = repo_example.joinpath(p)
-            dst = data_per_subject.joinpath(p)
-            if src.exists():
-                # create participant dir
-                if dst.exists():
-                    shutil.rmtree(dst)
-                dst.mkdir(parents=True, exist_ok=True)
-                # Ensure condition subfolders exist and copy example contents into each condition
-                for cond in ("tsst", "ftsst"):
-                    cond_dst = dst.joinpath(cond)
-                    if cond_dst.exists():
-                        shutil.rmtree(cond_dst)
-                    cond_dst.mkdir(parents=True, exist_ok=True)
-                    # copy files and directories from src into cond_dst
-                    for item in src.iterdir():
-                        # special-case reference_labels: copy into cond/biopac/reference_labels/rater_01
-                        if item.name == "reference_labels" and item.is_dir():
-                            # create per-phase per-channel files expected by EmpkinsDataset
-                            target_base = cond_dst.joinpath("biopac/reference_labels/rater_01")
-                            target_base.mkdir(parents=True, exist_ok=True)
-                            # find available example reference files (ECG/ICG)
-                            example_files = {child.name: child for child in item.iterdir() if child.is_file()}
-                            # use dataset PHASES constant to generate filenames
-                            try:
-                                from pepbench.datasets.empkins import EmpkinsDataset as _ED
-
-                                phases = _ED.PHASES
-                            except Exception:
-                                phases = ("Prep",)
-                            for phase in phases:
-                                for fname, child in example_files.items():
-                                    # map example filename to channel
-                                    if "ECG" in fname.upper():
-                                        channel = "ecg"
-                                    elif "ICG" in fname.upper():
-                                        channel = "icg"
-                                    else:
-                                        channel = fname
-                                    # construct expected filename
-                                    out_name = f"reference_labels_{p}_{cond}_{phase.lower()}_{channel}.csv"
-                                    out_path = target_base.joinpath(out_name)
-                                    shutil.copy2(child, out_path)
-                        else:
-                            target = cond_dst.joinpath(item.name)
-                            if item.is_dir():
-                                shutil.copytree(item, target)
-                            else:
-                                shutil.copy2(item, target)
-            else:
-                # fallback to creating minimal structure for this participant
-                for cond in ("tsst", "ftsst"):
-                    (data_per_subject / p / cond).mkdir(parents=True, exist_ok=True)
-    else:
-        for p in participants:
-            for cond in ("tsst", "ftsst"):
+    repo_example = Path(__file__).resolve().parents[1].joinpath("example_data")
+    for p in participants:
+        src = repo_example.joinpath(p)
+        if use_example_data and src.exists():
+            # copy example_data participant folders into the temporary test directory
+            _copy_example_participant(src, data_per_subject.joinpath(p), p)
+        else:
+            # fallback to creating minimal structure for this participant
+            for cond in _CONDITIONS:
                 (data_per_subject / p / cond).mkdir(parents=True, exist_ok=True)
 
     # create a simple demographics.csv required by metadata properties if one does not exist
@@ -99,7 +101,8 @@ def _make_minimal_structure(base_path: Path, participants=("VP_001",), use_examp
         demographics.to_csv(demographics_path, index=False)
 
 
-def test_create_index_and_constants(tmp_path):
+def test_create_index_and_constants(tmp_path: Path) -> None:
+    """Test that the index covers all participants, conditions and phases."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001", "VP_002"), use_example_data=True)
 
@@ -121,7 +124,8 @@ def test_create_index_and_constants(tmp_path):
     assert set(ds.CONDITIONS) == {"tsst", "ftsst"}
 
 
-def test__get_biopac_data(tmp_path, monkeypatch):
+def test__get_biopac_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that Biopac data loading fails without data and works with a patched loader."""
     base = tmp_path / "empkins"
     # First: minimal layout (no example data) -> reading should raise FileNotFoundError
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=False)
@@ -136,20 +140,22 @@ def test__get_biopac_data(tmp_path, monkeypatch):
     dummy_df = pd.DataFrame({"ecg": np.arange(5), "icg_der": np.zeros(5)})
     monkeypatch.setattr(
         "pepbench.datasets.empkins._dataset._cached_get_biopac_data",
-        lambda base_path, participant_id, condition: (dummy_df, 1000),
+        lambda *_args, **_kwargs: (dummy_df, 1000),
     )
     # also monkeypatch the helper loader to be safe if the module path uses the helper directly
     monkeypatch.setattr(
         "pepbench.datasets.empkins._helper._load_biopac_data",
-        lambda base_path, participant_id, condition: (dummy_df, 1000),
+        lambda *_args, **_kwargs: (dummy_df, 1000),
     )
     data, fs = ds2._get_biopac_data("VP_001", "tsst", "all")
     assert isinstance(data, pd.DataFrame)
     # sampling frequency should be a positive integer
-    assert isinstance(fs, (int, float)) and fs > 0
+    assert isinstance(fs, (int, float))
+    assert fs > 0
 
 
-def test_metadata_age_gender_bmi(tmp_path):
+def test_metadata_age_gender_bmi(tmp_path: Path) -> None:
+    """Test the metadata, age, gender and BMI properties."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=True)
 
@@ -174,7 +180,8 @@ def test_metadata_age_gender_bmi(tmp_path):
     assert pytest.approx(bmi_df.loc["VP_001", "BMI"], rel=1e-3) == 70.0 / ((175.0 / 100) ** 2)
 
 
-def test__get_biopac_data_uses_monkeypatched_loader(tmp_path, monkeypatch):
+def test__get_biopac_data_uses_monkeypatched_loader(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that Biopac data is read through the cached loader."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=True)
 
@@ -192,7 +199,7 @@ def test__get_biopac_data_uses_monkeypatched_loader(tmp_path, monkeypatch):
     # monkeypatch the cached loader in the dataset module to avoid reading .acq files
     monkeypatch.setattr(
         "pepbench.datasets.empkins._dataset._cached_get_biopac_data",
-        lambda base_path, participant_id, condition: (dummy_df, 1000),
+        lambda *_args, **_kwargs: (dummy_df, 1000),
     )
 
     data, fs = ds._get_biopac_data("VP_001", "tsst", "all")
@@ -201,7 +208,8 @@ def test__get_biopac_data_uses_monkeypatched_loader(tmp_path, monkeypatch):
     assert list(data["ecg"]) == list(range(10))
 
 
-def test__get_timelog_monkeypatched(tmp_path, monkeypatch):
+def test__get_timelog_monkeypatched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that the timelog is read through the timelog loader."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=True)
 
@@ -213,7 +221,7 @@ def test__get_timelog_monkeypatched(tmp_path, monkeypatch):
     # patch the internal _load_timelog used by the dataset module
     monkeypatch.setattr(
         "pepbench.datasets.empkins._dataset._load_timelog",
-        lambda base_path, participant_id, condition, phase: dummy_timelog if phase == "Prep" else dummy_timelog,
+        lambda *_args, **_kwargs: dummy_timelog,
     )
 
     result = ds._get_timelog("VP_001", "tsst", "Prep")
@@ -222,7 +230,8 @@ def test__get_timelog_monkeypatched(tmp_path, monkeypatch):
     assert result["start"].iloc[0] == 0
 
 
-def test_create_index_exclude_missing(tmp_path):
+def test_create_index_exclude_missing(tmp_path: Path) -> None:
+    """Test that participants with missing data are excluded from the index."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001", "VP_002"), use_example_data=False)
 
@@ -233,10 +242,11 @@ def test_create_index_exclude_missing(tmp_path):
 
     idx = ds.create_index()
     # VP_002 should not be present
-    assert "VP_002" not in idx["participant"].values
+    assert "VP_002" not in idx["participant"].to_numpy()
 
 
-def test_base_demographics_and_properties(tmp_path):
+def test_base_demographics_and_properties(tmp_path: Path) -> None:
+    """Test the base demographics and sampling rate properties."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=False)
     ds = EmpkinsDataset(base_path=base)
@@ -253,7 +263,8 @@ def test_base_demographics_and_properties(tmp_path):
     assert ds.sampling_rate_ecg == ds.SAMPLING_RATES["ecg"]
 
 
-def test_timelog_all_and_phase(monkeypatch, tmp_path):
+def test_timelog_all_and_phase(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test reading the timelog for all phases and for a single phase."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=False)
     ds = EmpkinsDataset(base_path=base)
@@ -276,9 +287,7 @@ def test_timelog_all_and_phase(monkeypatch, tmp_path):
     )
     dummy_timelog = pd.DataFrame([[0, 9, 0, 1, 2, 3, 4, 5, 6, 7]], columns=cols)
     # monkeypatch the helper loader to return our dummy structure by patching load_atimelogger_file
-    import pepbench.datasets.empkins._helper as empkins_helper
-
-    monkeypatch.setattr(empkins_helper, "load_atimelogger_file", lambda *a, **k: dummy_timelog)
+    monkeypatch.setattr(empkins_helper, "load_atimelogger_file", lambda *_args, **_kwargs: dummy_timelog)
 
     timelog_all = ds._get_timelog("VP_001", "tsst", "all")
     assert isinstance(timelog_all, pd.DataFrame)
@@ -288,7 +297,19 @@ def test_timelog_all_and_phase(monkeypatch, tmp_path):
     assert timelog_prep.shape[0] >= 0
 
 
-def test_biopac_phase_cut(monkeypatch, tmp_path):
+class _FakeBiopac:
+    """Minimal stand-in for :class:`biopsykit.io.biopac.BiopacDataset`."""
+
+    def __init__(self, df_local: pd.DataFrame) -> None:
+        self._df = df_local
+        self._sampling_rate = {"ecg": 1000}
+
+    def data_as_df(self, *_args: object, **_kwargs: object) -> pd.DataFrame:
+        return self._df
+
+
+def test_biopac_phase_cut(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Test that Biopac data is cut to the selected phase."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001",), use_example_data=False)
 
@@ -297,37 +318,22 @@ def test_biopac_phase_cut(monkeypatch, tmp_path):
     df = pd.DataFrame({"ecg": np.arange(100)}, index=times)
 
     # monkeypatch the biopac loader and BiopacDataset.from_acq_file to return our df and sampling rate
-    import pepbench.datasets.empkins._dataset as empkins_dataset
-    import pepbench.datasets.empkins._helper as empkins_helper
-
-    monkeypatch.setattr(empkins_helper, "_load_biopac_data", lambda *a, **k: (df, 1000))
-    monkeypatch.setattr(empkins_dataset, "_cached_get_biopac_data", lambda *a, **k: (df, 1000))
+    monkeypatch.setattr(empkins_helper, "_load_biopac_data", lambda *_args, **_kwargs: (df, 1000))
+    monkeypatch.setattr(empkins_dataset, "_cached_get_biopac_data", lambda *_args, **_kwargs: (df, 1000))
 
     # also patch BiopacDataset.from_acq_file as a fallback
-    import biopsykit.io.biopac as bk_biopac
-
-    class FakeBiopac:
-        def __init__(self, df_local):
-            self._df = df_local
-            self._sampling_rate = {"ecg": 1000}
-
-        def data_as_df(self, index="local_datetime"):
-            return self._df
-
-    monkeypatch.setattr(bk_biopac.BiopacDataset, "from_acq_file", lambda path: FakeBiopac(df))
+    monkeypatch.setattr(bk_biopac.BiopacDataset, "from_acq_file", lambda *_args, **_kwargs: _FakeBiopac(df))
 
     # create a timelog DataFrame with MultiIndex columns (phase, attr) like the real loader returns
     cols = pd.MultiIndex.from_tuples([("Prep", "start"), ("Prep", "end")])
     timelog = pd.DataFrame([[times[10], times[50]]], columns=cols)
-    monkeypatch.setattr(empkins_helper, "_load_timelog", lambda *a, **k: timelog)
+    monkeypatch.setattr(empkins_helper, "_load_timelog", lambda *_args, **_kwargs: timelog)
 
     ds = EmpkinsDataset(base_path=base)
     # monkeypatch the dataset's timelog property so _get_biopac_data can slice without changing ds.index
-    import pepbench.datasets.empkins._dataset as empkins_dataset
-
     # Provide a dict-like timelog where timelog['Prep'] returns a DataFrame with start/end columns
     timelog_map = {"Prep": pd.DataFrame({"start": [times[10]], "end": [times[50]]})}
-    monkeypatch.setattr(empkins_dataset.EmpkinsDataset, "timelog", property(lambda self: timelog_map), raising=True)
+    monkeypatch.setattr(empkins_dataset.EmpkinsDataset, "timelog", property(lambda _self: timelog_map), raising=True)
     data, fs = ds._get_biopac_data("VP_001", "tsst", "Prep")
 
     assert isinstance(data, pd.DataFrame)
@@ -336,12 +342,13 @@ def test_biopac_phase_cut(monkeypatch, tmp_path):
     assert fs == 1000
 
 
-def test_biopac_requires_single_selection(tmp_path):
+def test_biopac_requires_single_selection(tmp_path: Path) -> None:
+    """Test that accessing Biopac data for multiple participants raises an error."""
     base = tmp_path / "empkins"
     _make_minimal_structure(base, participants=("VP_001", "VP_002"), use_example_data=False)
     ds = EmpkinsDataset(base_path=base)
     # Trying to access ds.biopac when more than one participant/condition is selected should raise ValueError
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="only be accessed for one single participant"):
         _ = ds.biopac
 
 

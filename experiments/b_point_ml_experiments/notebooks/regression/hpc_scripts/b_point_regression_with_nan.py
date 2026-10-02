@@ -1,26 +1,26 @@
+"""Run the B-point regression experiments on the HPC (training data including missing values)."""
+
 # Imports
-import os
 import sys
 import warnings
 from pathlib import Path
-import pandas as pd
-import numpy as np
+
 import biopsykit as bp
+import numpy as np
+import pandas as pd
 import sklearn
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
-from sklearn.linear_model._cd_fast import ConvergenceWarning
-
-# Regression
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-
-# Cross-Validation
-from sklearn.model_selection import GroupKFold
 
 # Model Evaluation
 from biopsykit.classification.model_selection import SklearnPipelinePermuter
 
+# Regression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model._cd_fast import ConvergenceWarning
 
+# Cross-Validation
+from sklearn.model_selection import GroupKFold
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.tree import DecisionTreeRegressor
 
 # Set the working directory to the script's directory to ensure expected behavior of the relative paths
 job_id = sys.argv[1] if len(sys.argv) > 1 else "0"
@@ -34,10 +34,15 @@ rater = "rater_01"
 print(sklearn.__version__)
 
 # Load data
-input_data_b_point = pd.read_csv(data_path.joinpath(f"b-point/rr-interval/{rater}/train_data_b_point_rr_interval_include_nan.csv"), index_col=[0,1,2,3,4,5]).astype(float)
+input_data_b_point = pd.read_csv(
+    data_path.joinpath(f"b-point/rr-interval/{rater}/train_data_b_point_rr_interval_include_nan.csv"),
+    index_col=[0, 1, 2, 3, 4, 5],
+).astype(float)
 
 # Prepare data for training (split features from target and create groups)
-X_b_point, y_b_point, groups_b_point, group_keys_b_point = bp.classification.utils.prepare_df_sklearn(data=input_data_b_point, label_col="b_point_sample_reference", subject_col="participant", print_summary=False)
+X_b_point, y_b_point, groups_b_point, group_keys_b_point = bp.classification.utils.prepare_df_sklearn(
+    data=input_data_b_point, label_col="b_point_sample_reference", subject_col="participant", print_summary=False
+)
 print(f"Input data dtype: {X_b_point.dtype}")
 print(f"y_b_point isnan: {np.isnan(y_b_point).any()}")
 
@@ -89,7 +94,9 @@ if input_file_path_b_point.exists():
     print(f"Loading pre-fitted pipeline permuter from {input_file_path_b_point}")
     pipeline_permuter_b_point = SklearnPipelinePermuter.from_pickle(input_file_path_b_point)
 else:
-    pipeline_permuter_b_point = SklearnPipelinePermuter(model_dict_b_point, params_dict_b_point, hyper_search_dict, random_state=0)
+    pipeline_permuter_b_point = SklearnPipelinePermuter(
+        model_dict_b_point, params_dict_b_point, hyper_search_dict, random_state=0
+    )
 
 # Initialize cross-validation
 outer_cv = GroupKFold(n_splits=5)
@@ -100,7 +107,15 @@ print(f"Model name: {model_name}")
 # Fit and save intermediate results
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
-    pipeline_permuter_b_point.fit_and_save_intermediate(X=X_b_point, y=y_b_point, file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/{model_name}"), outer_cv=outer_cv, inner_cv=inner_cv, scoring="neg_mean_absolute_error", groups=groups_b_point)
+    pipeline_permuter_b_point.fit_and_save_intermediate(
+        X=X_b_point,
+        y=y_b_point,
+        file_path=models_path.joinpath(f"b-point/rr-interval/{rater}/{model_name}"),
+        outer_cv=outer_cv,
+        inner_cv=inner_cv,
+        scoring="neg_mean_absolute_error",
+        groups=groups_b_point,
+    )
 
 # Save the fitted pipeline permuter
 pipeline_permuter_b_point.to_pickle(models_path.joinpath(f"b-point/rr-interval/{rater}/{model_name}"))

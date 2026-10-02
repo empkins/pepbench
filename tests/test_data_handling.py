@@ -1,8 +1,11 @@
+"""Tests for the :mod:`pepbench.data_handling` module."""
+
 import numpy as np
 import pandas as pd
 import pytest
 from joblib.testing import raises
 
+import pepbench.data_handling._data_handling as dh
 from pepbench.data_handling import (
     add_unique_id_to_results_dataframe,
     compute_improvement_outlier_correction,
@@ -24,7 +27,8 @@ from pepbench.utils.exceptions import ValidationError
 
 
 @pytest.fixture
-def sample_results_per_sample():
+def sample_results_per_sample() -> pd.DataFrame:
+    """Create a small per-sample results frame with algorithm, participant and heartbeat index levels."""
     # index: algorithm levels + participant + heartbeat
     index = pd.MultiIndex.from_tuples(
         [
@@ -59,7 +63,8 @@ def sample_results_per_sample():
     return df
 
 
-def test_get_reference_data_and_pep(sample_results_per_sample):
+def test_get_reference_data_and_pep(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test extracting reference data and reference PEP."""
     ref = get_reference_data(sample_results_per_sample)
     # reference extraction drops algorithm levels and returns frame with reference columns
     assert "pep_ms" in ref.columns
@@ -76,7 +81,8 @@ def test_get_reference_data_and_pep(sample_results_per_sample):
         get_reference_pep("invalid input")
 
 
-def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
+def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test selecting data and PEP values for an algorithm combination."""
     # select by a full algorithm tuple (current implementation expects the full combo)
     data_q1 = get_data_for_algo(sample_results_per_sample, ("q1", "b1", "out1"))
     # xs drops the selected algorithm index levels, so remaining index names should be participant and heartbeat
@@ -108,7 +114,8 @@ def test_get_data_for_algo_and_get_pep_for_algo(sample_results_per_sample):
         get_pep_for_algo("not a dataframe", ("q1", "b1", "out1"))
 
 
-def test_describe_pep_values():
+def test_describe_pep_values() -> None:
+    """Test descriptive statistics of PEP values."""
     df = pd.DataFrame({"phase": ["A", "A", "B", "B"], "pep_ms": [100.0, 110.0, 120.0, 140.0]})
     desc = describe_pep_values(df, group_cols="phase", metrics=["mean", "std"])
     # should have grouping rows for metrics and columns for pep_ms
@@ -124,7 +131,8 @@ def test_describe_pep_values():
         describe_pep_values(df, group_cols=[1, 2], metrics=["mean"])
 
 
-def test_rr_interval_to_heart_rate():
+def test_rr_interval_to_heart_rate() -> None:
+    """Test converting RR intervals to heart rate."""
     df = pd.DataFrame({"rr_interval_ms": [1000.0, 500.0, 666.6666667]})
     out = rr_interval_to_heart_rate(df)
     # hr = 60 * 1000 / rr_interval_ms
@@ -140,10 +148,12 @@ def test_rr_interval_to_heart_rate():
     # test if column has been added not overwritten
     df2 = pd.DataFrame({"rr_interval_ms": [800.0, 600.0]})
     out2 = rr_interval_to_heart_rate(df2)
-    assert ("rr_interval_ms" and "heart_rate_bpm") in out2.columns
+    assert "rr_interval_ms" in out2.columns
+    assert "heart_rate_bpm" in out2.columns
 
 
-def test_add_unique_id_to_results_dataframe(sample_results_per_sample):
+def test_add_unique_id_to_results_dataframe(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test adding a unique sample identifier to the results index."""
     res = add_unique_id_to_results_dataframe(sample_results_per_sample)
     # resulting index should include id_concat
     assert "id_concat" in res.index.names
@@ -155,7 +165,8 @@ def test_add_unique_id_to_results_dataframe(sample_results_per_sample):
         add_unique_id_to_results_dataframe(123)
 
 
-def test_merge_result_metrics_and_per_sample_merge():
+def test_merge_result_metrics_and_per_sample_merge() -> None:
+    """Test merging metric tables and per-sample results from multiple annotators."""
     # create two simple metrics tables for annotators
     a1 = pd.DataFrame({"Mean Absolute Error [ms]": [5.0], "Mean Error [ms]": [0.5]}, index=["algoA"])
     a2 = pd.DataFrame({"Mean Absolute Error [ms]": [6.0], "Mean Error [ms]": [0.0]}, index=["algoA"])
@@ -176,7 +187,8 @@ def test_merge_result_metrics_and_per_sample_merge():
     assert "Annotator 2" in combined.columns.get_level_values(0)
 
 
-def test_get_error_by_group(sample_results_per_sample):
+def test_get_error_by_group(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test aggregating error metrics by group."""
     # use absolute_error_per_sample_ms column
     err = get_error_by_group(
         sample_results_per_sample, error_metric="absolute_error_per_sample_ms", grouper="participant"
@@ -190,7 +202,8 @@ def test_get_error_by_group(sample_results_per_sample):
         get_error_by_group(sample_results_per_sample, error_metric="absolute_error_per_sample_ms", grouper=[1, 2])
 
 
-def test_get_performance_metric_and_compute_performance_like(sample_results_per_sample):
+def test_get_performance_metric_and_compute_performance_like(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test extracting a single performance metric."""
     # create simple metric columns with last level and test droplevel behavior
     metric = get_performance_metric(sample_results_per_sample, "absolute_error_per_sample_ms")
     # implementation drops the inner column level and returns single-level columns containing metric name
@@ -201,7 +214,10 @@ def test_get_performance_metric_and_compute_performance_like(sample_results_per_
         get_performance_metric(sample_results_per_sample, 123)
 
 
-def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_results_per_sample):
+def test_correlation_reference_pep_heart_rate_monkeypatched(
+    monkeypatch: pytest.MonkeyPatch, sample_results_per_sample: pd.DataFrame
+) -> None:
+    """Test the correlation between reference PEP and heart rate with patched pingouin functions."""
     # ensure reference rr -> heart rate column exists
     # create heart rate column inside reference slice: we already have rr_interval_ms reference
     df = sample_results_per_sample.copy()
@@ -212,22 +228,21 @@ def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_
     # monkeypatch pingouin functions used by the module
     class FakePG:
         @staticmethod
-        def linear_regression(X, y, remove_na=True):
+        def linear_regression(*_args: object, **_kwargs: object) -> pd.DataFrame:
             # return a tiny DataFrame like pingouin would
             return pd.DataFrame({"beta": [0.1], "se": [0.01]})
 
         @staticmethod
-        def corr(x, y, method="pearson"):
+        def corr(*_args: object, **_kwargs: object) -> pd.DataFrame:
             # return a fake correlation DataFrame
             return pd.DataFrame({"r": [0.5], "p-val": [0.05]})
 
     # patch the module's pg object
-    import pepbench.data_handling._data_handling as dh
-
     monkeypatch.setattr(dh, "pg", FakePG)
 
     res = correlation_reference_pep_heart_rate(df)
-    assert "linear_regression" in res and "correlation" in res
+    assert "linear_regression" in res
+    assert "correlation" in res
     # check types
     assert isinstance(res["linear_regression"], pd.DataFrame)
     assert isinstance(res["correlation"], pd.DataFrame)
@@ -236,25 +251,25 @@ def test_correlation_reference_pep_heart_rate_monkeypatched(monkeypatch, sample_
         correlation_reference_pep_heart_rate([1, 2, 3])
 
 
-def test_merge_result_metrics_annotation_difference_and_error():
+def test_merge_result_metrics_annotation_difference_and_error() -> None:
+    """Test computing the annotation difference and its error for more than two annotators."""
     # two annotators: difference computed
     a1 = pd.DataFrame({"Mean Absolute Error [ms]": [5.0], "Mean Error [ms]": [0.5]}, index=["algoA"])
     a2 = pd.DataFrame({"Mean Absolute Error [ms]": [6.0], "Mean Error [ms]": [0.0]}, index=["algoA"])
     merged_with_diff = merge_result_metrics_from_multiple_annotators([a1, a2], add_annotation_difference=True)
     # should contain "Annotator Difference" as a top-level column (after concatenation)
-    assert any(
-        "Annotator Difference" in str(lv) or "Annotator Difference" in str(c)
-        for c in merged_with_diff.columns.get_level_values(0)
-    ) or "Annotator Difference" in merged_with_diff.columns.get_level_values(0).astype(str)
+    assert any("Annotator Difference" in str(c) for c in merged_with_diff.columns.get_level_values(0))
 
     # three annotators: computing difference should raise ValueError
     a3 = pd.DataFrame({"Mean Absolute Error [ms]": [7.0], "Mean Error [ms]": [0.1]}, index=["algoA"])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="only be computed for two annotators"):
         merge_result_metrics_from_multiple_annotators([a1, a2, a3], add_annotation_difference=True)
 
 
-def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
-    # create a reasonable num_heartbeats DataFrame indexed by algo levels + participant so unstack() inside function works
+def test_compute_pep_performance_metrics_basic(sample_results_per_sample: pd.DataFrame) -> None:
+    """Test computing PEP performance metrics."""
+    # create a reasonable num_heartbeats DataFrame indexed by algo levels + participant
+    # so that unstack() inside the function works
     algo_levels = ["q_peak_algorithm", "b_point_algorithm", "outlier_correction_algorithm"]
     # count heartbeats per (algo_levels + participant) as a DataFrame indexed by algo_levels + participant
     num_hb = (
@@ -273,7 +288,8 @@ def test_compute_pep_performance_metrics_basic(sample_results_per_sample):
         compute_pep_performance_metrics(sample_results_per_sample, num_hb, sortby=123)
 
 
-def test_compute_improvement_outlier_correction_signs():
+def test_compute_improvement_outlier_correction_signs() -> None:
+    """Test the improvement percentages of outlier correction."""
     # Construct DataFrame with a column level named 'outlier_correction_algorithm'
     cols = pd.MultiIndex.from_product(
         [["absolute_error_per_sample_ms"], ["out1", "out2"]],
@@ -293,14 +309,15 @@ def test_compute_improvement_outlier_correction_signs():
     assert isinstance(res, pd.DataFrame)
     assert "improvement_percent" in res.index or "improvement_percent" in res.columns or res.shape[0] >= 1
     # percentages should add up to ~100 across the three categories
-    vals = res.iloc[0].dropna().astype(float).values
+    vals = res.iloc[0].dropna().astype(float).to_numpy()
     assert np.isclose(vals.sum(), 100.0)
     # wrong input type should raise
     with raises(ValidationError):
         compute_improvement_outlier_correction([1, 2, 3], outlier_algos=["out1", "out2"])
 
 
-def test_compute_improvement_pipeline_sign_changes():
+def test_compute_improvement_pipeline_sign_changes() -> None:
+    """Test the sign-change percentages between two pipelines."""
     # Build a Series indexed by pipeline and sample so unstack("pipeline") yields two columns
     pipelines = [("a", "b"), ("c", "d")]
     pipeline_keys = ["_".join(p) for p in pipelines]  # ['a_b', 'c_d']

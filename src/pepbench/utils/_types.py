@@ -169,7 +169,7 @@ def check_data_is_base_pep_dataset_with_annotations(data: object) -> None:
     ValidationError
         If data is not an instance of BasePepDatasetWithAnnotations.
     """
-    from pepbench.datasets._base_pep_extraction_dataset import BasePepDatasetWithAnnotations
+    from pepbench.datasets._base_pep_extraction_dataset import BasePepDatasetWithAnnotations  # noqa: PLC0415
 
     if not isinstance(data, BasePepDatasetWithAnnotations):
         raise ValidationError(f"Expected data to be a BasePepDatasetWithAnnotations, got {type(data)} instead.")

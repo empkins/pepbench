@@ -34,18 +34,12 @@ from pepbench.data_handling._data_handling import (
     merge_result_metrics_from_multiple_annotators,
     merge_results_per_sample_from_different_annotators,
     rr_interval_to_heart_rate,
-    build_ml_results_df,
-    merge_ml_result_dfs,
-    describe_ml_results_df,
 )
 
 __all__ = [
     "add_unique_id_to_results_dataframe",
     "compute_improvement_outlier_correction",
     "compute_improvement_pipeline",
-    "build_ml_results_df",
-    "merge_ml_result_dfs",
-    "describe_ml_results_df"
     "compute_pep_performance_metrics",
     "correlation_reference_pep_heart_rate",
     "describe_pep_values",

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+"""Submit the regression jobs to the HPC (SLURM)."""
+
 import subprocess
 import sys
 from pathlib import Path
 
-from hpc_helper import build_job_submit_slurm, check_interpreter
+from hpc_helper import build_job_submit_slurm
 
 # print path of python interpreter
 print(sys.executable)
@@ -14,10 +16,10 @@ print(sys.executable)
 
 job_list = [
     {
-         "name": "regression",
-         "type": "general",
-         "walltime": "24:00:00",
-         "random_state": 0,
+        "name": "regression",
+        "type": "general",
+        "walltime": "24:00:00",
+        "random_state": 0,
     }
 ]
 

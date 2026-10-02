@@ -1,4 +1,7 @@
+"""Tests for the :mod:`pepbench.algorithms` package."""
+
 import importlib
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 import pytest
@@ -8,12 +11,16 @@ from pepbench.example_data import get_example_dataset
 
 
 @contextmanager
-def does_not_raise():
+def does_not_raise() -> Iterator[None]:
+    """Context manager that does nothing, used to mark code that is expected not to raise."""
     yield
 
 
 class TestAlgorithms:
-    def test_algorithms_package_exports(self):
+    """Tests for the algorithm submodules and their exports."""
+
+    def test_algorithms_package_exports(self) -> None:
+        """Test that all algorithm submodules are exposed by the package."""
         expected_submodules = [
             "ecg",
             "icg",
@@ -24,7 +31,8 @@ class TestAlgorithms:
         for name in expected_submodules:
             assert hasattr(alg_pkg, name), f"pepbench.algorithms is missing submodule {name}"
 
-    def test_submodule_all_members_callable(self):
+    def test_submodule_all_members_callable(self) -> None:
+        """Test that every member listed in a submodule's ``__all__`` is importable and callable."""
         submodules = [
             "ecg",
             "icg",
@@ -35,13 +43,15 @@ class TestAlgorithms:
         for sub in submodules:
             module = importlib.import_module(f"pepbench.algorithms.{sub}")
             names = getattr(module, "__all__", None)
-            assert names is not None and len(names) > 0, f"{sub}.__all__ should be defined and non-empty"
+            assert names is not None, f"{sub}.__all__ should be defined"
+            assert len(names) > 0, f"{sub}.__all__ should be non-empty"
             for item in names:
                 attr = getattr(module, item, None)
                 assert attr is not None, f"{item} listed in {sub}.__all__ but not importable"
                 assert callable(attr), f"{item} in {sub} is not callable"
 
-    def test_preprocessing_classes_instantiable(self):
+    def test_preprocessing_classes_instantiable(self) -> None:
+        """Test that preprocessing classes can be instantiated without arguments."""
         mod = importlib.import_module("pepbench.algorithms.preprocessing")
         names = getattr(mod, "__all__", [])
         # try to instantiate each exported preprocessing class; skip on TypeError (requires args)
@@ -55,7 +65,8 @@ class TestAlgorithms:
             except TypeError:
                 pytest.skip(f"{cls_name} requires constructor arguments; skipping instantiation check")
 
-    def test_example_data_and_ecg_algorithm_instantiation(self):
+    def test_example_data_and_ecg_algorithm_instantiation(self) -> None:
+        """Test that the example data loads and at least one ECG algorithm can be instantiated."""
         dataset = get_example_dataset()
         subset = dataset.get_subset(participant="VP_001")
         assert hasattr(subset, "ecg")
